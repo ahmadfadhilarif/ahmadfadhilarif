@@ -1,0 +1,5 @@
+- 👋 Hi, I’m 
+- 👀 I’m interested in object oriented programming
+- 🌱 I’m currently learning front end technologies
+- 💞️ I’m looking to collaborate on any project that can expose me to any front end tech stacks
+- 📫 Reach me at ahmadfadhilarif@gmail.com or drop me a message on www.linkedin.com/in/ahmadfadhilarif
