@@ -1,0 +1,33 @@
+'use strict';
+// Minimal inline SVG icon set (24x24 unless noted)
+const I = {
+  facebook: '<path d="M14 8.5V6.8c0-.8.2-1.3 1.4-1.3H17V2.3c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2H7.6v3.2h2.7V22H14V11.7h2.7l.4-3.2H14z"/>',
+  x: '<path d="M17.8 2.5h3.1l-6.8 7.8 8 10.6h-6.3l-4.9-6.4-5.6 6.4H2.2l7.3-8.3L1.9 2.5h6.4l4.4 5.9 5.1-5.9zm-1.1 16.5h1.7L7.4 4.3H5.6l11.1 14.7z"/>',
+  instagram: '<path d="M12 7.2A4.8 4.8 0 1 0 12 16.8 4.8 4.8 0 0 0 12 7.2zm0 7.9a3.1 3.1 0 1 1 0-6.2 3.1 3.1 0 0 1 0 6.2zm6.1-8.1a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zM21.9 8.2c-.1-1.6-.4-3-1.6-4.2-1.2-1.2-2.6-1.5-4.2-1.6-1.6-.1-6.6-.1-8.3 0-1.6.1-3 .4-4.2 1.6S2.2 6.6 2.1 8.2c-.1 1.6-.1 6.6 0 8.3.1 1.6.4 3 1.6 4.2 1.2 1.2 2.6 1.5 4.2 1.6 1.6.1 6.6.1 8.3 0 1.6-.1 3-.4 4.2-1.6 1.2-1.2 1.5-2.6 1.6-4.2.1-1.7.1-6.6-.1-8.3zm-2.1 10.1c-.3.9-1 1.6-1.9 1.9-1.3.5-4.5.4-5.9.4s-4.6.1-5.9-.4c-.9-.3-1.6-1-1.9-1.9-.5-1.3-.4-4.5-.4-5.9s-.1-4.6.4-5.9c.3-.9 1-1.6 1.9-1.9C7.4 4 10.6 4.1 12 4.1s4.6-.1 5.9.4c.9.3 1.6 1 1.9 1.9.5 1.3.4 4.5.4 5.9s.1 4.6-.4 5.9z"/>',
+  whatsapp: '<path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.4-.5c.2-.2.2-.3.3-.5.1-.2.1-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.3 5.2 4.6.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.3-.3-.4-.6-.5zM12 21.8c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4C2.7 15.6 2.2 13.8 2.2 12 2.2 6.6 6.6 2.2 12 2.2c2.6 0 5.1 1 6.9 2.9 1.8 1.8 2.9 4.3 2.9 6.9 0 5.4-4.4 9.8-9.8 9.8zm8.4-18.2A11.8 11.8 0 0 0 12 .2C5.5.2.2 5.5.2 12c0 2.1.5 4.1 1.6 5.9L.1 24l6.3-1.7c1.7.9 3.7 1.4 5.6 1.4 6.5 0 11.8-5.3 11.8-11.8 0-3.1-1.2-6.1-3.4-8.3z"/>',
+  telegram: '<path d="M21.9 4.1 18.6 19.6c-.2 1.1-.9 1.4-1.8.9l-5-3.7-2.4 2.3c-.3.3-.5.5-1 .5l.4-5.1 9.3-8.4c.4-.4-.1-.6-.6-.2L6 13.1l-4.9-1.5c-1.1-.3-1.1-1.1.2-1.6L20.5 2.6c.9-.3 1.7.2 1.4 1.5z"/>',
+  user: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M12 12.5a4.75 4.75 0 1 0 0-9.5 4.75 4.75 0 0 0 0 9.5zM3.5 21.5c.6-4.2 4.1-6.8 8.5-6.8s7.9 2.6 8.5 6.8"/>',
+  cart: '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M1.5 3h3l2.6 12.2h11.6l2.3-8.7H6"/><circle cx="9" cy="19.6" r="1.6"/><circle cx="17.2" cy="19.6" r="1.6"/>',
+  bag: '<path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M4.5 7.5h15l-1 14h-13zM8.5 10V6a3.5 3.5 0 0 1 7 0v4"/>',
+  home: '<path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M3 10.5 12 3l9 7.5V21h-6v-6.5H9V21H3z"/>',
+  menu: '<path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M3 6h18M3 12h18M3 18h18"/>',
+  chevDown: '<path fill="none" stroke="currentColor" stroke-width="2.4" d="m4 8 8 8 8-8"/>',
+  chevRight: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="m8 3 9 9-9 9"/>',
+  chevLeft: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="m16 3-9 9 9 9"/>',
+  arrowRight: '<path fill="none" stroke="currentColor" stroke-width="2.2" d="M3 12h17m-6-6 6 6-6 6"/>',
+  arrowDown: '<path fill="none" stroke="currentColor" stroke-width="2.2" d="M12 3v17m-6-6 6 6 6-6"/>',
+  grid: '<path d="M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 0h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  mail: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 5.5h18v13H3zM3.5 6l8.5 7 8.5-7"/>',
+  phone: '<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M6.6 2.8 9.4 6.5 7.6 9a12 12 0 0 0 7.4 7.4l2.5-1.8 3.7 2.8-1.5 3.4c-.3.6-.9.9-1.5.8C9.9 20.6 3.4 14.1 2.4 5.8c-.1-.6.2-1.2.8-1.5z"/>',
+  calendar: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M3.5 5.5h17v15h-17zM3.5 10h17M8 3v4m8-4v4"/>',
+  expand: '<path fill="none" stroke="currentColor" stroke-width="1.8" d="M9 3H3v6m12-6h6v6M9 21H3v-6m12 6h6v-6M3 3l7 7m11-7-7 7M3 21l7-7m11 7-7-7"/>',
+  filter: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 7h12m4 0h2M3 17h2m4 0h12"/><circle cx="17" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="7" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  check: '<path fill="none" stroke="currentColor" stroke-width="2.6" d="m4 12.5 5 5L20 6.5"/>',
+  person: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.6-4.4 3.8-7 8-7s7.4 2.6 8 7z"/>',
+  money: '<rect x="2.5" y="6" width="19" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>',
+  box: '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M12 2 21 7v10l-9 5-9-5V7zm0 0v0M3 7l9 5 9-5M12 12v10"/>',
+  stretch: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M4 4h5M4 4v5M4 4l6 6M20 4h-5M20 4v5M20 4l-6 6M4 20h5M4 20v-5M4 20l6-6M20 20h-5M20 20v-5M20 20l-6-6"/>',
+  air: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 9h12a3 3 0 1 0-3-3M3 15h16a3 3 0 1 1-3 3M3 12h9"/>',
+  drop: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11zM8.5 15h7"/>',
+};
+module.exports = (name, cls = '') => `<svg class="icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${I[name] || ''}</svg>`;
