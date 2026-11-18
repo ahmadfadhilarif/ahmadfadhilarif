@@ -804,8 +804,36 @@ function paths(lines,w,y,col){y=y||0;lines.forEach(([a,b])=>{
   const len=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let s=0;s<=len;s+=1)reserve(a[0]+(b[0]-a[0])*s/len,a[1]+(b[1]-a[1])*s/len,w/2+0.2)})}
 // walkable surfaces that are not straight paths (plazas, floors, rings round fountains): no grass or flowers grow on them
 const WALK=[];function walkRect(x0,x1,z0,z1){WALK.push({minX:x0,maxX:x1,minZ:z0,maxZ:z1})}function walkRing(x,z,r0,r1){WALK.push({x,z,r0,r1})}
+// a WALK entry is a ring {x,z,r0,r1}, a rectangle {minX..maxZ} or a curved path {poly,hw} (with its bounding box)
+function walkHit(w,x,z,m){if(w.r1!=null){const d=Math.hypot(x-w.x,z-w.z);return d>w.r0-m&&d<w.r1+m}
+  if(x<w.minX-m||x>w.maxX+m||z<w.minZ-m||z>w.maxZ+m)return false;if(!w.poly)return true;
+  const P=w.poly,h=w.hw+m;for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],bx=b[0]-a[0],bz=b[1]-a[1],l=bx*bx+bz*bz||1e-9;let t=((x-a[0])*bx+(z-a[1])*bz)/l;t=t<0?0:t>1?1:t;if((x-a[0]-bx*t)**2+(z-a[1]-bz*t)**2<h*h)return true}return false}
 function onWalk(x,z,m){for(const r of PATHR)if(x>r.minX-m&&x<r.maxX+m&&z>r.minZ-m&&z<r.maxZ+m)return true;
-  for(const w of WALK){if(w.r1!=null){const d=Math.hypot(x-w.x,z-w.z);if(d>w.r0-m&&d<w.r1+m)return true}else if(x>w.minX-m&&x<w.maxX+m&&z>w.minZ-m&&z<w.maxZ+m)return true}return false}
+  for(const w of WALK)if(walkHit(w,x,z,m))return true;return false}
+// a side path laid along a route: corners are rounded into smooth curves, it starts with a round end in front of its
+// panel and flares out where it meets the walkway, like a path that has been laid by hand
+const RIBR=[];
+function padPath(x0,x1,z0,z1,col){const w=x1-x0,d=z1-z0,r=Math.min(0.6,w/2,d/2),s=new THREE.Shape();s.moveTo(-w/2+r,-d/2);s.lineTo(w/2-r,-d/2);s.quadraticCurveTo(w/2,-d/2,w/2,-d/2+r);s.lineTo(w/2,d/2-r);s.quadraticCurveTo(w/2,d/2,w/2-r,d/2);
+  s.lineTo(-w/2+r,d/2);s.quadraticCurveTo(-w/2,d/2,-w/2,d/2-r);s.lineTo(-w/2,-d/2+r);s.quadraticCurveTo(-w/2,-d/2,-w/2+r,-d/2);flat(new THREE.ShapeGeometry(s,6),col,(x0+x1)/2,0.02+(pathN++%7)*0.0015,(z0+z1)/2);
+  walkRect(x0,x1,z0,z1);RIBR.push({minX:x0,maxX:x1,minZ:z0,maxZ:z1});for(let x=x0+0.5;x<x1;x+=1)for(let z=z0+0.5;z<z1;z+=1)reserve(x,z,0.9)}
+function ribbonPath(pts,w,col){const D=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1]);
+  const q=[pts[0]];for(let i=1;i<pts.length;i++)if(D(q[q.length-1],pts[i])>0.02)q.push(pts[i]);
+  const c=[q[0]];for(let i=1;i<q.length-1;i++){const a=c[c.length-1],b=q[i],d=q[i+1];if(Math.abs((b[0]-a[0])*(d[1]-b[1])-(b[1]-a[1])*(d[0]-b[0]))>1e-6)c.push(b)}c.push(q[q.length-1]);
+  const P0=[c[0]];for(let i=1;i<c.length-1;i++){const a=c[i-1],b=c[i],d=c[i+1],l1=D(a,b),l2=D(b,d),R=Math.min(1.8,l1*(i===1?0.95:0.48),l2*(i===c.length-2?0.95:0.48));
+    const p1=[b[0]-(b[0]-a[0])/l1*R,b[1]-(b[1]-a[1])/l1*R],p2=[b[0]+(d[0]-b[0])/l2*R,b[1]+(d[1]-b[1])/l2*R];
+    for(let k=0;k<=12;k++){const t=k/12,u=1-t;P0.push([u*u*p1[0]+2*u*t*b[0]+t*t*p2[0],u*u*p1[1]+2*u*t*b[1]+t*t*p2[1]])}}
+  P0.push(c[c.length-1]);
+  const P=[P0[0]];for(let i=1;i<P0.length;i++){const a=P[P.length-1],b=P0[i],l=D(a,b);if(l<0.01)continue;const n=Math.ceil(l/0.3);for(let k=1;k<=n;k++)P.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
+  let L=0;const cum=[0];for(let i=1;i<P.length;i++){L+=D(P[i-1],P[i]);cum.push(L)}
+  const V=[],N=[],I=[],y=0.02+(pathN++%7)*0.0015,HW=[];
+  P.forEach((p,i)=>{const a=P[Math.max(0,i-1)],b=P[Math.min(P.length-1,i+1)],tl=D(a,b)||1,tx=(b[0]-a[0])/tl,tz=(b[1]-a[1])/tl,f=Math.max(0,(cum[i]-(L-1.4))/1.4),hw=w/2+0.8*f*f;HW.push(hw);
+    V.push(p[0]-tz*hw,y,p[1]+tx*hw,p[0]+tz*hw,y,p[1]-tx*hw);N.push(0,1,0,0,1,0);if(i){const o=(i-1)*2;I.push(o,o+2,o+1,o+1,o+2,o+3)}});
+  {const a=V,o0=I[0]*3,o1=I[1]*3,o2=I[2]*3,ny=(a[o1+2]-a[o0+2])*(a[o2]-a[o0])-(a[o1]-a[o0])*(a[o2+2]-a[o0+2]);if(ny<0)for(let t=0;t<I.length;t+=3){const tmp=I[t+1];I[t+1]=I[t+2];I[t+2]=tmp}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setIndex(I);mesh(g,col,0,0,0,scene,true);
+  flat(new THREE.CircleGeometry(w/2,28),col,P[0][0],y-0.0005,P[0][1]);
+  const bb=(pp,h)=>({poly:pp,hw:h,minX:Math.min(...pp.map(v=>v[0]))-h,maxX:Math.max(...pp.map(v=>v[0]))+h,minZ:Math.min(...pp.map(v=>v[1]))-h,maxZ:Math.max(...pp.map(v=>v[1]))+h});
+  WALK.push(bb(P,w/2));const tail=P.filter((_,i)=>cum[i]>L-1.5);if(tail.length>1)WALK.push(bb(tail,w/2+0.8));
+  P.forEach((p,i)=>{if(i%3===0){reserve(p[0],p[1],HW[i]+0.2);RIBR.push({minX:p[0]-HW[i],maxX:p[0]+HW[i],minZ:p[1]-HW[i],maxZ:p[1]+HW[i]})}})}
 function hedge(cx,cz,w,d){blk(w,2.2,d,cx,1.1,cz,0x4a9446);colBox(cx-w/2,cx+w/2,cz-d/2,cz+d/2);
   const L=Math.max(w,d),alongX=w>d;for(let s=-L/2+0.6;s<L/2;s+=1.3)INST.bush.push({x:alongX?cx+s:cx+(RS()-0.5)*0.2,y:2.15,z:alongX?cz+(RS()-0.5)*0.2:cz+s,s:0.72+RS()*0.15,sy:0.5,c:pick([0x4a9446,0x55a24c,0x438a40]),ry:RS()*6})}
 // a big roadside sign; ry turns it so its face points back down the road at people walking up
@@ -819,7 +847,7 @@ function signPost(x,z,lines,ry){
 const lampPost=new THREE.CylinderGeometry(0.05,0.08,3,12),lampBase=new THREE.CylinderGeometry(0.16,0.2,0.3,12),lampCap=new THREE.ConeGeometry(0.34,0.25,12);
 // lamps and trees never stand on a path: anything placed on one is pushed out to the nearest edge
 function offPath(x,z,m,gap){for(let it=0;it<6;it++){let moved=false;
-  for(const r of PATHR){if(x>r.minX-m&&x<r.maxX+m&&z>r.minZ-m&&z<r.maxZ+m){
+  for(const r of PATHR.concat(RIBR)){if(x>r.minX-m&&x<r.maxX+m&&z>r.minZ-m&&z<r.maxZ+m){
     const opts=[[r.minX-gap-x,0],[r.maxX+gap-x,0],[0,r.minZ-gap-z],[0,r.maxZ+gap-z]].sort((a,b)=>Math.abs(a[0]+a[1])-Math.abs(b[0]+b[1]));
     x+=opts[0][0];z+=opts[0][1];moved=true}}
   if(!moved)break}return[x,z]}
@@ -1526,6 +1554,11 @@ function buildArea3(z0){
 }
 
 /* ---------- AREA 4: Windmill Hill ---------- */
+// a wooden railing that follows the ground (and stairs) beneath it, with a collider you can't step through
+function railing(x1,z1,x2,z2){const L=Math.hypot(x2-x1,z2-z1),n=Math.max(1,Math.ceil(L/1.5));let prev=null;
+  for(let i=0;i<=n;i++){const x=x1+(x2-x1)*i/n,z=z1+(z2-z1)*i/n,y=heightAt(x,z);blk(0.12,0.98,0.12,x,y+0.49,z,0x8a5a3b);mesh(new THREE.SphereGeometry(0.075,12,8),0x8a5a3b,x,y+1.0,z);
+    const top=[x,y+0.95,z],mid=[x,y+0.5,z];if(prev){rod(prev[0],top,0.035,0xa8784e);rod(prev[1],mid,0.028,0xa8784e)}prev=[top,mid]}
+  colBox(Math.min(x1,x2)-0.1,Math.max(x1,x2)+0.1,Math.min(z1,z2)-0.1,Math.max(z1,z2)+0.1)}
 function platformBlock(minX,maxX,minZ,maxZ,h){platforms.push({t:'box',minX,maxX,minZ,maxZ,h});
   blk(maxX-minX,h,maxZ-minZ,(minX+maxX)/2,h/2,(minZ+maxZ)/2,0xbca57f);flat(new THREE.PlaneGeometry(maxX-minX,maxZ-minZ),0x79c05a,(minX+maxX)/2,h+0.005,(minZ+maxZ)/2).receiveShadow=true;
   blk(maxX-minX+0.1,0.12,maxZ-minZ+0.1,(minX+maxX)/2,h-0.02,(minZ+maxZ)/2,0xa48d68,scene,true)}
@@ -1538,6 +1571,10 @@ function buildArea4(z0){
   platformBlock(-21,-4,z0-22,z0-10,1.2);platformBlock(-21,-8,z0-40,z0-26,2.4);
   stairs(-11,-8,z0-10,z0-6,'z',1.2,0);stairs(-16,-13,z0-26,z0-22,'z',2.4,1.2);stairs(-8,-2,z0-36,z0-33,'x',2.4,0);
   windmill(-14.5,z0-37.5,2.4);
+  const rl=(x1,z1,x2,z2)=>railing(x1,z0+z1,x2,z0+z2);
+  rl(-20.88,-10.12,-11,-10.12);rl(-8,-10.12,-4.12,-10.12);rl(-20.88,-21.88,-16,-21.88);rl(-13,-21.88,-4.12,-21.88);rl(-20.88,-21.88,-20.88,-10.12);rl(-4.12,-21.88,-4.12,-10.12);
+  rl(-20.88,-26.12,-16,-26.12);rl(-13,-26.12,-8.12,-26.12);rl(-20.88,-39.88,-8.12,-39.88);rl(-20.88,-39.88,-20.88,-26.12);rl(-8.12,-39.88,-8.12,-36);rl(-8.12,-33,-8.12,-26.12);
+  rl(-10.92,-10,-10.92,-6.05);rl(-8.08,-10,-8.08,-6.05);rl(-15.92,-26,-15.92,-22);rl(-13.08,-26,-13.08,-22);rl(-8,-35.92,-2.05,-35.92);rl(-8,-33.08,-2.05,-33.08);
   paths([[[0,z0-1],[0,z0-43.5]],[[0,z0-4],[-9.5,z0-4]],[[-9.5,z0-4],[-9.5,z0-6]]],3);
   paths([[[-9.5,z0-10.5],[-9.5,z0-16]],[[-9.5,z0-16],[-14.5,z0-16]],[[-14.5,z0-16],[-14.5,z0-21.6]]],2.2,1.2);
   paths([[[-14.5,z0-26.4],[-14.5,z0-29]],[[-14.5,z0-33.4],[-8.4,z0-33.4]]],2.2,2.4);
@@ -1555,18 +1592,23 @@ function buildArea4(z0){
    ===================================================================== */
 function bale(x,z){mesh(baleGeo,0xe8c766,x,0.6,z);[-0.3,0.3].forEach(o=>mesh(new THREE.TorusGeometry(0.612,0.012,8,96),0x8a6a3a,x+o,0.6,z).rotation.y=Math.PI/2);
   [-0.602,0.602].forEach(o=>[0.12,0.22,0.32,0.41,0.5].forEach(rr=>mesh(new THREE.TorusGeometry(rr,0.014,6,72),0xcfa64a,x+o,0.6,z,scene,true).rotation.y=Math.PI/2));colCirc(x,z,0.8);reserve(x,z,1.2)}
-const KITE={hand:null},_kv=new THREE.Vector3();
-function kite(ax,az){const k=new THREE.Group();scene.add(k);const s=new THREE.Shape();s.moveTo(0,0.7);s.lineTo(0.45,0);s.lineTo(0,-0.9);s.lineTo(-0.45,0);s.closePath();
-  k.add(new THREE.Mesh(new THREE.ShapeGeometry(s),new THREE.MeshStandardMaterial({color:lin(0xff6b57),side:THREE.DoubleSide,roughness:0.8})));
+const KITE={},_kv=new THREE.Vector3();
+// o: offset of the kite from its anchor (dx,dz), height h, phase ph, colour col, and anchor [x,y,z] for a kite tied to the ground;
+// a kite held by a pet gets K.hand set to the pet's paw later
+function kite(ax,az,o){o=Object.assign({dx:4,dz:-5,h:11,ph:0,col:0xff6b57},o||{});const K={hand:null},k=new THREE.Group();scene.add(k);const s=new THREE.Shape();s.moveTo(0,0.7);s.lineTo(0.45,0);s.lineTo(0,-0.9);s.lineTo(-0.45,0);s.closePath();
+  k.add(new THREE.Mesh(new THREE.ShapeGeometry(s),new THREE.MeshStandardMaterial({color:lin(o.col),side:THREE.DoubleSide,roughness:0.8})));
   const x2=new THREE.Mesh(new THREE.PlaneGeometry(0.03,1.6),new THREE.MeshBasicMaterial({color:0x7a4a2c}));x2.position.y=-0.1;k.add(x2);
   for(let i=0;i<4;i++){const b=new THREE.Mesh(new THREE.PlaneGeometry(0.22,0.12),new THREE.MeshBasicMaterial({color:lin([0xffd23f,0x3d7cc9,0x7cc35a,0xff9ecf][i]),side:THREE.DoubleSide}));b.position.set(Math.sin(i)*0.15,-1.15-i*0.4,0);k.add(b)}
   const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0xffffff}));line.frustumCulled=false;scene.add(line);
-  anims.push(t=>{k.position.set(ax+4+Math.sin(t*0.5)*1.5,11+Math.sin(t*0.9)*0.8,az-5+Math.cos(t*0.4));k.rotation.set(-0.3,0.4,Math.sin(t*1.3)*0.3);
-    const p=line.geometry.attributes.position;if(KITE.hand){KITE.hand.getWorldPosition(_kv);p.setXYZ(0,_kv.x,_kv.y,_kv.z)}else p.setXYZ(0,ax+0.6,0.5,az);p.setXYZ(1,k.position.x,k.position.y-0.6,k.position.z);p.needsUpdate=true})}
+  if(o.anchor){mesh(new THREE.CylinderGeometry(0.035,0.02,0.5,8),0x8a5a3b,o.anchor[0],0.2,o.anchor[2]);mesh(new THREE.TorusGeometry(0.07,0.02,8,20),0xfffaf0,o.anchor[0],0.3,o.anchor[2]).rotation.x=Math.PI/2;colCirc(o.anchor[0],o.anchor[2],0.15)}
+  anims.push(t=>{const T=t+o.ph;k.position.set(ax+o.dx+Math.sin(T*0.5)*1.5,o.h+Math.sin(T*0.9)*0.8,az+o.dz+Math.cos(T*0.4));k.rotation.set(-0.3,0.4+o.ph,Math.sin(T*1.3)*0.3);
+    const p=line.geometry.attributes.position;if(K.hand){K.hand.getWorldPosition(_kv);p.setXYZ(0,_kv.x,_kv.y,_kv.z)}else if(o.anchor)p.setXYZ(0,o.anchor[0],o.anchor[1],o.anchor[2]);else p.setXYZ(0,ax+0.6,0.5,az);p.setXYZ(1,k.position.x,k.position.y-0.6,k.position.z);p.needsUpdate=true});
+  return K}
 function sundial(x,z){mesh(lathe([[0.32,0],[0.3,0.08],[0.18,0.16],[0.14,0.3],[0.12,0.85],[0.16,0.95],[0.3,1.0],[0.3,1.06],[0,1.06]],48,40),0xd9cfb8,x,0.3,z);
   mesh(new THREE.CylinderGeometry(0.42,0.42,0.04,48),matBrass,x,1.38,z);const s=new THREE.Shape();s.moveTo(0,0);s.lineTo(0.34,0);s.lineTo(0,0.26);s.closePath();mesh(new THREE.ExtrudeGeometry(s,{depth:0.02,bevelEnabled:false}),matBrass,x-0.17,1.4,z-0.01)}
+const MAYPOLE={};
 function maypole(x,z){const H=6.2;mesh(new THREE.CylinderGeometry(0.08,0.13,H,24),0xfffaf0,x,H/2,z);mesh(new THREE.SphereGeometry(0.2,20,14),matBrass,x,H+0.12,z);
-  const top=new THREE.Group();top.position.set(x,H-0.3,z);scene.add(top);const wr=new THREE.Mesh(new _G.Tor(0.42,0.09,10,40),M(0x4a9446));wr.rotation.x=Math.PI/2;top.add(wr);
+  const top=new THREE.Group();top.position.set(x,H-0.3,z);scene.add(top);MAYPOLE.top=top;MAYPOLE.x=x;MAYPOLE.z=z;const wr=new THREE.Mesh(new _G.Tor(0.42,0.09,10,40),M(0x4a9446));wr.rotation.x=Math.PI/2;top.add(wr);
   [0xff6b57,0xffd23f,0x3d7cc9,0x7cc35a,0xb48cff,0xff9ecf].forEach((c,i)=>{const a0=i/6*Math.PI*2,pts=[];for(let k=0;k<=14;k++){const t=k/14,a=a0+t*0.7,r=0.42+t*2.5;pts.push([Math.cos(a)*r,-t*(H-1.4)-Math.sin(t*Math.PI)*0.35,Math.sin(a)*r])}
     const m=new THREE.Mesh(tube(pts,0.035,40),dbl(c,{roughness:0.8}));m.castShadow=true;top.add(m)});
   anims.push((t,dt)=>{top.rotation.y+=dt*0.35});colCirc(x,z,0.35);reserve(x,z,3.2)}
@@ -1585,7 +1627,7 @@ function scarecrow(x,z){rod([x,0,z],[x,2.1,z],0.05,0x8a5a3b);rod([x-0.8,1.55,z],
 const beeMats={y:new THREE.MeshPhysicalMaterial({color:lin(0xffcf33),roughness:0.7,sheen:new THREE.Color(0.6,0.55,0.3)}),k:new THREE.MeshStandardMaterial({color:lin(0x2a2420),roughness:0.6}),
   w:new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:0.45,roughness:0.1,clearcoat:1,side:THREE.DoubleSide,depthWrite:false}),
   eye:new THREE.MeshPhysicalMaterial({color:lin(0x14100e),roughness:0.08,clearcoat:1}),wh:new THREE.MeshBasicMaterial({color:0xffffff}),pink:new THREE.MeshStandardMaterial({color:lin(0xff8fb3),roughness:0.6})};
-function cuteBees(cx,cz,n,sx,sz){for(let i=0;i<n;i++){const g=new THREE.Group();g.scale.setScalar(2.4);scene.add(g);
+function cuteBees(cx,cz,n,sx,sz){for(let i=0;i<n;i++){const g=new THREE.Group();g.scale.setScalar(1.2);scene.add(g);
   const add=(geo,mat,x,y,z,sc,r,p)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sc)m.scale.set(sc[0],sc[1],sc[2]);if(r)m.rotation.set(r[0],r[1],r[2]);m.castShadow=true;(p||g).add(m);return m};
   add(new _G.Sph(0.09,24,18),beeMats.y,0,0,-0.02,[1,0.95,1.2]);[0,1].forEach(k=>add(new _G.Tor(0.083-k*0.01,0.018,8,28),beeMats.k,0,0,-0.045-k*0.05,[1,0.95,1]));
   add(new _G.Sph(0.072,24,18),beeMats.y,0,0.02,0.1);
@@ -1611,7 +1653,7 @@ function annex0(z0){const c=z0-56;
   gazebo(20,z0-46.5);
   flowerBed(-12,z0-49,1.6);flowerBed(12,z0-63,1.6);flowerBed(-21,z0-64,1.4);
   [-17,-11,11].forEach(x=>addTree(x,z0-52.2,{type:'blossom',s:1.1}));
-  flat(new THREE.PlaneGeometry(2.4,2),0x3d7cc9,-19,0.03,z0-49);flat(new THREE.PlaneGeometry(2.4,0.3),0xfffaf0,-19,0.031,z0-48.4);mesh(new THREE.CylinderGeometry(0.3,0.3,0.42,16),0xb5773e,-18.4,0.21,z0-49.3);reserve(-19,z0-49,2);kite(-19,z0-49);
+  flat(new THREE.PlaneGeometry(2.4,2),0x3d7cc9,-19,0.03,z0-49);flat(new THREE.PlaneGeometry(2.4,0.3),0xfffaf0,-19,0.031,z0-48.4);mesh(new THREE.CylinderGeometry(0.3,0.3,0.42,16),0xb5773e,-18.4,0.21,z0-49.3);reserve(-19,z0-49,2);KITE.a=kite(-19,z0-49);KITE.b=kite(-19,z0-49,{dx:-4.5,dz:-6,h:10,ph:2.1,col:0x3d7cc9});kite(-19,z0-49,{dx:10.5,dz:-0.5,h:7.5,ph:4.3,col:0x7cc35a,anchor:[-14.4,0.33,z0-45.8]});
   bench(2.8,z0-47,'w');bench(2.8,z0-62,'w');bench(-8.5,z0-58.6,'s');
   lamp(2.2,z0-45.5);lamp(2.2,z0-66);lamp(-6,z0-53.6);lamp(6,z0-58.4);
   butterflies(-10,z0-60,6,10);
@@ -1747,8 +1789,11 @@ function lighthouse(x,z){const H=11,R=y=>1.5-(y-1)/(H-1)*0.5;
   mesh(lathe([[0.9,0],[0.85,0.25],[0.6,0.55],[0.25,0.75],[0,0.8]],48,24),0xd8352a,x,H+1.4,z);mesh(new THREE.SphereGeometry(0.12,16,12),matBrass,x,H+2.25,z);
   [3.5,6.5].forEach(y=>archWindow(sgroup(x,0,z+R(y)+0.01,0),y,0.4,0.6,true));
   const beam=new THREE.Group();beam.position.set(x,H+0.8,z);scene.add(beam);
-  const bm=new THREE.MeshBasicMaterial({color:0xfff2b3,transparent:true,opacity:0.16,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false,fog:false});
-  [1,-1].forEach(sd=>{const cg=new _G.Cone(1.4,16,24,1,true);cg.rotateZ(sd*Math.PI/2);cg.translate(sd*8,0,0);beam.add(new THREE.Mesh(cg,bm))});
+  // the beam is a faint haze of light: brightest at the lamp, fading away along its length and towards its soft edges
+  const bm=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,uniforms:{col:{value:new THREE.Color(0xfff0cc)}},
+    vertexShader:'varying vec3 vP;varying vec3 vN;varying vec3 vV;void main(){vP=position;vec4 mv=modelViewMatrix*vec4(position,1.0);vV=-mv.xyz;vN=normalMatrix*normal;gl_Position=projectionMatrix*mv;}',
+    fragmentShader:'uniform vec3 col;varying vec3 vP;varying vec3 vN;varying vec3 vV;void main(){float d=clamp(length(vP)/16.0,0.0,1.0);float e=abs(dot(normalize(vN),normalize(vV)));float a=0.07*pow(1.0-d,1.8)*pow(e,2.5);gl_FragColor=vec4(col*a,1.0);}'});
+  [1,-1].forEach(sd=>{const cg=new _G.Cone(1.9,16,32,1,true);cg.rotateZ(sd*Math.PI/2);cg.translate(sd*8,0,0);beam.add(new THREE.Mesh(cg,bm))});
   anims.push((t,dt)=>{beam.rotation.y+=dt*0.8})}
 function buildBeach(z0){const S=11,zc=z0-AREA/2;
   flat(new THREE.PlaneGeometry(AW+S,AREA),0xf0dca0,(S-AW)/2,0.016,zc);flat(new THREE.PlaneGeometry(2.2,AREA),0xd4bf8e,S-0.6,0.018,zc);
@@ -2164,16 +2209,16 @@ function giantButterfly(x,y,z,ry,tex,fly){tex=tex||bflyTex;const g=new THREE.Gro
   for(let k=1;k<6;k++)add(new _G.Tor(0.072-k*0.006,0.012,6,24),gold,0,0,-0.12-k*0.13,null,[0,0,0]);
   [-1,1].forEach(s=>{add(new _G.Sph(0.055,20,14),new THREE.MeshPhysicalMaterial({color:lin(0x1a1530),roughness:0.15,clearcoat:1}),s*0.07,0.06,0.42);add(new _G.Sph(0.016,8,6),new THREE.MeshBasicMaterial({color:0xffffff}),s*0.085,0.09,0.465);
     const pts=[];for(let k=0;k<=12;k++){const t=k/12;pts.push([s*(0.04+t*0.3),0.1+t*0.5-t*t*0.15,0.42+t*0.35])}add(tube(pts,0.008,24),fz,0,0,0);add(new _G.Sph(0.03,14,10),gold,s*0.34,0.45,0.77);
-    for(let k=0;k<3;k++){const lp=[[s*0.06,-0.04,0.18-k*0.12],[s*0.22,-0.2,0.24-k*0.16],[s*0.3,-0.5,0.3-k*0.22]];add(tube(lp,0.012,10),fz,0,0,0)}});
+});
   {const pts=[];for(let k=0;k<=14;k++){const a=k/14*Math.PI*3;pts.push([0,-0.02-0.05*(1-k/14)*Math.sin(a)-0.02,0.47+0.04*Math.cos(a)*(1-k/14)])}add(tube(pts,0.006,30),gold,0,0,0)}
   const ph=RS()*6;
   // a flying butterfly drifts about its patch, banking as it turns, then picks a lavender spike, lands for a few seconds
   // with its wings slowly opening and closing, and takes off again
   if(fly){const pos=new THREE.Vector3(x,y,z),vel=new THREE.Vector3(),tgt=new THREE.Vector3(),dv=new THREE.Vector3();let st='fly',tm=5+RS()*6,wt=0,head=ry,bank=0;
-    const way=()=>tgt.set(fly.x0+RS()*(fly.x1-fly.x0),1.6+RS()*2.2,fly.z0+RS()*(fly.z1-fly.z0));way();
+    const way=()=>{tgt.set(fly.x0+RS()*(fly.x1-fly.x0),1.6+RS()*2.2,fly.z0+RS()*(fly.z1-fly.z0));if(fly.high&&Math.abs(tgt.x)<fly.high)tgt.y=3.7+RS()*1.2};way();
     anims.push((t,dt)=>{dt=Math.min(dt,0.05);
       if(st==='rest'){tm-=dt;const open=0.15+0.55*(0.5+0.5*Math.sin(t*1.3+ph));wings[0].rotation.z=-open;wings[1].rotation.z=open;bank*=0.9;if(tm<0){st='fly';tm=7+RS()*7;way();vel.set(0,1.4,0)}}
-      else{if(st==='fly'){tm-=dt;wt-=dt;if(wt<0||pos.distanceTo(tgt)<0.8){way();wt=2+RS()*2}if(tm<0){st='land';tgt.set(fly.x0+RS()*(fly.x1-fly.x0),fly.landY,fly.z0+RS()*(fly.z1-fly.z0))}}
+      else{if(st==='fly'){tm-=dt;wt-=dt;if(wt<0||pos.distanceTo(tgt)<0.8){way();wt=2+RS()*2}if(tm<0){st='land';if(fly.spots){const q=fly.spots[Math.floor(RS()*fly.spots.length)];tgt.set(q[0],q[1],q[2])}else tgt.set(fly.x0+RS()*(fly.x1-fly.x0),fly.landY,fly.z0+RS()*(fly.z1-fly.z0))}}
         const d=pos.distanceTo(tgt),sp=st==='land'?Math.min(1.8,d*1.2+0.25):2.3;dv.subVectors(tgt,pos).normalize().multiplyScalar(sp);vel.lerp(dv,Math.min(1,dt*(st==='land'?2.5:1.3)));pos.addScaledVector(vel,dt);
         if(st==='land'&&d<0.1){pos.copy(tgt);st='rest';tm=2+RS()*2.5;vel.set(0,0,0)}
         if(vel.x*vel.x+vel.z*vel.z>0.01){let dh=Math.atan2(vel.x,vel.z)-head;while(dh>Math.PI)dh-=Math.PI*2;while(dh<-Math.PI)dh+=Math.PI*2;head+=dh*Math.min(1,dt*4);bank+=(-dh*1.4-bank)*Math.min(1,dt*3)}
@@ -2244,22 +2289,24 @@ function buildRiver(gz,o){const c=gz-GAP/2,hw=3.4,L=hw+1.8,H=0.85,deck=o.stone?0
   if(o.name==='Kingfisher Creek')kingfisher(1.75,H+0.95,c+0.7,Math.PI/2);
   if(o.name==='Otter Stream'){otter(-23,c+0.6,'back',0);otter(-21.6,c-0.4,'back',1.4);otter(21,c,'swim',0);otter(9.5,c-hw-0.9,'sit',0)}
 }
+// natural rose colours, one kind per arch: deep red, soft pink, white, yellow, coral, crimson, blush and peach
+const ROSEC=[[0xa8102a,0xb81530],[0xf28aac,0xf59cb9],[0xfaf4ea,0xf6efe0],[0xf5cc3a,0xf7d65a],[0xf27a4e,0xf48a5e],[0xd31e3c,0xdc2c48],[0xf8c3cf,0xf4b3c3],[0xf6b48c,0xf8c29c]];
 function buildGardenLink(gz,o){const c=gz-GAP/2;
   paths([[[0,gz-0.6],[0,gz-GAP+0.6]]],3,0,o.kind==='frost'?SNOWPATH:undefined);
   if(o.kind==='roses'){
     let last=gz-4;
     for(let z=gz-4;z>gz-GAP+4;z-=2.4){last=z;mesh(new THREE.TorusGeometry(1.9,0.06,10,48,Math.PI),0xfffaf0,0,1.1,z);[-1.9,1.9].forEach(x=>{blk(0.12,1.15,0.12,x,0.57,z,0xfffaf0);colCirc(x,z,0.12)});
       for(let k=0;k<=8;k++){const a=k/8*Math.PI,x=Math.cos(a)*1.9,y=1.1+Math.sin(a)*1.9;INST.bush.push({x,y,z:z+(RS()-0.5)*0.3,s:0.38+RS()*0.1,sy:0.34,c:pick([0x4a9446,0x3f8f45]),ry:RS()*6});
-        for(let f=0;f<3;f++)INST.flower.push({x:x+(RS()-0.5)*0.5,y:y+(RS()-0.5)*0.4,z:z+(RS()-0.5)*0.5,s:1.3,c:pick([0xff4f6d,0xff8fab,0xfffaf0,0xd8352a]),ry:RS()*6,rx:(RS()-0.5)*2,k:'rose'})}}
+        for(let f=0;f<3;f++)INST.flower.push({x:x+(RS()-0.5)*0.5,y:y+(RS()-0.5)*0.4,z:z+(RS()-0.5)*0.5,s:1.25+RS()*0.3,c:pick(ROSEC[Math.round((gz-4-z)/2.4)%ROSEC.length]),ry:RS()*6,rx:(RS()-0.5)*2,k:'rose'})}}
     rod([0,3.0,gz-4],[0,3.0,last],0.04,0xfffaf0);[-1,1].forEach(s=>rod([s*1.34,2.44,gz-4],[s*1.34,2.44,last],0.035,0xfffaf0));
     [-1,1].forEach(s=>{for(let z=gz-3;z>gz-GAP+2;z-=4){mesh(new THREE.CylinderGeometry(0.07,0.09,0.9,10),0x7a5236,s*5.2,0.45,z);INST.bush.push({x:s*5.2,y:1.25,z,s:0.85,sy:0.85,c:0x2f6a44,ry:RS()*6});INST.blob.push({x:s*5.2,y:0.036,z,s:1.2,ry:0});colCirc(s*5.2,z,0.35);reserve(s*5.2,z,1)}
       flowerBed(s*13,c,2.0);flowerBed(s*22,gz-6,1.6);flowerBed(s*22,gz-GAP+6,1.6);bench(s*3.6,c+(s>0?3.6:-3.6),s>0?'w':'e')});
     butterflies(0,c,10,30);
-    giantButterfly(-7.4,1.3,c-1,Math.PI/2);
+    giantButterfly(-7.4,1.6,c-1,Math.PI/2,null,{x0:-25,x1:25,z0:gz-GAP+3,z1:gz-3,high:3,spots:[[-13,0.8,c],[13,0.8,c],[-22,0.75,gz-6],[22,0.75,gz-6],[-22,0.75,gz-GAP+6],[22,0.75,gz-GAP+6],[0,3.12,gz-6.4],[0,3.12,gz-11.2],[0,3.12,gz-16]]});
   }else if(o.kind==='sun'){
     for(const s of [-1,1])for(let x=4;x<AW-2;x+=1.25)for(let z=gz-3;z>gz-GAP+3;z-=1.3){const fx=s*x+(RS()-0.5)*0.3,fz=z+(RS()-0.5)*0.3,h=1.3+RS()*0.6;
       INST.stem.push({x:fx,y:0,z:fz,s:2.4,sy:h});INST.flower.push({x:fx,y:h,z:fz,s:2.6+RS()*0.6,c:pick([0xffc61a,0xffb400,0xffd23f]),ry:(RS()-0.5)*0.6,rx:1.0,k:'sun'});INST.bush.push({x:fx,y:h*0.45,z:fz,s:0.3,sy:0.3,c:0x4f9a3a,ry:RS()*6})}
-    [[2.8,gz-7],[2.8,gz-8.4],[2.8,gz-9.8]].forEach(([x,z])=>beehive(x,z));scarecrow(-2.9,c);cuteBees(-7,c,6,3.2,8);cuteBees(7,c,6,3.2,8);cuteBees(4.5,gz-8.4,3,1.6,2);bench(3,gz-GAP+5.5,'w');butterflies(0,c,10,30);
+    [[2.8,gz-7],[2.8,gz-8.4],[2.8,gz-9.8]].forEach(([x,z])=>beehive(x,z));scarecrow(-2.9,c);cuteBees(-7,c,9,3.2,8);cuteBees(7,c,9,3.2,8);cuteBees(4.5,gz-8.4,5,1.6,2);bench(3,gz-GAP+5.5,'w');butterflies(0,c,10,30);
   }else if(o.kind==='lavender'){
     for(const s of [-1,1])for(let x=4.2;x<AW-1.5;x+=1.7)for(let z=gz-2.6;z>gz-GAP+2.6;z-=0.8){const fx=s*x;INST.bush.push({x:fx,y:0.32,z,s:0.55,sy:0.55,c:pick([0x8d72c9,0x9b7fd6,0x7f66b8]),ry:RS()*6});
       if(RS()<0.6)INST.flower.push({x:fx+(RS()-0.5)*0.3,y:0.55,z,s:1.6,c:0xb48cff,ry:RS()*6,rx:(RS()-0.5)*0.3,k:'lav'})}
@@ -2381,7 +2428,9 @@ buildApproach();
 // panels
 const panelFaces=[],gates=[],entryCables=[];
 function buildPanel(p,spot,z0){
-  const x=spot[0],z=z0+spot[1],n=FACES[spot[2]],wall=spot[3]==='wall',base=heightAt(x,z);
+  const x=spot[0],z=z0+spot[1],wall=spot[3]==='wall',base=heightAt(x,z);let n=FACES[spot[2]];
+  // a free-standing panel that has a walkway beside it (but not in front) turns to face that walkway
+  if(!wall){const ok=m=>onWalk(x+m[0]*1.9,z+m[1]*1.9,0.3)||heightAt(x+m[0]*1.9,z+m[1]*1.9)>0.05;if(!ok(n))for(const k of ['s','n','e','w'])if(ok(FACES[k])){n=FACES[k];break}}
   p.normal=new THREE.Vector3(n[0],0,n[1]);p.pos=new THREE.Vector3(x,base+EYE,z);p.wall=wall;
   p.cablePt=wall?[x+n[0]*0.2,z+n[1]*0.2]:[x-n[0]*0.15,z-n[1]*0.15];
   const g=sgroup(x,base,z,Math.atan2(n[0],n[1]));
@@ -2429,14 +2478,18 @@ ROOMS.forEach((room,r)=>{
       const s=cellOf(sx,sz),G=new Float64Array(N*4).fill(1e9),from=new Int32Array(N*4).fill(-1),H=[];let end=-1;
       const push=(f,st)=>{H.push([f,st]);let n=H.length-1;while(n>0){const q=(n-1)>>1;if(H[q][0]<=H[n][0])break;[H[q],H[n]]=[H[n],H[q]];n=q}};
       const pop=()=>{const top=H[0],last=H.pop();if(H.length){H[0]=last;let n=0;for(;;){const l=2*n+1,rr=l+1;let mn=n;if(l<H.length&&H[l][0]<H[mn][0])mn=l;if(rr<H.length&&H[rr][0]<H[mn][0])mn=rr;if(mn===n)break;[H[mn],H[n]]=[H[n],H[mn]];n=mn}}return top};
-      for(let d=0;d<4;d++){G[s*4+d]=0;push(0,s*4+d)}
+      {const d0=nx>0.5?0:nx<-0.5?1:nz<-0.5?2:3;G[s*4+d0]=0;push(0,s*4+d0)}   // leave straight out from the panel's front
       while(H.length){const [g,st]=pop();if(g>G[st])continue;const k=st>>2,d=st&3;if(tgt[k]&&k!==s){end=st;break}const i=k%NX,j=(k/NX)|0;
-        for(let nd=0;nd<4;nd++){const ni=i+DI[nd],nj=j+DJ[nd];if(ni<0||nj<0||ni>=NX||nj>=NZ)continue;const nk=nj*NX+ni;if(blk[nk]&&!tgt[nk])continue;
-          const ng=g+1+(nd!==d?1.5:0),ns=nk*4+nd;if(ng<G[ns]){G[ns]=ng;from[ns]=st;push(ng,ns)}}}
+        for(let nd=0;nd<4;nd++){if((nd^1)===d)continue;const ni=i+DI[nd],nj=j+DJ[nd];if(ni<0||nj<0||ni>=NX||nj>=NZ)continue;const nk=nj*NX+ni;if(blk[nk]&&!tgt[nk])continue;
+          const ng=g+1+(nd!==d?7:0),ns=nk*4+nd;if(ng<G[ns]){G[ns]=ng;from[ns]=st;push(ng,ns)}}}
       if(end<0)return;const cells=[];for(let c=end;c>=0;c=from[c])cells.push(c>>2);cells.reverse();
       const P=cells.map(k=>[X(k%NX),Z((k/NX)|0)]),pts=[[p.pos.x+nx*0.55,p.pos.z+nz*0.55],[sx,sz]];if(Math.abs(P[0][0]-sx)>1e-6&&Math.abs(P[0][1]-sz)>1e-6)pts.push(nx?[P[0][0],sz]:[sx,P[0][1]]);
       for(let q=0;q<P.length;q++){if(q>0&&q<P.length-1&&(P[q-1][0]===P[q][0])===(P[q][0]===P[q+1][0]))continue;pts.push(P[q])}
-      const segs=[];for(let q=0;q<pts.length-1;q++)if(Math.hypot(pts[q+1][0]-pts[q][0],pts[q+1][1]-pts[q][1])>0.01)segs.push([pts[q],pts[q+1]]);paths(segs,1.6,0,col)});
+      // a panel right beside a walkway gets one paved bay with rounded corners joining its front to the path (no lawn
+      // notch left between them); further away it gets a curving side path
+      {const h=0.8,bx0=Math.min(...pts.map(q=>q[0]))-h,bx1=Math.max(...pts.map(q=>q[0]))+h,bz0=Math.min(...pts.map(q=>q[1]))-h,bz1=Math.max(...pts.map(q=>q[1]))+h;
+       const clear=!near.some(c=>c.t==='box'?(c.maxX>bx0&&c.minX<bx1&&c.maxZ>bz0&&c.minZ<bz1&&!c.panel):(c.x+c.r>bx0&&c.x-c.r<bx1&&c.z+c.r>bz0&&c.z-c.r<bz1));
+       if(clear&&bx1-bx0<=5&&bz1-bz0<=5)padPath(bx0,bx1,bz0,bz1,col);else ribbonPath(pts,1.6,col)}});
     fillPathGaps(z0,col)});
 })();
 // no grass in the middle of a path: on a 0.25 m grid, every patch of open ground that is completely surrounded by paths,
@@ -2444,13 +2497,13 @@ ROOMS.forEach((room,r)=>{
 // slightly oversized so it tucks under the surrounding paths and never leaves a sliver of grass at the edges
 // first, slivers: the ground is cut into cells along every path edge (so each cell is exactly path or not), and any run of
 // open cells lying between two paths and less than 1.5 m across, in either direction, is paved edge to edge
-function fillPathSlots(z0,col){const zA=z0-AREA,pr=PATHR.filter(r=>r.maxZ>zA&&r.minZ<z0).concat(WALK.filter(w=>w.r1==null&&w.maxZ>zA&&w.minZ<z0));
+function fillPathSlots(z0,col){const zA=z0-AREA,pr=PATHR.filter(r=>r.maxZ>zA&&r.minZ<z0).concat(WALK.filter(w=>w.r1==null&&!w.poly&&w.maxZ>zA&&w.minZ<z0)),polys=WALK.filter(w=>w.poly&&w.maxZ>zA&&w.minZ<z0);
   const uniq=a=>[...new Set(a.map(v=>Math.round(v*1000)/1000))].sort((p,q)=>p-q);
   const xs=uniq([-AW,AW,...pr.flatMap(r=>[r.minX,r.maxX])].filter(v=>v>=-AW&&v<=AW)),zs=uniq([zA,z0,...pr.flatMap(r=>[r.minZ,r.maxZ])].filter(v=>v>=zA&&v<=z0));
   const NX=xs.length-1,NZ=zs.length-1,st=new Uint8Array(NX*NZ),fill=new Uint8Array(NX*NZ);   // 0 open lawn, 1 walk, 2 blocked
   const near=colliders.filter(c=>!c.dyn&&!c.panel&&(c.t==='box'?c.maxZ>zA&&c.minZ<z0:c.t==='circ'?c.z>zA-2&&c.z<z0+2:false));
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=(xs[i]+xs[i+1])/2,z=(zs[j]+zs[j+1])/2,k=j*NX+i;
-    if(onWalk(x,z,0)){st[k]=1;continue}if(inWater(x,z,0.05)||heightAt(x,z)>0.03){st[k]=2;continue}
+    if(polys.some(w=>walkHit(w,x,z,0.05))){st[k]=2;continue}if(onWalk(x,z,0)){st[k]=1;continue}if(inWater(x,z,0.05)||heightAt(x,z)>0.03){st[k]=2;continue}
     for(const c of near)if(c.t==='box'?(x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ):((x-c.x)**2+(z-c.z)**2<c.r*c.r)){st[k]=2;break}}
   const runs=(len,at,size)=>{let a=0;while(a<len){if(st[at(a)]!==0){a++;continue}let b=a;while(b+1<len&&st[at(b+1)]===0)b++;
     if(a>0&&b<len-1&&st[at(a-1)]===1&&st[at(b+1)]===1&&size(a,b)<1.5)for(let q=a;q<=b;q++)fill[at(q)]=1;a=b+1}};
@@ -2466,7 +2519,7 @@ function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z
   const near=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z0-AREA-1&&c.minZ<z0+1:c.t==='circ'?Math.abs(c.z-(z0-AREA/2))<AREA/2+2:false));
   const walk=new Uint8Array(N),blk=new Uint8Array(N);
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=X(i),z=Z(j),k=j*NX+i;let w=0;for(const r of pr)if(x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ){w=1;break}
-    if(!w)for(const q of wk){if(q.r1!=null){const d=Math.hypot(x-q.x,z-q.z);if(d>q.r0&&d<q.r1){w=1;break}}else if(x>q.minX&&x<q.maxX&&z>q.minZ&&z<q.maxZ){w=1;break}}
+    if(!w)for(const q of wk)if(walkHit(q,x,z,0)){w=q.poly?2:1;break}
     walk[k]=w;if(w)continue;if(inWater(x,z,0.1)||heightAt(x,z)>0.03){blk[k]=2;continue}
     for(const c of near)if(c.t==='box'?(x>c.minX-0.05&&x<c.maxX+0.05&&z>c.minZ-0.05&&z<c.maxZ+0.05):((x-c.x)**2+(z-c.z)**2<(c.r+0.05)**2)){blk[k]=1;break}}
   // flood each patch of non-path ground; a patch that reaches the room's edge or water/raised ground is open lawn and is left alone
@@ -2703,7 +2756,14 @@ buildLOD([{geo:coneCards(300,3,0.85),mat:needleMat,d:55,shadow:true,depth:needle
 buildLOD([{geo:rockGeo(36,24),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0.03),d:40,shadow:true},{geo:rockGeo(12,8),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0),d:150,shadow:true}],INST.rock,30);
 // flowers: tulips everywhere by default, real roses on the rose arches, sunflowers in Sunflower Lane, lavender spikes
 {const fm=windPatch(std({vertexColors:true,side:THREE.DoubleSide,roughness:0.55}),0.05,0.5),far=flowerGeo(5,false),by=k=>INST.flower.filter(o=>(o.k||'tulip')===k);
- const rose=cabbageGeo(7,12,8,9);rose.scale(0.3,0.3,0.3);
+ // a rose: a tight spiral bud in the middle, then rings of cupped petals that open wider and curl back at the tips
+ // towards the outside; darker deep inside, lighter at the petal edges
+ const rose=(()=>{const P=[],C=[],I=[],L=[[4,0.006,0.026,1.5,0.0,0.55],[5,0.012,0.034,1.25,0.5,0.66],[5,0.02,0.044,0.95,0.15,0.78],[6,0.03,0.052,0.62,0.6,0.9],[7,0.038,0.058,0.32,0.3,1.0]];
+   L.forEach(([n,r0,len,open,ph,sh],li)=>{for(let k=0;k<n;k++){const a0=(k+ph)/n*Math.PI*2+li*0.9,hw=Math.PI/n*1.35,base=P.length/3,SU=4,SV=5;
+     for(let v=0;v<=SV;v++)for(let u=0;u<=SU;u++){const uu=u/SU*2-1,vv=v/SV,a=a0+uu*hw*(0.55+0.45*Math.sin(vv*2.6+0.25)),op=open-(li>2?vv*vv*1.1:0),
+       rad=r0+len*vv*Math.cos(op)-0.18*len*uu*uu*vv,y=len*vv*Math.sin(op)+0.12*len*uu*uu*vv;P.push(Math.cos(a)*rad,y,Math.sin(a)*rad);const c=sh*(0.72+0.28*vv)+0.06*Math.abs(uu)*vv;C.push(c,c*0.98,c*0.95)}
+     for(let v=0;v<SV;v++)for(let u=0;u<SU;u++){const q=base+v*(SU+1)+u;I.push(q,q+SU+1,q+1,q+1,q+SU+1,q+SU+2)}}});
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();g.scale(1.1,1.1,1.1);return g})();
  buildLOD([{geo:tulipGeo(),mat:fm,d:32},{geo:far,mat:fm,d:65}],by('tulip'),16);
  buildLOD([{geo:sunflowerGeo(),mat:fm,d:50},{geo:far,mat:fm,d:95}],by('sun'),16);
  buildLOD([{geo:rose,mat:fm,d:36},{geo:far,mat:fm,d:70}],by('rose'),16);
@@ -2881,9 +2941,25 @@ function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g)
 {const ax=-19,az=z0s[0]-49,g=new THREE.Group();g.position.set(ax+1.5,0,az+0.6);g.rotation.y=Math.atan2(2.5,-5.6);scene.add(g);
  const sc=1.25,m=critterMesh('hopbun');m.scale.setScalar(sc);g.add(m);
  const arm=new THREE.Mesh(new _G.Cyl(0.05,0.06,0.36,12),new THREE.MeshStandardMaterial({color:lin(CRIT.hopbun.body),roughness:0.6}));arm.position.set(0.27*sc,0.56*sc,0.12*sc);arm.rotation.set(-0.5,0,-0.35);arm.scale.setScalar(sc);arm.castShadow=true;g.add(arm);
- const paw=new THREE.Object3D();paw.position.set(0.34*sc,0.76*sc,0.22*sc);g.add(paw);KITE.hand=paw;colCirc(g.position.x,g.position.z,0.45);
+ const paw=new THREE.Object3D();paw.position.set(0.34*sc,0.76*sc,0.22*sc);g.add(paw);KITE.a.hand=paw;colCirc(g.position.x,g.position.z,0.45);
  anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.4))*0.05;g.rotation.z=Math.sin(t*1.3)*0.05;arm.rotation.x=-0.5+Math.sin(t*1.7)*0.12;paw.position.y=0.76*sc+Math.sin(t*1.7)*0.03+m.position.y})}
+// a second pet flies the blue kite on the other side of the blanket (its string heads away from the first pet)
+{const ax=-19,az=z0s[0]-49,g=new THREE.Group();g.position.set(ax-1.9,0,az+0.9);g.rotation.y=Math.atan2(-2.6,-6.9);scene.add(g);
+ const sc=1.15,m=critterMesh('puffle');m.scale.setScalar(sc);g.add(m);
+ const arm=new THREE.Mesh(new _G.Cyl(0.05,0.06,0.36,12),new THREE.MeshStandardMaterial({color:lin(CRIT.puffle.body),roughness:0.6}));arm.position.set(0.27*sc,0.56*sc,0.12*sc);arm.rotation.set(-0.5,0,-0.35);arm.scale.setScalar(sc);arm.castShadow=true;g.add(arm);
+ const paw=new THREE.Object3D();paw.position.set(0.34*sc,0.76*sc,0.22*sc);g.add(paw);KITE.b.hand=paw;colCirc(g.position.x,g.position.z,0.45);
+ anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.1+1))*0.05;g.rotation.z=Math.sin(t*1.1+2)*0.05;arm.rotation.x=-0.5+Math.sin(t*1.5+1)*0.12;paw.position.y=0.76*sc+Math.sin(t*1.5+1)*0.03+m.position.y})}
 Object.keys(CRIT).forEach(k=>critters(k,1,zF0,zF0-FIN,1.15));
+// a pet holding the end of the red maypole ribbon, skipping round the pole as the ribbons turn
+if(MAYPOLE.top){const g=new THREE.Group();scene.add(g);const sc=1.1,m=critterMesh('sprout');m.scale.setScalar(sc);g.add(m);
+  const arm=new THREE.Mesh(new _G.Cyl(0.05,0.06,0.36,12),new THREE.MeshStandardMaterial({color:lin(CRIT.sprout.body),roughness:0.6}));arm.position.set(-0.24*sc,0.62*sc,0.0);arm.rotation.set(0,0,0.5);arm.scale.setScalar(sc);arm.castShadow=true;g.add(arm);
+  const col={t:'circ',x:0,z:0,r:0.35,on:true,dyn:true};colliders.push(col);let w=0;
+  anims.push((t,dt)=>{const A=0.7-MAYPOLE.top.rotation.y,R=3.2;g.position.set(MAYPOLE.x+Math.cos(A)*R,Math.abs(Math.sin(t*6))*0.08,MAYPOLE.z+Math.sin(A)*R);
+    g.rotation.y=Math.atan2(Math.sin(A),-Math.cos(A));m.rotation.z=Math.sin(t*6)*0.06;col.x=g.position.x;col.z=g.position.z})}
+// about a third of the benches have a pet sitting on one end, leaving the middle of the bench free for you
+BENCHES.forEach((b,i)=>{if(i%3!==1)return;const ry=Math.atan2(b.n[0],b.n[1]),tx=Math.cos(ry),tz=-Math.sin(ry),side=i%2?1:-1,kinds=Object.keys(CRIT),k=kinds[(i*7)%kinds.length];
+  const m=critterMesh(k);m.scale.setScalar(0.82);m.position.set(b.x+tx*0.6*side-b.n[0]*0.06,b.y+0.47,b.z+tz*0.6*side-b.n[1]*0.06);m.rotation.y=ry;m.rotation.x=-0.08;scene.add(m);
+  if(snowAmt(b.z)>0.5)addScarf(m);const ph=i*1.3;anims.push(t=>{const v=(px-m.position.x)**2+(pz-m.position.z)**2<4900;m.visible=v;if(!v)return;m.rotation.z=Math.sin(t*1.1+ph)*0.05;m.rotation.y=ry+Math.sin(t*0.4+ph)*0.25})});
 
 /* ---------- the guide owl and the cable glow ----------
    a friendly owl perches on top of the next panel to solve; when you solve it, the owl flies off in a gentle arc to
