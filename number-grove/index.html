@@ -56,6 +56,42 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
 .rooms li{font:700 13px var(--body);padding:6px 10px;border-radius:999px;background:#eef3e6;color:var(--leaf)}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .demo{display:block;width:100%;max-width:100%;height:auto;border-radius:16px}
+/* main menu: a frosted panel on the left over a slow fly-over of the world; sub-pages open in a card beside it */
+#menu{position:fixed;inset:0;z-index:20;display:grid;grid-template-columns:minmax(300px,420px) 1fr;align-items:stretch}
+#menu[hidden]{display:none}
+#menuFade{position:fixed;inset:0;background:#0b1d26;opacity:0;pointer-events:none;z-index:19}
+body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-open #prompt,body.menu-open #joy,body.menu-open #lookHint,body.menu-open #solvebar,body.menu-open #sitbar,body.menu-open #toast{display:none!important}
+.mpanel{margin:16px;padding:30px 28px 22px;background:rgba(255,250,240,.9);-webkit-backdrop-filter:blur(12px) saturate(1.2);backdrop-filter:blur(12px) saturate(1.2);border-radius:28px;box-shadow:0 10px 0 rgba(29,51,64,.22),0 30px 60px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:18px;overflow:auto;box-sizing:border-box;max-height:calc(100vh - 32px)}
+.logo{font:800 clamp(58px,7.5vw,88px)/.82 var(--display);margin:6px 0 0;color:var(--ink);letter-spacing:-.01em}
+.logo em{font-style:normal;color:var(--leaf);display:block}
+.mprog{display:grid;gap:8px}.mprogtext{font:700 14px var(--body);color:var(--mute)}.mprogtext b{color:var(--ink);font-size:16px}
+.mbar{height:10px;border-radius:999px;background:#e3e9e2;overflow:hidden}.mbar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--leaf),#7cc35a);border-radius:999px}
+.mbtns{display:grid;gap:10px;margin-top:4px}
+.mbtns button{font:800 21px/1 var(--display);padding:14px 20px;border-radius:18px;text-align:left;background:#fff;color:var(--ink);box-shadow:0 4px 0 rgba(29,51,64,.16);display:flex;justify-content:space-between;align-items:center;transition:transform .12s,box-shadow .12s}
+.mbtns button:hover{transform:translateY(-2px);box-shadow:0 6px 0 rgba(29,51,64,.2)}
+.mbtns button:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(29,51,64,.2)}
+.mbtns button.primary{background:var(--sun);font-size:28px;padding:18px 22px}
+.mbtns button[hidden]{display:none}
+.mfoot{margin:auto 0 0;font:700 12px var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.msub{align-self:center;justify-self:start;margin:16px;width:min(620px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;background:var(--card);border-radius:28px;padding:22px 26px 26px;box-shadow:0 10px 0 rgba(29,51,64,.22),0 30px 60px rgba(0,0,0,.18);box-sizing:border-box}
+.msub[hidden]{display:none}.mpage{display:grid;gap:14px}.mpage[hidden]{display:none}
+.msub h2{font:800 32px/1 var(--display);margin:0}.msub h3{font:800 20px/1 var(--display);margin:6px 0 0}.msub p{margin:0;font-size:16px;line-height:1.5}
+.msubintro{color:var(--mute)}
+.mback{justify-self:start;background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px #d6dfd9;padding:8px 14px;margin-bottom:6px}
+.places{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.places li{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;background:#fff;border-radius:16px;padding:10px 12px;box-shadow:0 3px 0 rgba(29,51,64,.1)}
+.places .pnum{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font:800 17px var(--display);background:#eef3e6;color:var(--leaf)}
+.places li.done .pnum{background:var(--leaf);color:#fff}.places li.locked{opacity:.62}.places li.current{box-shadow:0 0 0 3px var(--sun),0 3px 0 rgba(29,51,64,.1)}
+.places b{font:800 18px/1.1 var(--display);display:block}.places .ptopic{font:400 13px var(--body);color:var(--mute)}
+.places .pmeta{display:flex;align-items:center;gap:10px;margin-top:5px}.places .dots{font-size:11px;letter-spacing:2px;color:var(--coral);white-space:nowrap}
+.places .pbar{flex:1;height:6px;border-radius:999px;background:#e8ede6;overflow:hidden;min-width:50px}.places .pbar i{display:block;height:100%;background:var(--leaf)}
+.places .pcount{font:700 12px var(--body);color:var(--mute);font-variant-numeric:tabular-nums}
+.places button{padding:9px 14px;font-size:14px}.places .plock{font:700 12px var(--body);color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+.setrow{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 3px 0 rgba(29,51,64,.1);font:700 17px var(--body)}
+.tog{min-width:84px}.tog.on{background:var(--leaf)}.tog.off{background:#9aa6ab}
+.seg{display:flex;gap:6px}.seg button{background:#e8ede6;color:var(--ink);padding:9px 13px;font-size:14px}.seg button.on{background:var(--ink);color:var(--card)}
+.rules dt{color:var(--leaf)}
+@media (max-width:760px){#menu{grid-template-columns:1fr;align-items:end}.mpanel{max-height:calc(100vh - 32px);gap:14px}.mfoot{margin-top:4px}.msub{position:fixed;inset:12px;width:auto;max-height:none;margin:0}.logo{font-size:58px}}
 @media (max-width:480px){.card{padding:22px 18px 18px}#solvebar span{display:none}#hud{max-width:calc(100vw - 150px)}}
 </style>
 
@@ -67,29 +103,60 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
   <div id="pips"></div>
   <div id="total">0 of 72 panels solved</div>
 </div>
-<div id="tools" hidden><span id="fps" aria-label="Frames per second">-- fps</span><button id="soundBtn" type="button">Sound on</button><button id="musicBtn" type="button">Music on</button><button id="qualBtn" type="button">Quality: High</button><button id="helpBtn" type="button">Help</button></div>
+<div id="tools" hidden><span id="fps" aria-label="Frames per second">-- fps</span><button id="menuBtn" type="button">Menu</button><button id="soundBtn" type="button">Sound on</button><button id="musicBtn" type="button">Music on</button><button id="qualBtn" type="button">Quality: High</button><button id="helpBtn" type="button">Help</button></div>
 <div id="toast" hidden></div>
 <div id="solvebar" hidden><span id="solveTip">Click the panel to start your line, move to trace, click again at the rounded end.</span><button id="clearBtn" type="button" class="ghost">Clear line</button><button id="backBtn" type="button">Step back</button></div>
 <div id="lookHint" hidden>Click to look around</div>
 <div id="sitbar" hidden>You are sitting down. Look around, then press E or click to stand up.</div>
 <div id="joy" hidden><div id="knob"></div></div>
 
-<div id="start" class="overlay">
-  <div class="card">
-    <p class="eyebrow">A walking maths puzzle garden</p>
-    <h1>Number <em>Grove</em></h1>
-    <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
-    <p>Explore a castle, a windmill hill, a park, a village, a duck pond, a snowy hollow, a glass greenhouse, a market and a sandy beach, from the easiest place to the hardest, with rivers and gardens in between. Each place has 8 puzzle panels that start easy and get harder. Draw one line from the big circle to the rounded end so the numbers follow the rule. Follow the yellow cables to find the next panel, and solve them all to open each gate. Turn your sound on to hear the chickens, ducks and windmills, and look out for the little critters hopping about.</p>
-    <dl class="how">
-      <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
-      <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
-      <dt>Solve</dt><dd>Click a panel, click again to start the line, move to trace it, then click at the rounded end</dd>
-      <dt>Step back</dt><dd>Esc, right-click, or the Step back button</dd>
-      <dt>Sit</dt><dd>Look at a bench and click (or press E) to sit. Press E again to stand.</dd>
-    </dl>
-    <ul class="rooms"><li>Ordering numbers</li><li>Counting in steps</li><li>Adding</li><li>Times tables</li><li>Odd and even</li><li>Taking away</li><li>Doubles and halves</li><li>Matching sums</li><li>Number bonds</li></ul>
-    <div class="row"><button id="startBtn" type="button" class="sun">Start exploring</button><button id="resetBtn" type="button" class="ghost" hidden>Start over</button></div>
+<div id="menuFade"></div>
+<div id="menu">
+  <div class="mpanel">
+    <div class="mhead"><p class="eyebrow">A walking maths puzzle garden</p><h1 class="logo">Number <em>Grove</em></h1></div>
+    <div id="mProg" class="mprog" hidden><div class="mprogtext"><b id="mProgN">0</b> of 72 panels solved <span id="mProgP"></span></div><div class="mbar"><i id="mProgBar"></i></div></div>
+    <nav class="mbtns" aria-label="Main menu">
+      <button id="mPlay" type="button" class="primary"><span id="mPlayText">Play</span><span aria-hidden="true">›</span></button>
+      <button id="mNew" type="button" hidden><span>New game</span><span aria-hidden="true">›</span></button>
+      <button id="mPlaces" type="button"><span>Places</span><span aria-hidden="true">›</span></button>
+      <button id="mHow" type="button"><span>How to play</span><span aria-hidden="true">›</span></button>
+      <button id="mSettings" type="button"><span>Settings</span><span aria-hidden="true">›</span></button>
+    </nav>
+    <p class="mfoot">9 places · 72 puzzles · Sound on is best</p>
   </div>
+  <section id="mSub" class="msub" hidden aria-live="polite">
+    <button id="mBack" type="button" class="mback">‹ Back</button>
+    <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">From the easiest place to the hardest. Finish every panel in a place to open its gate to the next.</p><ol id="placeList" class="places"></ol></div>
+    <div id="pgHow" class="mpage" hidden><h2>How to play</h2>
+      <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
+      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables to the next panel, and solve every panel in a place to open its gate.</p>
+      <dl class="how">
+        <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
+        <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
+        <dt>Solve</dt><dd>Click a panel, click again to start the line, move to trace it, then click at the rounded end</dd>
+        <dt>Step back</dt><dd>Esc, right-click, or the Step back button</dd>
+        <dt>Sit</dt><dd>Look at a bench and click (or press E) to sit. Press E again to stand.</dd>
+        <dt>Menu</dt><dd>The Menu button, or press M</dd>
+      </dl>
+      <h3>The rules</h3>
+      <dl class="how rules">
+        <dt>Ordering</dt><dd>Touch every number, from the smallest to the biggest.</dd>
+        <dt>Counting</dt><dd>Touch the counting numbers in order. Stay off the others.</dd>
+        <dt>Adding</dt><dd>The numbers your line touches must add up to the target.</dd>
+        <dt>Times tables</dt><dd>Touch every number in the times table, and none of the others.</dd>
+        <dt>Odd and even</dt><dd>Your line is a fence. Keep odd and even numbers in different areas.</dd>
+        <dt>Taking away</dt><dd>Start at the top number and take away each number you touch, to land on the goal.</dd>
+        <dt>Same answers</dt><dd>Your line is a fence. Every area must hold sums (or doubles and halves) with the same answer.</dd>
+        <dt>Number bonds</dt><dd>Your line is a fence. The numbers in every area must add up to the target.</dd>
+      </dl></div>
+    <div id="pgSettings" class="mpage" hidden><h2>Settings</h2>
+      <div class="setrow"><span>Sound</span><button id="sSound" type="button" class="tog"></button></div>
+      <div class="setrow"><span>Music</span><button id="sMusic" type="button" class="tog"></button></div>
+      <div class="setrow"><span>Graphics</span><div id="sQual" class="seg" role="group" aria-label="Graphics quality"></div></div>
+      <div class="setrow"><span>Full screen</span><button id="sFull" type="button" class="tog"></button></div></div>
+    <div id="pgNew" class="mpage" hidden><h2>Start a new game?</h2><p>This clears every panel you have solved, closes all the gates, and puts you back at the start of the road.</p>
+      <div class="row"><button id="newYes" type="button" class="sun">Yes, start over</button><button id="newNo" type="button" class="ghost">Keep my progress</button></div></div>
+  </section>
 </div>
 
 <div id="help" class="overlay" hidden>
@@ -3398,7 +3465,7 @@ window.addEventListener('keydown',e=>{
   if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();
   if(e.code==='Escape'&&mode==='solve'){e.preventDefault();exitSolve(true)}
   if(mode==='sit'&&(e.code==='KeyE'||e.code==='Space'||e.code==='Enter')){standUp();return}
-  if(mode==='walk'&&started&&e.code==='KeyE'&&aimedBench&&!aimed)sitDown(aimedBench);
+  if(mode==='walk'&&started&&!MENU.open&&e.code==='KeyE'&&aimedBench&&!aimed)sitDown(aimedBench);
 });
 window.addEventListener('keyup',e=>{keys[e.code]=false;if(e.code==='Escape'&&pendingLock){pendingLock=false;setTimeout(requestLock,20)}});
 window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
@@ -3580,13 +3647,46 @@ function resetProgress(){
   ROOMS.forEach((_,r)=>closeGate(r));px=0;pz=APP-3;ph=0;yaw=0;pitch=0;celebrated=false;refreshWorld();updateHud();
 }
 $('#helpReset').addEventListener('click',()=>{if(mode==='solve')exitSolve();resetProgress();$('#help').hidden=true;toast('Fresh start. Good luck!')});
-$('#resetBtn').addEventListener('click',()=>{resetProgress();$('#resetBtn').hidden=true;$('#startBtn').textContent='Start exploring'});
-$('#startBtn').addEventListener('click',()=>{
-  try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();ambInit();if(MUSIC.on)musicStart()}catch(e){}
-  started=true;$('#start').hidden=true;$('#hud').hidden=false;$('#tools').hidden=false;$('#crosshair').hidden=false;$('#joy').hidden=!isTouch;
-  updateHud();requestLock();canvas.focus();
-  if(isTouch)toast('Use your left thumb to walk. Drag to look. Tap a panel to solve it.');
-});
+/* ---------- main menu ----------
+   shown first, over a slow fly-over of the places; Play/Continue/Resume, New game, Places (progress, difficulty and a
+   quick way back to any place you have reached), How to play and Settings. the Menu button or M brings it back */
+const MENU={open:true,t:0};
+const DIFF={castle:1,windmill:1,adding:2,times:2,oddeven:3,snow:3,glass:4,match:4,beach:5};
+function firstOpen(){let r=0;while(r<NR&&roomDone(r))r++;return r}
+function menuPage(id){['pgPlaces','pgHow','pgSettings','pgNew'].forEach(k=>$('#'+k).hidden=k!==id);$('#mSub').hidden=!id;if(id==='pgPlaces')buildPlaces();if(id==='pgSettings')syncSettings();if(id==='pgHow')drawDemo()}
+function menuProgress(){const n=PANELS.filter(p=>p.solved).length,d=ROOMS.filter((_,r)=>roomDone(r)).length;
+  $('#mPlayText').textContent=started?'Resume':n?'Continue':'Play';$('#mNew').hidden=!n;$('#mProg').hidden=!n;
+  $('#mProgN').textContent=n;$('#mProgP').textContent='· '+d+' of '+NR+' places';$('#mProgBar').style.width=(n/PANELS.length*100)+'%'}
+function buildPlaces(){const ol=$('#placeList'),fo=firstOpen();ol.textContent='';
+  ROOMS.forEach((room,r)=>{const n=room.list.filter(p=>p.solved).length,done=n===room.list.length,open=r<=fo,li=document.createElement('li');li.className=done?'done':!open?'locked':r===fo?'current':'';
+    const d=DIFF[room.key]||3;li.innerHTML=`<span class="pnum">${done?'✓':r+1}</span><div><b></b><span class="ptopic"></span><div class="pmeta"><span class="dots" title="Difficulty ${d} of 5">${'●'.repeat(d)}${'○'.repeat(5-d)}</span><div class="pbar"><i style="width:${n/8*100}%"></i></div><span class="pcount">${n}/8</span></div></div>`;
+    li.querySelector('b').textContent=room.name;li.querySelector('.ptopic').textContent=room.topic;
+    if(open){const b=document.createElement('button');b.type='button';b.className=r===fo?'sun':'ghost';b.textContent=r===fo?'Go':'Visit';b.setAttribute('aria-label',(r===fo?'Go to ':'Visit ')+room.name);
+      b.addEventListener('click',()=>{px=0;pz=z0s[r]-2.5;ph=heightAt(px,pz);yaw=0;pitch=0;play()});li.appendChild(b)}
+    else{const s=document.createElement('span');s.className='plock';s.textContent='Locked';li.appendChild(s)}
+    ol.appendChild(li)})}
+function syncSettings(){const t=(el,on,a,b)=>{el.textContent=on?a:b;el.className='tog '+(on?'on':'off')};t($('#sSound'),!muted,'On','Off');t($('#sMusic'),MUSIC.on,'On','Off');t($('#sFull'),!!document.fullscreenElement,'On','Off');
+  const q=$('#sQual');q.textContent='';QLS.slice().reverse().forEach(k=>{const b=document.createElement('button');b.type='button';b.textContent=QNAME[k];b.className=k===QL?'on':'';b.addEventListener('click',()=>{setQuality(k);syncSettings()});q.appendChild(b)})}
+function openMenu(){if(mode==='solve')exitSolve();if(mode==='sit')standUp();if(document.pointerLockElement)document.exitPointerLock();
+  MENU.open=true;$('#menu').hidden=false;document.body.classList.add('menu-open');menuPage(null);menuProgress();$('#mPlay').focus()}
+function play(){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();AC.resume&&AC.resume();ambInit();if(MUSIC.on)musicStart()}catch(e){}
+  const first=!started;started=true;MENU.open=false;$('#menu').hidden=true;$('#menuFade').style.opacity=0;document.body.classList.remove('menu-open');
+  $('#hud').hidden=false;$('#tools').hidden=false;$('#crosshair').hidden=false;$('#joy').hidden=!isTouch;updateHud();requestLock();canvas.focus();
+  if(first&&isTouch)toast('Use your left thumb to walk. Drag to look. Tap a panel to solve it.')}
+$('#mPlay').addEventListener('click',play);
+$('#mNew').addEventListener('click',()=>menuPage('pgNew'));
+$('#mPlaces').addEventListener('click',()=>menuPage('pgPlaces'));
+$('#mHow').addEventListener('click',()=>menuPage('pgHow'));
+$('#mSettings').addEventListener('click',()=>menuPage('pgSettings'));
+$('#mBack').addEventListener('click',()=>menuPage(null));
+$('#newNo').addEventListener('click',()=>menuPage(null));
+$('#newYes').addEventListener('click',()=>{resetProgress();started=false;menuPage(null);menuProgress();toast('Fresh start. Good luck!')});
+$('#sSound').addEventListener('click',()=>{$('#soundBtn').click();syncSettings()});
+$('#sMusic').addEventListener('click',()=>{$('#musicBtn').click();syncSettings()});
+$('#sFull').addEventListener('click',()=>{try{if(document.fullscreenElement)document.exitFullscreen();else document.documentElement.requestFullscreen()}catch(e){}setTimeout(syncSettings,300)});
+$('#menuBtn').addEventListener('click',openMenu);
+window.addEventListener('keydown',e=>{if(e.code==='KeyM'&&started&&!e.repeat){if(MENU.open)play();else if(mode!=='solve')openMenu()}else if(e.code==='Escape'&&MENU.open){if(!$('#mSub').hidden)menuPage(null);else if(started)play()}});
+document.body.classList.add('menu-open');
 
 /* ---------- restore progress ---------- */
 (function(){
@@ -3594,8 +3694,8 @@ $('#startBtn').addEventListener('click',()=>{
   PANELS.forEach(p=>{if(ids.has(p.id)){p.solved=true;p.complete=true;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}}});
   ROOMS.forEach((_,q)=>{if(roomDone(q))openGate(q,true)});let r=0;while(r<NR&&roomDone(r))r++;
   pz=r<NR?z0s[r]-3:zF0-3;
-  $('#startBtn').textContent='Continue';$('#resetBtn').hidden=false;
 })();
+menuProgress();
 
 /* ---------- demo drawing on the start card ---------- */
 function drawDemo(){
@@ -3618,7 +3718,7 @@ function frame(t){
   const dt=Math.min(0.05,(t-lastT)/1000);lastT=t;const ts=t/1000;
   if(mode==='walk'){
     let fx=0,fz=0;
-    if(started&&$('#help').hidden&&$('#done').hidden){
+    if(started&&!MENU.open&&$('#help').hidden&&$('#done').hidden){
       if(keys.KeyW||keys.ArrowUp)fz-=1;if(keys.KeyS||keys.ArrowDown)fz+=1;if(keys.KeyA)fx-=1;if(keys.KeyD)fx+=1;
       if(keys.ArrowLeft)yaw+=dt*2.1;if(keys.ArrowRight)yaw-=dt*2.1;
       fx+=joy.x;fz+=joy.y;
@@ -3648,6 +3748,10 @@ function frame(t){
     camera.position.lerpVectors(camFrom,camTo,k);camera.rotation.set(pitchFrom*(1-k),yawFrom+(yawTo-yawFrom)*k,0);
     if(active)drawPanel(active);
   }
+  if(MENU.open){   // a slow orbit over one place after another, with a soft fade between shots
+    MENU.t+=dt;const L=14,n=NR+1,k=Math.floor(MENU.t/L)%n,u=(MENU.t%L)/L,cz=k<NR?z0s[k]-34:zF0-15,a=0.9+k*1.3+u*0.75,R=k<NR?27:16,hgt=k<NR?13:7;
+    camera.position.set(Math.cos(a)*R,hgt-u*1.5,cz+Math.sin(a)*R);camera.lookAt(0,1.5,cz);
+    $('#menuFade').style.opacity=Math.max(0,1-Math.min(u,1-u)*L/0.9).toFixed(3)}
   sky.position.copy(camera.position);
   sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
   gates.forEach(g=>{if(g.open&&g.t<1){g.t=Math.min(1,g.t+dt*0.55);poseGate(g)}});
