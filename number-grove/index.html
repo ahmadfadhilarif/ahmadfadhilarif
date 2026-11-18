@@ -853,7 +853,11 @@ function offPath(x,z,m,gap){for(let it=0;it<6;it++){let moved=false;
   if(!moved)break}return[x,z]}
 // lamps are placed at the end, once every path exists
 const LAMPS=[];function lamp(x,z){LAMPS.push([x,z])}
-function placeLamp(x,z){[x,z]=offPath(x,z,0.3,0.6);const y=heightAt(x,z);mesh(lampPost,0x2b3a42,x,y+1.5,z);mesh(lampBase,0x2b3a42,x,y+0.15,z);mesh(lanternGeo,matGlow,x,y+2.95,z,scene,true);mesh(new THREE.CylinderGeometry(0.075,0.095,0.06,24),0x2b3a42,x,y+2.95,z);mesh(lampCap,0x2b3a42,x,y+3.47,z);colCirc(x,z,0.15);reserve(x,z,0.8)}
+// nothing may stand in front of a puzzle panel: a lamp that lands in a panel's view (up to 3.6 m out, 1.8 m either side)
+// is slid sideways, along the panel's face, until it stands 2 m to the side
+function clearOfPanels(x,z){for(let it=0;it<4;it++){let moved=false;for(const p of PANELS){if(!p.normal)continue;const nx=p.normal.x,nz=p.normal.z,dx=x-p.pos.x,dz=z-p.pos.z,d=dx*nx+dz*nz,w=dx*-nz+dz*nx;
+  if(d>-0.3&&d<3.6&&Math.abs(w)<1.8){const s=w>=0?1:-1,m=2.0*s-w;x+=-nz*m;z+=nx*m;moved=true}}if(!moved)break}return[x,z]}
+function placeLamp(x,z){[x,z]=offPath(x,z,0.3,0.6);[x,z]=clearOfPanels(x,z);const y=heightAt(x,z);mesh(lampPost,0x2b3a42,x,y+1.5,z);mesh(lampBase,0x2b3a42,x,y+0.15,z);mesh(lanternGeo,matGlow,x,y+2.95,z,scene,true);mesh(new THREE.CylinderGeometry(0.075,0.095,0.06,24),0x2b3a42,x,y+2.95,z);mesh(lampCap,0x2b3a42,x,y+3.47,z);colCirc(x,z,0.15);reserve(x,z,0.8)}
 const BENCHES=[];
 function bench(x,z,face){BENCHES.push({x,z,n:FACES[face],y:heightAt(x,z)});const n=FACES[face],g=sgroup(x,heightAt(x,z),z,Math.atan2(n[0],n[1]));
   [-0.17,0,0.17].forEach(o=>blk(1.8,0.05,0.14,0,0.46,o,0xb5773e,g));[0.68,0.88].forEach(y=>blk(1.8,0.12,0.04,0,y,-0.26,0xb5773e,g));
@@ -1863,8 +1867,46 @@ function archery(x,z,ry){const g=sgroup(x,0,z,ry);rod([-0.5,0,-0.35],[0,1.9,0],0
   [[0.12,0.1],[-0.2,-0.15],[0.05,-0.3]].forEach(([a,b])=>rod([a,1.35+b,0.22],[a+0.05,1.38+b,0.75],0.012,0x7a4a2c,g));colCirc(x,z,0.9)}
 function bannerPole(x,z,i){mesh(new THREE.CylinderGeometry(0.05,0.06,3.6,12),0x7a4a2c,x,1.8,z);mesh(new THREE.SphereGeometry(0.09,12,10),matBrass,x,3.65,z);blk(0.8,0.05,0.05,x,3.35,z,0x7a4a2c);
   mesh(new THREE.PlaneGeometry(0.7,1.5),flagMats[i%4],x,2.55,z+0.03,scene,true);colCirc(x,z,0.12);reserve(x,z,0.8)}
+// living fire: each flame is a camera-facing sheet drawn by a shader. turbulent noise rises through it so it licks,
+// splits and flickers, tapering to ragged tips; white-yellow at the heart, orange, then deep red at the edges
+const FIRE_V='uniform vec2 sc;varying vec2 vUv;void main(){vUv=uv;vec4 c=modelViewMatrix*vec4(0.,0.,0.,1.);c.xy+=vec2(position.x*sc.x,position.y*sc.y);gl_Position=projectionMatrix*c;}';
+const FIRE_F=`uniform float t;uniform float seed;uniform float core;varying vec2 vUv;
+  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+vec2(1,1)),f.x),f.y);}
+  float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
+  void main(){float y=vUv.y,x=(vUv.x-.5)*2.,tt=t*1.6+seed*10.;
+    float d=fbm(vec2(vUv.x*3.+seed,y*2.6-tt*1.15)),d2=fbm(vec2(vUv.x*6.-seed,y*5.-tt*2.1));
+    x+=(d-.5)*.6*y+(d2-.5)*.2*y;float w=mix(.95,.04,pow(y,.85));
+    float f=(1.-smoothstep(w*.5,w,abs(x)))*(1.-smoothstep(.3,1.,y+(d-.5)*.65))*smoothstep(0.,.07,y);f*=.7+.6*d2;
+    if(core>.5)f*=1.-smoothstep(.08,.5,y);
+    vec3 col=mix(vec3(.7,.1,.01),vec3(1.,.42,.04),smoothstep(.05,.45,f));col=mix(col,vec3(1.,.82,.4),smoothstep(.45,.85,f));col=mix(col,vec3(1.,.97,.86),smoothstep(.75,1.,f)*core);
+    gl_FragColor=vec4(col*smoothstep(.02,.35,f)*(core>.5?1.05:.85),1.);}`;
+const fireGeo=new THREE.PlaneGeometry(1,1);fireGeo.translate(0,0.5,0);
+const fireMat=(seed,core,w,hgt)=>new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{t:U_TIME,seed:{value:seed},core:{value:core?1:0},sc:{value:new THREE.Vector2(w,hgt)}},vertexShader:FIRE_V,fragmentShader:FIRE_F});
+const charMat=new THREE.MeshStandardMaterial({color:lin(0x1c1612),roughness:0.95});
+// a brazier: an iron bowl on a post holding charred logs on a bed of pulsing coals, tall living flames, sparks that
+// drift up and wink out, a thin wisp of smoke and a warm glow; it roars softly and crackles (see the ambient sound)
 function brazier(x,z){mesh(new THREE.CylinderGeometry(0.06,0.1,1.1,12),0x2b3a42,x,0.55,z);mesh(lathe([[0.08,0],[0.32,0.1],[0.4,0.3],[0.38,0.32],[0.3,0.14],[0,0.1]],32),0x2b3a42,x,1.05,z);
-  const fl=new THREE.Mesh(new _G.Cone(0.22,0.55,16),matGlow);fl.position.set(x,1.55,z);scene.add(fl);const ph=RS()*6;anims.push(t=>{fl.scale.set(1,1+0.15*Math.sin(t*11+ph)+0.08*Math.sin(t*23+ph),1)});colCirc(x,z,0.4);SNDS.push({k:'fire',x,z,t:RS()})}
+  mesh(new THREE.TorusGeometry(0.39,0.025,8,40),0x2b3a42,x,1.36,z).rotation.x=Math.PI/2;
+  const ph=RS()*6,ember=new THREE.MeshStandardMaterial({color:lin(0x2a0f06),emissive:lin(0xff4a12),emissiveIntensity:1.2,roughness:0.9});
+  for(let k=0;k<11;k++){const a=k*2.4+ph,r=0.05+((k*37)%10)/10*0.2,c=mesh(new THREE.DodecahedronGeometry(0.04+((k*13)%5)*0.008,0),ember,x+Math.cos(a)*r,1.2+((k*7)%3)*0.015,z+Math.sin(a)*r,scene,true);c.rotation.set(k,k*2,k*3);c.userData.st=0}
+  for(let k=0;k<3;k++){const a=k*Math.PI/3+ph,lg=mesh(new THREE.CylinderGeometry(0.045,0.05,0.5,10),charMat,x,1.27+k*0.02,z);lg.rotation.set(Math.PI/2,0,a);lg.rotation.order='YXZ';lg.rotation.set(Math.PI/2-0.15,a,0);lg.userData.st=0}
+  const fg=new THREE.Group();fg.position.set(x,1.22,z);scene.add(fg);
+  [[ph,0,0.62,1.15],[ph+3.1,0,0.48,0.95],[ph+5.7,1,0.34,0.6]].forEach(([sd,core,w,h])=>{const m=new THREE.Mesh(fireGeo,fireMat(sd,core,w,h));m.frustumCulled=false;m.renderOrder=5;fg.add(m)});
+  const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:sprayTex,color:lin(0xff8a30),transparent:true,opacity:0.35,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false}));glow.scale.set(1.7,1.7,1);glow.position.set(x,1.5,z);scene.add(glow);
+  // sparks
+  const NS=16,sg=new THREE.BufferGeometry(),SP=new Float32Array(NS*3),SC=new Float32Array(NS*3),sp=[];for(let i=0;i<NS;i++)sp.push({life:Math.random(),max:0.6+Math.random()*0.9,vx:(Math.random()-0.5)*0.3,vz:(Math.random()-0.5)*0.3,vy:0.8+Math.random()*0.9,x:0,y:0,z:0});
+  sg.setAttribute('position',new THREE.BufferAttribute(SP,3));sg.setAttribute('color',new THREE.BufferAttribute(SC,3));
+  const sparks=new THREE.Points(sg,new THREE.PointsMaterial({map:sprayTex,size:0.045,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true}));sparks.frustumCulled=false;scene.add(sparks);
+  // smoke
+  const smoke=sprayPoints(10,0.7,0.09);smoke.material.color=lin(0x6a6460);const so=[];for(let i=0;i<10;i++)so.push([Math.random(),Math.random()*6.28]);
+  anims.push((t,dt)=>{const near=(px-x)**2+(pz-z)**2<3600;sparks.visible=smoke.visible=fg.visible=glow.visible=near;if(!near)return;
+    const fl=0.8+0.2*Math.sin(t*13+ph)*Math.sin(t*7.3+ph*2)+0.1*Math.sin(t*23+ph);ember.emissiveIntensity=1.0+0.6*fl;glow.material.opacity=0.28+0.12*fl;glow.scale.setScalar(1.55+0.2*fl);
+    for(let i=0;i<NS;i++){const s=sp[i];s.life+=dt/s.max;if(s.life>=1){s.life=0;s.max=0.6+Math.random()*0.9;s.x=x+(Math.random()-0.5)*0.35;s.y=1.3;s.z=z+(Math.random()-0.5)*0.35;s.vx=(Math.random()-0.5)*0.35;s.vz=(Math.random()-0.5)*0.35;s.vy=0.8+Math.random()*1.0}
+      s.x+=(s.vx+Math.sin(t*3+i)*0.15)*dt;s.z+=(s.vz+Math.cos(t*2.7+i)*0.15)*dt;s.y+=s.vy*dt;s.vy*=1-dt*0.4;const k=Math.pow(1-s.life,1.5)*(Math.sin(t*30+i*7)>-0.6?1:0.3);
+      SP[i*3]=s.x;SP[i*3+1]=s.y;SP[i*3+2]=s.z;SC[i*3]=1*k;SC[i*3+1]=(0.55+0.3*(1-s.life))*k;SC[i*3+2]=0.15*k}sg.attributes.position.needsUpdate=true;sg.attributes.color.needsUpdate=true;
+    const a=smoke.geometry.attributes.position;for(let i=0;i<10;i++){const [k,an]=so[i],q=(t*0.18+k)%1;a.setXYZ(i,x+Math.cos(an+q*2)*q*0.5+q*0.6,2.1+q*3.2,z+Math.sin(an+q*2)*q*0.5)}a.needsUpdate=true});
+  colCirc(x,z,0.4);SNDS.push({k:'fire',x,z},{k:'crackle',x,z,t:RS()})}
 // the great keep: a tall stone hall with buttresses, string courses, rows of arched windows, a corbelled parapet,
 // four big corner towers, a central donjon rising from the roof, a grand arched door and long hanging banners.
 // (the east face stays flat and clear below 4 m: a puzzle panel hangs on it)
@@ -2477,7 +2519,7 @@ function buildPanel(p,spot,z0){
   p.tex=new THREE.CanvasTexture(cv);p.tex.anisotropy=maxAniso;p.tex.encoding=THREE.sRGBEncoding;
   const face=new THREE.Mesh(new THREE.PlaneGeometry(PW,PH),new THREE.MeshBasicMaterial({map:p.tex,toneMapped:false}));face.position.set(0,EYE,0.003);face.userData.panel=p;g.add(face);
   p.face=face;panelFaces.push(face);
-  reserve(x,z,1.3);reserve(x+n[0]*2.2,z+n[1]*2.2,1.8);
+  reserve(x,z,1.3);reserve(x+n[0]*2.2,z+n[1]*2.2,1.8);reserve(x+n[0]*0.9,z+n[1]*0.9,1.15);reserve(x+n[0]*3.4,z+n[1]*3.4,1.3);   // keep the view in front clear of scattered trees, bushes and rocks
 }
 const route=(a,b,mode)=>mode==='zx'?[a,[a[0],b[1]],b]:[a,[b[0],a[1]],b];
 ROOMS.forEach((room,r)=>{
@@ -3077,9 +3119,9 @@ anims.push((t,dt)=>{const np=nextPanel(),pts=np?ROOMS[np.room].legPts[np.ri]:nul
    loops (fountains, rivers, the sea, bees) follow the nearest source of each kind; one-off noises
    (clucks, quacks, creaks, bells...) come from each source on its own timer and are kept soft */
 const AMB={ready:false};
-const LOOPDEF={fountain:{r:20,v:0.05},river:{r:24,v:0.05},water:{r:16,v:0.022},sea:{r:45,v:0.06},bees:{r:9,v:0.02}};
+const LOOPDEF={fire:{r:13,v:0.04},fountain:{r:20,v:0.05},river:{r:24,v:0.05},water:{r:16,v:0.022},sea:{r:45,v:0.06},bees:{r:9,v:0.02}};
 const SHOTDEF={cluck:{r:22,v:0.05,e:[3,8]},quack:{r:26,v:0.05,e:[5,14]},baa:{r:30,v:0.055,e:[7,18]},tweet:{r:32,v:0.03,e:[2.5,7]},gull:{r:48,v:0.035,e:[5,12]},
-  creak:{r:28,v:0.03,e:[2.6,3.4]},swing:{r:18,v:0.016,e:[1.7,1.8]},bell:{r:70,v:0.05,e:[45,70]},fire:{r:10,v:0.03,e:[0.3,1.1]},splash:{r:15,v:0.02,e:[1.5,4]},squeak:{r:14,v:0.035,e:[6,16]}};
+  creak:{r:28,v:0.03,e:[2.6,3.4]},swing:{r:18,v:0.016,e:[1.7,1.8]},bell:{r:70,v:0.05,e:[45,70]},crackle:{r:13,v:0.05,e:[0.07,0.5]},splash:{r:15,v:0.02,e:[1.5,4]},squeak:{r:14,v:0.035,e:[6,16]}};
 function srcPos(s,x,z){if(s.o)return[s.o.x,s.o.z];if(s.box)return[Math.max(s.minX,Math.min(s.maxX,x)),Math.max(s.minZ,Math.min(s.maxZ,z))];
   if(s.rx){const dx=(x-s.x)/s.rx,dz=(z-s.z)/s.rz,q=Math.hypot(dx,dz);if(q<=1)return[x,z];return[s.x+dx/q*s.rx,s.z+dz/q*s.rz]}return[s.x,s.z]}
 function ambInit(){if(AMB.ready||!AC||!AC.createBiquadFilter)return;AMB.ready=true;
@@ -3090,6 +3132,7 @@ function ambInit(){if(AMB.ready||!AC||!AC.createBiquadFilter)return;AMB.ready=tr
     filters.forEach(([type,f,q,gain])=>{const b=AC.createBiquadFilter();b.type=type;b.frequency.value=f;if(q)b.Q.value=q;if(gain)b.gain.value=gain;n.connect(b);n=b});
     const c=chan();n.connect(c.g);src.start();AMB[name]=c};
   noiseLoop('fountain',[['highpass',700],['peaking',2600,1,6]]);noiseLoop('river',[['bandpass',650,0.6]]);noiseLoop('water',[['lowpass',420]]);noiseLoop('sea',[['lowpass',520]]);
+  noiseLoop('fire',[['lowpass',420],['peaking',160,0.9,5],['highpass',45]]);
   noiseLoop('wind',[['lowpass',260]]);AMB.wind.g.gain.value=0.008;
   {const c=chan(),f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=650;[208,221,415].forEach((fr,i)=>{const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=fr;const og=AC.createGain();og.gain.value=i===2?0.25:1;o.connect(og);og.connect(f);o.start()});f.connect(c.g);AMB.bees=c}
 }
@@ -3109,7 +3152,9 @@ const SHOT={
   creak:(o,t)=>{blip(o,'sawtooth',62+Math.random()*10,78,t,0.55,['bandpass',380,7]);hiss(o,t,0.9,'lowpass',420,1,0.6)},
   swing:(o,t)=>blip(o,'sawtooth',150,190,t,0.3,['bandpass',950,9]),
   bell:(o,t)=>{for(let i=0;i<2;i++)[[523,1],[1046,0.45],[1568,0.22]].forEach(([f,a])=>{const q=AC.createOscillator(),g=AC.createGain();q.frequency.value=f;q.connect(g);g.connect(o);g.gain.setValueAtTime(0.0001,t+i*1.6);g.gain.exponentialRampToValueAtTime(a,t+i*1.6+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+i*1.6+2.6);q.start(t+i*1.6);q.stop(t+i*1.6+2.7)})},
-  fire:(o,t)=>{for(let i=0;i<3+Math.floor(Math.random()*4);i++)hiss(o,t+Math.random()*0.35,0.025,'highpass',2500,1,1)},
+  // fire: little clusters of sharp wood ticks at random pitches, and now and then a log pops with a soft thump
+  crackle:(o,t)=>{const n=1+Math.floor(Math.random()*5);for(let i=0;i<n;i++)hiss(o,t+Math.random()*0.2,0.004+Math.random()*0.014,'bandpass',1600+Math.random()*4400,0.8+Math.random()*1.6,0.35+Math.random()*0.9);
+    if(Math.random()<0.12){hiss(o,t+0.04,0.06,'lowpass',1100,0.7,1);blip(o,'sine',150,55,t+0.04,0.09)}},
   splash:(o,t)=>hiss(o,t,0.35,'bandpass',1700,1.2,1),
   squeak:(o,t)=>{blip(o,'sine',900,1500,t,0.12,null,[30,60]);blip(o,'sine',1100,1300,t+0.16,0.1)}};
 function gateCreak(){if(!AMB.ready||muted)return;const t=AC.currentTime,o=shotOut(0.07,0,t);blip(o,'sawtooth',90,62,t+0.05,1.3,['bandpass',520,6],[9,6]);hiss(o,t,0.15,'lowpass',300,1,1)}
@@ -3123,7 +3168,7 @@ function ambUpdate(dt,ts){if(!AMB.ready)return;
     if(muted)continue;const [ax,az]=srcPos(s,cx,cz),d=Math.hypot(ax-cx,az-cz);if(d>=D.r)continue;const v=D.v*Math.pow(1-d/D.r,2);if(v<0.002)continue;
     SHOT[s.k](shotOut(v,panOf(ax,az)),now+0.02)}
   for(const k in LOOPDEF){const c=AMB[k],b=best[k],D=LOOPDEF[k];let v=0,pn=0;if(b&&b.d<D.r){v=D.v*Math.pow(1-b.d/D.r,2);pn=panOf(b.ax,b.az)}
-    if(k==='sea')v*=0.6+0.4*Math.sin(ts*0.45)*Math.sin(ts*0.45);if(k==='river')v*=0.85+0.15*Math.sin(ts*1.7);
+    if(k==='sea')v*=0.6+0.4*Math.sin(ts*0.45)*Math.sin(ts*0.45);if(k==='river')v*=0.85+0.15*Math.sin(ts*1.7);if(k==='fire')v*=0.6+0.4*(0.5+0.5*Math.sin(ts*1.9)*Math.sin(ts*0.83+2)+0.15*Math.sin(ts*5.3));
     c.g.gain.setTargetAtTime(v,now,0.25);if(c.p)c.p.pan.setTargetAtTime(pn*0.7,now,0.25)}
   AMB.wind.g.gain.setTargetAtTime(0.008+0.035*snowAmt(cz),now,0.8);
   AMB.out.gain.setTargetAtTime(muted?0:1,now,0.05)}
