@@ -2436,8 +2436,49 @@ ROOMS.forEach((room,r)=>{
       if(end<0)return;const cells=[];for(let c=end;c>=0;c=from[c])cells.push(c>>2);cells.reverse();
       const P=cells.map(k=>[X(k%NX),Z((k/NX)|0)]),pts=[[p.pos.x+nx*0.55,p.pos.z+nz*0.55],[sx,sz]];if(Math.abs(P[0][0]-sx)>1e-6&&Math.abs(P[0][1]-sz)>1e-6)pts.push(nx?[P[0][0],sz]:[sx,P[0][1]]);
       for(let q=0;q<P.length;q++){if(q>0&&q<P.length-1&&(P[q-1][0]===P[q][0])===(P[q][0]===P[q+1][0]))continue;pts.push(P[q])}
-      const segs=[];for(let q=0;q<pts.length-1;q++)if(Math.hypot(pts[q+1][0]-pts[q][0],pts[q+1][1]-pts[q][1])>0.01)segs.push([pts[q],pts[q+1]]);paths(segs,1.6,0,col)})});
+      const segs=[];for(let q=0;q<pts.length-1;q++)if(Math.hypot(pts[q+1][0]-pts[q][0],pts[q+1][1]-pts[q][1])>0.01)segs.push([pts[q],pts[q+1]]);paths(segs,1.6,0,col)});
+    fillPathGaps(z0,col)});
 })();
+// no grass in the middle of a path: on a 0.25 m grid, every patch of open ground that is completely surrounded by paths,
+// plazas or things standing on them (benches, panels, beds) is paved over in the same path material. the paving is cut
+// slightly oversized so it tucks under the surrounding paths and never leaves a sliver of grass at the edges
+// first, slivers: the ground is cut into cells along every path edge (so each cell is exactly path or not), and any run of
+// open cells lying between two paths and less than 1.5 m across, in either direction, is paved edge to edge
+function fillPathSlots(z0,col){const zA=z0-AREA,pr=PATHR.filter(r=>r.maxZ>zA&&r.minZ<z0).concat(WALK.filter(w=>w.r1==null&&w.maxZ>zA&&w.minZ<z0));
+  const uniq=a=>[...new Set(a.map(v=>Math.round(v*1000)/1000))].sort((p,q)=>p-q);
+  const xs=uniq([-AW,AW,...pr.flatMap(r=>[r.minX,r.maxX])].filter(v=>v>=-AW&&v<=AW)),zs=uniq([zA,z0,...pr.flatMap(r=>[r.minZ,r.maxZ])].filter(v=>v>=zA&&v<=z0));
+  const NX=xs.length-1,NZ=zs.length-1,st=new Uint8Array(NX*NZ),fill=new Uint8Array(NX*NZ);   // 0 open lawn, 1 walk, 2 blocked
+  const near=colliders.filter(c=>!c.dyn&&!c.panel&&(c.t==='box'?c.maxZ>zA&&c.minZ<z0:c.t==='circ'?c.z>zA-2&&c.z<z0+2:false));
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=(xs[i]+xs[i+1])/2,z=(zs[j]+zs[j+1])/2,k=j*NX+i;
+    if(onWalk(x,z,0)){st[k]=1;continue}if(inWater(x,z,0.05)||heightAt(x,z)>0.03){st[k]=2;continue}
+    for(const c of near)if(c.t==='box'?(x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ):((x-c.x)**2+(z-c.z)**2<c.r*c.r)){st[k]=2;break}}
+  const runs=(len,at,size)=>{let a=0;while(a<len){if(st[at(a)]!==0){a++;continue}let b=a;while(b+1<len&&st[at(b+1)]===0)b++;
+    if(a>0&&b<len-1&&st[at(a-1)]===1&&st[at(b+1)]===1&&size(a,b)<1.5)for(let q=a;q<=b;q++)fill[at(q)]=1;a=b+1}};
+  // repeat until settled: paving one sliver can leave its neighbour newly boxed in between paths
+  for(let it=0;it<6;it++){let n0=0;for(let k=0;k<fill.length;k++)n0+=fill[k];
+    for(let j=0;j<NZ;j++)runs(NX,i=>j*NX+i,(a,b)=>xs[b+1]-xs[a]);
+    for(let i=0;i<NX;i++)runs(NZ,j=>j*NX+i,(a,b)=>zs[b+1]-zs[a]);
+    let n1=0;for(let k=0;k<fill.length;k++){if(fill[k])st[k]=1;n1+=fill[k]}if(n1===n0)break}
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){if(!fill[j*NX+i])continue;let w=1;while(i+w<NX&&fill[j*NX+i+w])w++;for(let a=0;a<w;a++)fill[j*NX+i+a]=0;
+    const o=0.04,minX=xs[i]-o,maxX=xs[i+w]+o,minZ=zs[j]-o,maxZ=zs[j+1]+o;flat(new THREE.PlaneGeometry(maxX-minX,maxZ-minZ),col,(minX+maxX)/2,0.0195,(minZ+maxZ)/2);walkRect(minX,maxX,minZ,maxZ)}}
+function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z0-0.3,NX=Math.floor((2*AW-1)/G)+1,NZ=Math.floor((AREA-0.6)/G)+1,N=NX*NZ,X=i=>x0+i*G,Z=j=>zT-j*G;
+  const pr=PATHR.filter(r=>r.maxZ>z0-AREA-1&&r.minZ<z0+1),wk=WALK.filter(w=>w.r1!=null?Math.abs(w.z-(z0-AREA/2))<AREA/2+w.r1:w.maxZ>z0-AREA-1&&w.minZ<z0+1);
+  const near=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z0-AREA-1&&c.minZ<z0+1:c.t==='circ'?Math.abs(c.z-(z0-AREA/2))<AREA/2+2:false));
+  const walk=new Uint8Array(N),blk=new Uint8Array(N);
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=X(i),z=Z(j),k=j*NX+i;let w=0;for(const r of pr)if(x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ){w=1;break}
+    if(!w)for(const q of wk){if(q.r1!=null){const d=Math.hypot(x-q.x,z-q.z);if(d>q.r0&&d<q.r1){w=1;break}}else if(x>q.minX&&x<q.maxX&&z>q.minZ&&z<q.maxZ){w=1;break}}
+    walk[k]=w;if(w)continue;if(inWater(x,z,0.1)||heightAt(x,z)>0.03){blk[k]=2;continue}
+    for(const c of near)if(c.t==='box'?(x>c.minX-0.05&&x<c.maxX+0.05&&z>c.minZ-0.05&&z<c.maxZ+0.05):((x-c.x)**2+(z-c.z)**2<(c.r+0.05)**2)){blk[k]=1;break}}
+  // flood each patch of non-path ground; a patch that reaches the room's edge or water/raised ground is open lawn and is left alone
+  const seen=new Uint8Array(N),fill=new Uint8Array(N),st=[];
+  for(let s0=0;s0<N;s0++){if(walk[s0]||seen[s0])continue;const comp=[];let open=false;st.push(s0);seen[s0]=1;
+    while(st.length){const k=st.pop();comp.push(k);const i=k%NX,j=(k/NX)|0;if(i===0||j===0||i===NX-1||j===NZ-1||blk[k]===2)open=true;
+      for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+a,jj=j+b;if(ii<0||jj<0||ii>=NX||jj>=NZ)continue;const q=jj*NX+ii;if(!walk[q]&&!seen[q]){seen[q]=1;st.push(q)}}}
+    if(!open&&comp.length*G*G<12)comp.forEach(k=>{if(!blk[k])fill[k]=1})}
+  for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){if(!fill[j*NX+i])continue;let w=1;while(i+w<NX&&fill[j*NX+i+w])w++;let h=1;
+    grow:while(j+h<NZ){for(let a=0;a<w;a++)if(!fill[(j+h)*NX+i+a])break grow;h++}
+    for(let b=0;b<h;b++)for(let a=0;a<w;a++)fill[(j+b)*NX+i+a]=0;
+    const e=G*0.75,minX=X(i)-e,maxX=X(i+w-1)+e,maxZ=Z(j)+e,minZ=Z(j+h-1)-e;flat(new THREE.PlaneGeometry(maxX-minX,maxZ-minZ),col,(minX+maxX)/2,0.0195,(minZ+maxZ)/2);walkRect(minX,maxX,minZ,maxZ)}}
 LAMPS.forEach(([x,z])=>placeLamp(x,z));
 
 /* ---------- cable router: every cable is laid on a 0.5 m grid with A*, going around walls, water, benches and
