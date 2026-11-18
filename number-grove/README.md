@@ -1,6 +1,18 @@
 # Number Grove
 
-A 3D walking maths puzzle garden for the browser. Explore seven places (Adding Garden, Times Table Village, Odd and Even Pond, Match Maker Market, Windmill Hill, Number Bond Beach, Place Value Castle), each with 8 line-drawing puzzle panels that get harder as you go.
+A 3D walking maths puzzle garden for the browser. Explore nine places, each with 8 line-drawing puzzle panels that get harder as you go:
+
+| Place | Maths topic |
+|---|---|
+| Adding Garden | Adding up |
+| Times Table Village | Times tables |
+| Odd and Even Pond | Odd and even numbers |
+| Match Maker Market | Adding, taking away, times |
+| Windmill Hill | Counting in steps |
+| Number Bond Beach | Number bonds |
+| Place Value Castle | Ordering numbers |
+| Glasshouse Gardens | Doubles and halves |
+| Snowflake Hollow | Taking away |
 
 ## Play
 

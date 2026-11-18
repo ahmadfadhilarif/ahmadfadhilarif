@@ -65,7 +65,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
 <div id="hud" hidden>
   <div><span id="roomName">Adding Garden</span><span id="roomTopic">Adding up</span></div>
   <div id="pips"></div>
-  <div id="total">0 of 56 panels solved</div>
+  <div id="total">0 of 72 panels solved</div>
 </div>
 <div id="tools" hidden><span id="fps" aria-label="Frames per second">-- fps</span><button id="soundBtn" type="button">Sound on</button><button id="musicBtn" type="button">Music on</button><button id="qualBtn" type="button">Quality: High</button><button id="helpBtn" type="button">Help</button></div>
 <div id="toast" hidden></div>
@@ -79,7 +79,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
     <p class="eyebrow">A walking maths puzzle garden</p>
     <h1>Number <em>Grove</em></h1>
     <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
-    <p>Explore a park, a village, a duck pond, a market, a windmill hill, a sandy beach and a castle, with rivers and gardens in between. Each place has 8 puzzle panels that start easy and get harder. Draw one line from the big circle to the rounded end so the numbers follow the rule. Follow the yellow cables to find the next panel, and solve them all to open each gate. Turn your sound on to hear the chickens, ducks and windmills, and look out for the little critters hopping about.</p>
+    <p>Explore a park, a village, a duck pond, a market, a windmill hill, a sandy beach, a castle, a glass greenhouse and a snowy hollow, with rivers and gardens in between. Each place has 8 puzzle panels that start easy and get harder. Draw one line from the big circle to the rounded end so the numbers follow the rule. Follow the yellow cables to find the next panel, and solve them all to open each gate. Turn your sound on to hear the chickens, ducks and windmills, and look out for the little critters hopping about.</p>
     <dl class="how">
       <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
       <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
@@ -87,7 +87,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
       <dt>Step back</dt><dd>Esc, right-click, or the Step back button</dd>
       <dt>Sit</dt><dd>Look at a bench and click (or press E) to sit. Press E again to stand.</dd>
     </dl>
-    <ul class="rooms"><li>Adding</li><li>Times tables</li><li>Odd and even</li><li>Matching sums</li><li>Counting in steps</li><li>Number bonds</li><li>Ordering numbers</li></ul>
+    <ul class="rooms"><li>Adding</li><li>Times tables</li><li>Odd and even</li><li>Matching sums</li><li>Counting in steps</li><li>Number bonds</li><li>Ordering numbers</li><li>Doubles and halves</li><li>Taking away</li></ul>
     <div class="row"><button id="startBtn" type="button" class="sun">Start exploring</button><button id="resetBtn" type="button" class="ghost" hidden>Start over</button></div>
   </div>
 </div>
@@ -111,7 +111,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
   <div class="card">
     <p class="eyebrow">Every gate is open</p>
     <h2>You finished Number Grove!</h2>
-    <p>You solved all 56 panels: adding, times tables, odd and even, matching sums, counting in steps, number bonds and ordering numbers. That is a lot of maths thinking.</p>
+    <p>You solved all 72 panels: adding, times tables, odd and even, matching sums, counting in steps, number bonds, ordering numbers, doubles and halves, and taking away. That is a lot of maths thinking.</p>
     <div class="row"><button id="doneClose" type="button" class="sun">Keep exploring</button></div>
   </div>
 </div>
@@ -173,6 +173,7 @@ function exprFor(v,ops,rng){
   if(ops.includes('+')&&v>=2)opts.push(()=>{const a=ri(rng,1,v-1);return a+'+'+(v-a)});
   if(ops.includes('-'))opts.push(()=>{const b=ri(rng,1,9);return (v+b)+'−'+b});
   if(ops.includes('x')){const f=[];for(let a=2;a<=10;a++)if(v%a===0&&v/a>=2&&v/a<=10)f.push(a);if(f.length){opts.push(()=>{const a=f[ri(rng,0,f.length-1)];return a+'×'+(v/a)});opts.push(()=>{const a=f[ri(rng,0,f.length-1)];return a+'×'+(v/a)})}}
+  if(ops.includes('d')){if(v%2===0&&v>=2){const h=v/2;opts.push(()=>'double '+h);opts.push(()=>h+'+'+h)}opts.push(()=>'half of '+(v*2))}
   if(!opts.length||rng()<0.15)return String(v);
   return opts[ri(rng,0,opts.length-1)]();
 }
@@ -190,6 +191,11 @@ const GEN={
     }
     if(cnt<(p.minOn||2)||off<(p.minOff||2)||s<(p.minTarget||4)||s>p.maxTarget)return false;
     p.nodes=nodes;p.target=s;return true;
+  },
+  // taking away: start at a round number and take away every number the line touches, landing exactly on the goal
+  take(p,path,rng){
+    if(!GEN.sum(p,path,rng))return false;const s=p.target,R=p.round||10;
+    p.from=Math.ceil((s+ri(rng,p.extra[0],p.extra[1]))/R)*R;p.goal=p.from-s;return true;
   },
   mult(p,path,rng){
     const on=new Set(path.map(n=>K(n[0],n[1])));let a=0,b=0;const nodes={},k=p.k,need=p.need||(p.W*p.H>=16?3:2);
@@ -225,7 +231,7 @@ const GEN={
   },
   grp(p,path,rng){
     const {lab,n}=regionsOf(p.W,p.H,path);if(n<(p.minRegions||2))return false;
-    const pool=bag(p.vmin,p.vmax,1,rng);if(pool.length<n)return false;
+    const pool=bag(p.vmin,p.vmax,1,rng).filter(v=>!p.even||v%2===0);if(pool.length<n)return false;
     const vals=pool.slice(0,n),cells=[],cw=p.W-1,used=new Set(),seen=new Set();
     for(let i=0;i<lab.length;i++){if(rng()<(p.fill||0.8)){const v=vals[lab[i]];let l=null;for(let t=0;t<16&&!l;t++){const c=exprFor(v,p.ops,rng);if(!seen.has(c))l=c}
       if(!l)continue;seen.add(l);used.add(lab[i]);cells.push({cx:i%cw,cy:(i/cw)|0,v,label:l})}}
@@ -268,6 +274,10 @@ function validate(p,path){
     let s=0;vis.forEach(k=>{if(p.nodes[k]!=null)s+=p.nodes[k]});
     if(s!==p.target){vis.forEach(k=>{if(p.nodes[k]!=null)res.errNodes.add(k)});
       fail(s<p.target?`Your path makes ${s}. You need ${p.target-s} more.`:`Your path makes ${s}. That is ${s-p.target} too many.`)}
+  }else if(p.type==='take'){
+    let s=0;vis.forEach(k=>{if(p.nodes[k]!=null)s+=p.nodes[k]});const got=p.from-s;
+    if(got!==p.goal){vis.forEach(k=>{if(p.nodes[k]!=null)res.errNodes.add(k)});
+      fail(got>p.goal?`You landed on ${got}. Take away ${got-p.goal} more.`:`You landed on ${got}. That is ${p.goal-got} too far.`)}
   }else if(p.type==='mult'){
     const wrong=[],missed=[];
     for(const k in p.nodes){const v=p.nodes[k],m=v%p.k===0;if(!m&&visSet.has(k))wrong.push([k,v]);if(m&&!visSet.has(k))missed.push([k,v])}
@@ -301,13 +311,14 @@ function validate(p,path){
 function ruleText(p){
   switch(p.type){
     case 'sum':return['Make '+p.target,'Add up the numbers your line touches.'];
+    case 'take':return['Start at '+p.from+', land on '+p.goal,'Take away every number your line touches.'];
     case 'mult':return['Hop on the '+p.k+'s','Touch every number in the '+p.k+' times table. Stay off the others.'];
     case 'order':return p.hide?['Count '+(p.down?'back':'on')+' in '+p.k+'s','Start at '+p.seq[0]+'. Touch '+p.seq.length+' numbers in order. Stay off the rest.']
       :['Count '+(p.down?'back ':'')+'by '+p.k+'s','Touch '+p.seq.join(', ')+' in that order. Stay off other numbers.'];
     case 'bond':return['Make '+p.target+' in each area','Your line is a fence. The numbers in every area must add up to '+p.target+'.'];
     case 'rank':return[p.down?'Biggest to smallest':'Smallest to biggest','Touch every number, going from the '+(p.down?'biggest to the smallest.':'smallest to the biggest.')];
     case 'sep':return['Odd and Even','Your line is a fence. Keep odd and even numbers in different areas.'];
-    case 'grp':return['Same Answers','Your line is a fence. Every area must hold sums with the same answer.'];
+    case 'grp':return p.ops.includes('d')?['Doubles and halves','Your line is a fence. Each area must hold matching answers.']:['Same Answers','Your line is a fence. Every area must hold sums with the same answer.'];
   }
 }
 
@@ -384,11 +395,32 @@ const ROOMS=[
     {type:'rank',W:4,H:4,count:5,lo:100,hi:999,start:[1,3],end:[2,0]},
     {type:'rank',W:6,H:6,count:7,band:true,down:true,wind:0.6},
     {type:'rank',W:6,H:6,count:6,perm:true,wind:0.65,start:[2,5],end:[3,0]},
-    {type:'rank',W:7,H:7,count:9,spread:60,down:true,wind:0.6}]}
+    {type:'rank',W:7,H:7,count:9,spread:60,down:true,wind:0.6}]},
+  {name:'Glasshouse Gardens',topic:'Doubles and halves',scatter:{trees:6,bushes:30,flowers:300},
+   spots:[[-3.6,-8,'e'],[5,-15,'w'],[-16,-19,'e'],[-4,-29,'e'],[4,-39,'w'],[16,-50,'w'],[-14,-56,'e'],[7,-64,'s']],panels:[
+    {type:'grp',W:3,H:3,ops:'d',vmin:2,vmax:12,even:true,fill:1},
+    {type:'grp',W:3,H:3,ops:'d',vmin:4,vmax:20,even:true,fill:1,end:[2,2]},
+    {type:'grp',W:4,H:4,ops:'d',vmin:4,vmax:20,even:true,fill:0.8,minTiles:6},
+    {type:'grp',W:4,H:4,ops:'d',vmin:6,vmax:30,even:true,fill:0.85,minTiles:7,start:[1,3],end:[2,0]},
+    {type:'grp',W:4,H:4,ops:'d+',vmin:8,vmax:40,even:true,minRegions:3,fill:0.9,minTiles:8,end:[3,3]},
+    {type:'grp',W:6,H:6,ops:'d+',vmin:10,vmax:50,even:true,minRegions:4,fill:0.7,minTiles:14,wind:0.6},
+    {type:'grp',W:6,H:6,ops:'dx',vmin:12,vmax:60,even:true,minRegions:4,fill:0.75,minTiles:15,wind:0.65,start:[2,5],end:[3,0]},
+    {type:'grp',W:7,H:7,ops:'d+x',vmin:12,vmax:80,even:true,minRegions:5,fill:0.6,minTiles:18,wind:0.6}]},
+  {name:'Snowflake Hollow',topic:'Taking away',scatter:{trees:22,bushes:0,rocks:14,flowers:0,grass:0,snow:true},
+   spots:[[-3.6,-8,'e'],[9,-17,'w'],[-13,-34.5,'n'],[12,-30,'w'],[-4,-44,'e'],[8,-56,'w'],[-16,-58,'e'],[7,-64,'s']],panels:[
+    {type:'take',W:3,H:3,maxVal:5,density:0.75,maxTarget:9,round:10,extra:[1,5]},
+    {type:'take',W:3,H:3,maxVal:9,density:0.8,minTarget:6,maxTarget:15,round:10,extra:[2,8],end:[2,2]},
+    {type:'take',W:4,H:4,maxVal:9,density:0.5,minTarget:10,maxTarget:20,minOn:3,round:10,extra:[3,15]},
+    {type:'take',W:4,H:4,maxVal:12,density:0.55,minTarget:15,maxTarget:28,minOn:3,round:10,extra:[5,20],start:[1,3],end:[3,1]},
+    {type:'take',W:4,H:4,maxVal:15,density:0.6,minTarget:20,maxTarget:35,minOn:3,minOff:4,round:50,extra:[5,30],end:[3,3]},
+    {type:'take',W:6,H:6,maxVal:15,density:0.35,minTarget:35,maxTarget:90,minOn:5,minOff:8,wind:0.6,round:100,extra:[5,40]},
+    {type:'take',W:6,H:6,maxVal:20,density:0.38,minTarget:45,maxTarget:110,minOn:6,minOff:9,wind:0.65,start:[2,5],end:[3,0],round:100,extra:[10,60]},
+    {type:'take',W:7,H:7,maxVal:25,density:0.32,minTarget:55,maxTarget:150,minOn:7,minOff:10,wind:0.6,round:100,extra:[10,80]}]}
 ];
 // little links between the places: rivers with bridges and garden walks
 const CONN=[{name:'Willow River',kind:'river'},{name:'Rose Walk',kind:'roses'},{name:'Stepping Stone Brook',kind:'river',stone:true},
-  {name:'Sunflower Lane',kind:'sun',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},{name:'Kingfisher Creek',kind:'river'},{name:'Lavender Path',kind:'lavender',scatter:{trees:0,bushes:0,flowers:0,grass:2500}}];
+  {name:'Sunflower Lane',kind:'sun',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},{name:'Kingfisher Creek',kind:'river'},{name:'Lavender Path',kind:'lavender',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},
+  {name:'Otter Stream',kind:'river'},{name:'Frosty Pine Path',kind:'frost',scatter:{trees:8,bushes:0,rocks:6,flowers:0,grass:0,snow:true}}];
 const NR=ROOMS.length, z0s=ROOMS.map((_,r)=>-r*(AREA+GAP)), zF0=z0s[NR-1]-AREA, LEN=-zF0+FIN;
 
 const PANELS=[];
@@ -442,6 +474,7 @@ function drawPanel(p){
   const onNums=p.path.map(n=>p.nodes[K(n[0],n[1])]).filter(v=>v!=null);
   if(!pow){title='No power yet';sub='Solve the panel before this one. Follow the cable.'}
   else if(p.type==='sum'&&onNums.length)live=onNums.join(' + ')+' = '+onNums.reduce((a,b)=>a+b,0);
+  else if(p.type==='take'&&onNums.length)live=p.from+' − '+onNums.join(' − ')+' = '+(p.from-onNums.reduce((a,b)=>a+b,0));
   else if(p.type==='order'&&onNums.length)live='You counted: '+onNums.join(', ');
   else if(p.type==='rank'&&onNums.length)live='Your order: '+onNums.join(', ');
   const tt=title+(p.solved&&pow?'  ✓':'');
@@ -458,7 +491,12 @@ function drawPanel(p){
   p.cells.forEach(cell=>{
     const cx=ox+(cell.cx+0.5)*sp,cy=oy+(cell.cy+0.5)*sp,err=blink&&p.err&&p.err.errCells.has(cell.cx+','+cell.cy);
     const bigG=layout(p).big,w=sp*(bigG?0.8:0.68),h=Math.min(sp*(bigG?0.5:0.46),58);rr(c,cx-w/2,cy-h/2,w,h,bigG?9:12);c.fillStyle=err?'#ff5e5b':T.node;c.fill();
-    c.fillStyle=err?'#fff':T.nodeText;fitFont(c,cell.label,800,Math.min(sp*0.34,36),FD,w-(bigG?8:14));c.fillText(cell.label,cx,cy+2);
+    c.fillStyle=err?'#fff':T.nodeText;const fs0=Math.min(sp*0.34,36),mw=w-(bigG?8:14),cut=cell.label.lastIndexOf(' ');
+    // long worded labels ("half of 76") go on two lines so they stay big enough to read
+    const fs1=fitFont(c,cell.label,800,fs0,FD,mw);
+    if(cut>0&&fs1<fs0*0.75){const a=cell.label.slice(0,cut),b=cell.label.slice(cut+1),fs=Math.min(fitFont(c,a,800,h*0.44,FD,mw),fitFont(c,b,800,h*0.44,FD,mw));
+      c.font=`800 ${fs}px ${FD}`;c.fillText(a,cx,cy-fs*0.45+2);c.fillText(b,cx,cy+fs*0.58+2)}
+    else c.fillText(cell.label,cx,cy+2);
   });
   if(p.path.length){
     c.strokeStyle=col;c.lineWidth=tw;c.beginPath();c.moveTo(s[0],s[1]);
@@ -702,6 +740,9 @@ function flatAt(x,z,m){const h=heightAt(x,z);return heightAt(x+m,z)===h&&heightA
 function hillH(x,z){const dx=Math.max(0,Math.abs(x)-(AW+5)),dz=Math.max(0,z-(APP+8),-LEN-8-z),d=Math.max(dx,dz);if(d<=0)return 0;
   const s=Math.min(1,d/50),n=Math.sin(x*0.045)*Math.cos(z*0.037)*0.5+0.5+Math.sin(x*0.11+z*0.07)*0.25;return s*s*(5+20*n)}
 const groundAt=(x,z)=>Math.max(heightAt(x,z),hillH(x,z));
+// the snowy part of the world: the frosty path and Snowflake Hollow, fading out over 14 m on either side
+const SNOWR=8,SNOW_TOP=z0s[SNOWR-1]-AREA,SNOW_BOT=z0s[SNOWR]-AREA;
+function snowAmt(z){const d=Math.max(z-SNOW_TOP,SNOW_BOT-z,0);return Math.max(0,1-d/14)}
 function blocked(x,z,curH){
   const r=0.32;
   for(const c of colliders){if(!c.on)continue;
@@ -745,9 +786,10 @@ const cobbleTex=canvasTex(256,256,c=>{c.fillStyle='#bfb29a';c.fillRect(0,0,256,2
   for(let y=0;y<8;y++)for(let x=0;x<8;x++){const g=200+Math.floor(r()*30);c.fillStyle=`rgb(${g},${g-10},${g-28})`;rr(c,x*32+2+(y%2)*16-((y%2)&&x===7?256:0),y*32+2,28,28,8);c.fill();if(y%2&&x===7){rr(c,-14,y*32+2,28,28,8);c.fill()}}},[7,7]);
 
 /* ---------- ground with distant hills ---------- */
+const SNOWC=new THREE.Color(0xeef3f7);
 {const W=900,D=LEN+700,g=new THREE.PlaneGeometry(W,D,240,300);g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cz=-LEN/2,c=new THREE.Color();
  for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i)+cz,h=hillH(x,z);pos.setY(i,h);
-   const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03-Math.min(h,25)*0.002);c.convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
+   const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03-Math.min(h,25)*0.002);{const sn=snowAmt(z);if(sn>0)c.lerp(SNOWC,sn*0.92)}c.convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
  g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));g.computeVertexNormals();
  const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.z=cz;gm.receiveShadow=true;scene.add(gm)}
 
@@ -1685,6 +1727,160 @@ function buildCastle(z0){
   birds(0,z0-50,5);
 }
 
+/* ---------- AREA 7: Glasshouse Gardens ---------- */
+// a big Victorian glasshouse with a palm in the middle, potting benches and hanging baskets; outside are raised
+// vegetable beds, a pumpkin patch, sunflowers, an orchard, beehives and a potting shed
+const matGlass=new THREE.MeshStandardMaterial({color:lin(0xe4f6f2),transparent:true,opacity:0.2,roughness:0.04,metalness:0,envMap:skyCube,envMapIntensity:1.2,depthWrite:false,side:THREE.DoubleSide});
+const FRAME=0xeef2ee;
+function raisedBed(x,z,w,d,kind){blk(w,0.5,d,x,0.25,z,0xa8784e);flat(new THREE.PlaneGeometry(w-0.24,d-0.24),0x6b4a2f,x,0.505,z);colBox(x-w/2,x+w/2,z-d/2,z+d/2);reserve(x,z,Math.max(w,d)/2+0.6);
+  const nx=Math.max(1,Math.round((w-0.5)/0.9)),nz=Math.max(1,Math.round((d-0.5)/0.9));
+  for(let i=0;i<nx;i++)for(let j=0;j<nz;j++){const px=x+(i-(nx-1)/2)*0.9,pz=z+(j-(nz-1)/2)*0.9;
+    if(kind==='cabbage')INST.cabbage.push({x:px,y:0.72,z:pz,s:0.75+RS()*0.3,ry:RS()*6.28,c:(i+j)%3?0x9fd46e:0x8c4a7e});
+    else if(kind==='tomato'){rod([px,0.5,pz],[px,1.75,pz],0.015,0xb98a5a);INST.bush.push({x:px,y:1.05,z:pz,s:0.42,sy:0.9,c:pick(LEAFC),ry:RS()*6});
+      for(let k=0;k<4;k++){const a=RS()*6.28;INST.apple.push({x:px+Math.cos(a)*0.3,y:0.8+RS()*0.6,z:pz+Math.sin(a)*0.3,s:0.8})}}
+    else flowersAt(px,pz,6,0.35,0.5)}}
+function pottedPlant(x,y,z,k){mesh(potGeo,0xb5653a,x,y,z,scene,true);
+  if(k===0){mesh(new THREE.CylinderGeometry(0.08,0.1,0.42,12),0x4f8a3a,x,y+0.55,z);mesh(new THREE.SphereGeometry(0.08,12,8),0x4f8a3a,x,y+0.76,z);
+    rod([x,y+0.5,z],[x+0.14,y+0.58,z],0.035,0x4f8a3a);rod([x+0.14,y+0.58,z],[x+0.14,y+0.72,z],0.035,0x4f8a3a);mesh(new THREE.SphereGeometry(0.035,8,6),0xff6b9a,x,y+0.84,z,scene,true)}
+  else if(k===1)INST.bush.push({x,y:y+0.55,z,s:0.32,sy:0.3,c:pick(LEAFC),ry:RS()*6});
+  else{for(let f=0;f<5;f++){const a=RS()*6.28,h=0.18+RS()*0.12;INST.flower.push({x:x+Math.cos(a)*0.1,y:y+0.36+h,z:z+Math.sin(a)*0.1,s:0.9,c:pick(FLOWC),ry:RS()*6,rx:0});INST.stem.push({x:x+Math.cos(a)*0.1,y:y+0.36,z:z+Math.sin(a)*0.1,s:1,sy:h})}}}
+function pottingBench(x,z,len){blk(1.6,0.08,len,x,0.85,z,0xb98a5a);[-1,1].forEach(a=>[-1,1].forEach(b=>blk(0.08,0.85,0.08,x+a*0.7,0.42,z+b*(len/2-0.1),0x8a5a3b)));
+  blk(1.5,0.05,len-0.2,x,0.25,z,0xb98a5a);colBox(x-0.8,x+0.8,z-len/2,z+len/2);
+  for(let s=-len/2+0.4,k=0;s<len/2-0.2;s+=0.55,k++)pottedPlant(x+(k%2?0.35:-0.35),0.89,z+s,k%3)}
+function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=3.2,RH=6.2,DW=1.6,GH=WH-0.6;
+  flat(new THREE.PlaneGeometry(W,L),0xd9cfb8,cx,0.018,cz);
+  const glass=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,matGlass);m.position.set(x,y,z);m.rotation.y=ry||0;m.renderOrder=3;scene.add(m);return m};
+  // low brick wall, then glass sides and ends with a door gap in the middle of each end
+  [x0,x1].forEach(xx=>{blk(0.3,0.6,L,xx,0.3,cz,0x9c5b44);glass(new THREE.PlaneGeometry(L,GH),xx,0.6+GH/2,cz,Math.PI/2);colBox(xx-0.15,xx+0.15,z0,z1);
+    blk(0.14,0.14,L+0.2,xx,WH,cz,FRAME);[0.6,1.9].forEach(y=>blk(0.1,0.08,L,xx,y,cz,FRAME));
+    for(let k=0;k<=14;k++)blk(0.08,GH,0.08,xx,0.6+GH/2,z0+k*L/14,FRAME)});
+  const rise=RH-WH,sl=Math.hypot(W/2,rise),ang=Math.atan2(rise,W/2);
+  [z0,z1].forEach(zz=>{[-1,1].forEach(s=>{const sw=W/2-DW;blk(sw,0.6,0.3,cx+s*(DW+sw/2),0.3,zz,0x9c5b44);glass(new THREE.PlaneGeometry(sw,GH),cx+s*(DW+sw/2),0.6+GH/2,zz);colBox(s<0?x0:cx+DW,s<0?cx-DW:x1,zz-0.15,zz+0.15);
+      for(let k=0;k<=4;k++)blk(0.08,GH,0.08,cx+s*(DW+k*sw/4),0.6+GH/2,zz,FRAME);blk(0.12,2.6,0.12,cx+s*DW,1.3,zz,FRAME)});
+    blk(W,0.08,0.1,cx,1.9,zz,FRAME);blk(DW*2,0.12,0.12,cx,2.6,zz,FRAME);blk(W+0.2,0.14,0.14,cx,WH,zz,FRAME);glass(new THREE.PlaneGeometry(DW*2,WH-2.6),cx,2.6+(WH-2.6)/2,zz);
+    const sh=new THREE.Shape();sh.moveTo(-W/2,0);sh.lineTo(W/2,0);sh.lineTo(0,rise);sh.closePath();glass(new THREE.ShapeGeometry(sh),cx,WH,zz);
+    for(let k=1;k<8;k++){const gx=-W/2+k*W/8,h=rise*(1-Math.abs(gx)/(W/2));blk(0.08,h,0.08,cx+gx,WH+h/2,zz,FRAME)}
+    [-1,1].forEach(s=>blk(sl,0.12,0.12,cx+s*W/4,WH+rise/2,zz,FRAME).rotation.z=-s*ang)});
+  // glass roof on rafters, a ridge beam and a little glass lantern on top
+  [-1,1].forEach(s=>{const g=new THREE.PlaneGeometry(sl,L);g.rotateX(-Math.PI/2);g.rotateZ(-s*ang);glass(g,cx+s*W/4,WH+rise/2,cz);
+    for(let k=1;k<14;k++)blk(sl,0.08,0.08,cx+s*W/4,WH+rise/2+0.02,z0+k*L/14,FRAME).rotation.z=-s*ang});
+  blk(0.18,0.18,L+0.3,cx,RH,cz,FRAME);
+  glass(new THREE.BoxGeometry(1.6,1.0,1.6),cx,RH+0.5,cz);[-1,1].forEach(a=>[-1,1].forEach(b=>blk(0.07,1.0,0.07,cx+a*0.8,RH+0.5,cz+b*0.8,FRAME)));
+  const cr=mesh(new THREE.ConeGeometry(1.25,0.8,4),FRAME,cx,RH+1.4,cz);cr.rotation.y=Math.PI/4;mesh(new THREE.SphereGeometry(0.13,16,12),matBrass,cx,RH+1.9,cz);
+  // hanging baskets
+  [[-3.2,-6],[3.2,-6],[-3.2,6],[3.2,6]].forEach(([a,b])=>{const hx=cx+a,hz=cz+b,hy=WH+rise*(1-Math.abs(a)/(W/2));rod([hx,hy,hz],[hx,3.3,hz],0.012,0x2b3a42);
+    mesh(new THREE.SphereGeometry(0.32,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),0x8a5a3b,hx,3.3,hz,scene,true);INST.bush.push({x:hx,y:3.25,z:hz,s:0.42,sy:0.4,c:pick(LEAFC),ry:RS()*6});
+    for(let f=0;f<6;f++){const an=RS()*6.28;INST.flower.push({x:hx+Math.cos(an)*0.3,y:3.1+RS()*0.3,z:hz+Math.sin(an)*0.3,s:1,c:pick(FLOWC),ry:RS()*6,rx:(RS()-0.5)*1.5})}});
+  for(let x=x0+1;x<x1;x+=2)for(let z=z0+1;z<z1;z+=2)reserve(x,z,2.3);
+}
+function pumpkin(x,z,s){const m=mesh(new THREE.SphereGeometry(0.45*s,24,16),0xf28c28,x,0.3*s,z);m.scale.y=0.68;
+  mesh(new THREE.TorusGeometry(0.3*s,0.12*s,10,24),0xe07a1c,x,0.3*s,z).rotation.x=Math.PI/2;mesh(new THREE.CylinderGeometry(0.04*s,0.06*s,0.18*s,8),0x5a7a2a,x,0.6*s,z);colCirc(x,z,0.42*s)}
+function wheelbarrow(x,z,ry){const g=sgroup(x,0,z,ry);mesh(new THREE.TorusGeometry(0.22,0.06,10,24),0x2b3a42,0,0.25,0.75,g).rotation.y=Math.PI/2;
+  const tg=new THREE.CylinderGeometry(0.55,0.35,0.4,4,1,true);tg.rotateY(Math.PI/4);tg.scale(0.85,1,1.2);const t=mesh(tg,dbl(0x3f8f6a,{roughness:0.5}),0,0.62,0.1,g);t.rotation.x=0.1;
+  [-1,1].forEach(s=>{rod([s*0.3,0.45,0.6],[s*0.32,0.6,-0.95],0.025,0x8a5a3b,g);rod([s*0.28,0.45,-0.35],[s*0.28,0,-0.4],0.025,0x2b3a42,g)});colCirc(x,z,0.8)}
+function wateringCan(x,z,ry,col){const g=sgroup(x,0,z,ry);mesh(new THREE.CylinderGeometry(0.15,0.17,0.32,20),col,0,0.16,0,g);rod([0.12,0.12,0],[0.38,0.36,0],0.025,col,g);
+  mesh(new THREE.TorusGeometry(0.13,0.02,8,20,Math.PI),col,-0.05,0.32,0,g);mesh(new THREE.CylinderGeometry(0.05,0.03,0.05,12),col,0.4,0.38,0,g).rotation.z=-0.8}
+function buildGreenhouse(z0){const gz=z0-34;
+  paths([[[0,z0-1],[0,gz+4]],[[0,gz-4],[0,z0-67.5]]],3);flat(new THREE.RingGeometry(2.4,3.9,48),PATHC,0,0.021,gz);
+  glasshouse(0,gz,18,22);
+  // the palm in the middle of the glasshouse, in a round stone bed
+  mesh(new THREE.CylinderGeometry(2.1,2.2,0.4,40),0xcfc3a8,0,0.2,gz);flat(new THREE.CircleGeometry(1.95,32),0x6b4a2f,0,0.41,gz);colCirc(0,gz,2.2);
+  palm(0,gz,5.0,0.5,0.4);flowersAt(0,gz,26,1.7,0.3);
+  pottingBench(-7.6,gz+6.5,7);pottingBench(-7.6,gz-5.5,7);pottingBench(7.6,gz+6.5,7);pottingBench(7.6,gz-5.5,7);
+  // vegetable beds by the entrance
+  [[12,-6,'cabbage'],[18.5,-6,'tomato'],[12,-10.5,'flowers'],[18.5,-10.5,'cabbage'],[12,-17,'tomato'],[18.5,-17,'flowers']].forEach(([x,z,k])=>raisedBed(x,z0+z,5,2,k));
+  // pumpkin patch
+  flat(new THREE.CircleGeometry(3.6,40),0x6b4a2f,-13,0.019,z0-9);reserve(-13,z0-9,4);
+  [[-14.5,-7.5,1.2],[-11.8,-8,0.9],[-13,-10.6,1.4],[-15.4,-10.2,0.8],[-11,-10.8,1],[-13.6,-6.2,0.7],[-10.6,-6.8,0.8]].forEach(([x,z,s])=>pumpkin(x,z0+z,s));
+  for(let i=0;i<14;i++){const a=RS()*6.28,d=Math.sqrt(RS())*3.2;INST.bush.push({x:-13+Math.cos(a)*d,y:0.12,z:z0-9+Math.sin(a)*d,s:0.4,sy:0.25,c:pick(LEAFC),ry:RS()*6})}
+  // sunflowers along the left hedge
+  for(let x=-28;x<-25;x+=1.15)for(let z=z0-3;z>z0-31;z-=1.3){const fx=x+(RS()-0.5)*0.3,fz=z+(RS()-0.5)*0.3,h=1.4+RS()*0.6;
+    INST.stem.push({x:fx,y:0,z:fz,s:2.4,sy:h});INST.flower.push({x:fx,y:h,z:fz,s:2.6+RS()*0.6,c:pick([0xffc61a,0xffb400,0xffd23f]),ry:Math.PI/2+(RS()-0.5)*0.6,rx:1.0,k:'sun'});INST.bush.push({x:fx,y:h*0.45,z:fz,s:0.3,sy:0.3,c:0x4f9a3a,ry:RS()*6});reserve(fx,fz,0.6)}
+  // cold frames, water butt, watering cans, wheelbarrow and compost bins
+  [-26,-31].forEach(z=>{blk(2.4,0.45,1.4,-20,0.22,z0+z,0xa8784e);const lid=new THREE.Mesh(new THREE.PlaneGeometry(2.3,1.45),matGlass);lid.position.set(-20,0.55,z0+z);lid.rotation.x=-Math.PI/2+0.2;scene.add(lid);
+    for(let k=0;k<4;k++)INST.cabbage.push({x:-20.8+k*0.55,y:0.32,z:z0+z,s:0.5,ry:RS()*6,c:0x9fd46e});colBox(-21.2,-18.8,z0+z-0.7,z0+z+0.7);reserve(-20,z0+z,1.8)});
+  mesh(new THREE.CylinderGeometry(0.5,0.45,1.1,24),0x3f8f6a,-10.4,0.55,z0-21.6);mesh(new THREE.CylinderGeometry(0.52,0.52,0.06,24),0x2b3a42,-10.4,1.12,z0-21.6);colCirc(-10.4,z0-21.6,0.55);reserve(-10.4,z0-21.6,1.2);
+  wateringCan(-2.6,z0-21.4,0.6,0x3f8f6a);wateringCan(2.7,z0-21.8,2.4,0xd8352a);wheelbarrow(11,z0-21,0.5);reserve(11,z0-21,1.5);
+  [-28.5,-31.2].forEach(z=>{const cx=22.5,cz=z0+z;[-1,1].forEach(s=>blk(0.08,1.0,2.0,cx+s*0.95,0.5,cz,0x8a5a3b));blk(2.0,1.0,0.08,cx,0.5,cz-0.95,0x8a5a3b);for(let y=0.15;y<1;y+=0.28)blk(2.0,0.18,0.06,cx,y,cz+0.95,0xa8784e);
+    flat(new THREE.PlaneGeometry(1.8,1.8),0x5a3f28,cx,0.85,cz);colBox(cx-1,cx+1,cz-1,cz+1);reserve(cx,cz,1.8)});
+  // orchard, beehives and the potting shed at the back
+  [[-21,-49],[-25.5,-57],[-21,-65],[-26,-46.5]].forEach(([x,z])=>addTree(x,z0+z,{type:'round',apples:true,s:1.15}));
+  [-6.2,-7.8,-9.4].forEach(x=>beehive(x,z0-62.5));
+  house(20,z0-60,6,5,'w',0xe5f0d0,0x3f8f6a,0);
+  bench(-2.7,z0-50,'e');bench(2.7,z0-10,'w');
+  lamp(2.2,z0-5);lamp(-2.2,z0-19);lamp(2.2,z0-49);lamp(-2.2,z0-58);
+  butterflies(0,z0-10,10,30);butterflies(0,gz,6,10);birds(0,z0-55,5);
+  chimneys.filter(c=>c[2]<z0+1&&c[2]>z0-AREA-1).forEach(c=>chimneySmoke(c[0],c[1],c[2]));
+}
+
+/* ---------- AREA 8: Snowflake Hollow ---------- */
+// deep snow: a frozen lake, an igloo, snowmen, a log cabin, a hot cocoa hut, sledges, ice number blocks and snowfall
+const SNOWPATH=0xbfcad3;
+const matSnow=triPatch(new THREE.MeshStandardMaterial({color:lin(0xe0e8ee),roughness:0.9}),TX.plaster,0.22,0.02);
+const matSnowBall=triPatch(new THREE.MeshStandardMaterial({color:lin(0xf3f7fa),roughness:0.85}),TX.plaster,0.7,0.02);
+const matIce=new THREE.MeshStandardMaterial({color:lin(0x7fbcd8),roughness:0.12,metalness:0,envMap:skyCube,envMapIntensity:1.0});
+function snowGround(zc,len){flat(new THREE.PlaneGeometry(AW*2,len),matSnow,0,0.016,zc)}
+// a pine with snow sitting on its branches
+function snowPine(x,z,s){[x,z]=offPath(x,z,0.9,1.2);addTree(x,z,{type:'pine',s});const b=groundAt(x,z);
+  [[1.85,1.12],[2.75,0.82],[3.6,0.5]].forEach(([h,r])=>{const m=mesh(new THREE.ConeGeometry(r*s,0.55*s,14),matSnowBall,x,b+h*s,z,scene,true);m.rotation.y=RS()*6})}
+function frozenPond(x,z,rx,rz){flat(new THREE.CircleGeometry(1,64),0xdde6ec,x,0.019,z).scale.set(rx+0.9,1,rz+0.9);flat(new THREE.CircleGeometry(1,64),matIce,x,0.028,z).scale.set(rx,1,rz);
+  for(let i=0;i<14;i++){const a=i/14*6.28+RS()*0.3,s=0.4+RS()*0.6;INST.rock.push({x:x+Math.cos(a)*(rx+0.9),y:0.1*s,z:z+Math.sin(a)*(rz+0.9),s,sy:s*0.55,ry:RS()*6,c:pick([0xe4ebf0,0xd7dfe6])})}
+  for(let a=0;a<6.28;a+=0.5)reserve(x+Math.cos(a)*rx*0.55,z+Math.sin(a)*rz*0.55,Math.min(rx,rz)*0.6);reserve(x,z,Math.min(rx,rz))}
+const iglooTex=canvasTex(512,256,c=>{c.fillStyle='#f4f8fb';c.fillRect(0,0,512,256);c.strokeStyle='rgba(120,150,175,0.5)';c.lineWidth=3;const rows=6;
+  for(let j=0;j<rows;j++){const y=j*256/rows,n=6+j*2,off=(j%2)*0.5;c.beginPath();c.moveTo(0,y);c.lineTo(512,y);c.stroke();for(let i=0;i<n;i++){const x=(i+off)*512/n;c.beginPath();c.moveTo(x,y);c.lineTo(x,y+256/rows);c.stroke()}}});
+function igloo(x,z,r,ry){const g=sgroup(x,0,z,ry),mat=new THREE.MeshStandardMaterial({map:iglooTex,roughness:0.85,side:THREE.DoubleSide});
+  mesh(new THREE.SphereGeometry(r,48,20,0,Math.PI*2,0,Math.PI/2),mat,0,0,0,g);
+  const tg=new THREE.CylinderGeometry(1.0,1.0,1.8,32,1,true,Math.PI/2,Math.PI);tg.rotateX(Math.PI/2);mesh(tg,mat,0,0,r-0.1,g);
+  mesh(new THREE.CircleGeometry(0.85,24,0,Math.PI),new THREE.MeshBasicMaterial({color:0x1d2a33}),0,0,r+0.79,g,true);
+  colCirc(x,z,r);colCirc(x+Math.sin(ry)*(r+0.3),z+Math.cos(ry)*(r+0.3),1.0);reserve(x,z,r+2)}
+function snowman(x,z,s,ry){const g=sgroup(x,0,z,ry);
+  mesh(new THREE.SphereGeometry(0.62*s,28,20),matSnowBall,0,0.55*s,0,g);mesh(new THREE.SphereGeometry(0.45*s,28,20),matSnowBall,0,1.4*s,0,g);mesh(new THREE.SphereGeometry(0.32*s,28,20),matSnowBall,0,2.05*s,0,g);
+  [-1,1].forEach(sd=>{mesh(new THREE.SphereGeometry(0.045*s,10,8),0x1d2430,sd*0.11*s,2.13*s,0.28*s,g,true);rod([sd*0.4*s,1.5*s,0],[sd*1.0*s,1.85*s,0.05*s],0.025*s,0x6b4a2f,g)});
+  for(let k=0;k<3;k++)mesh(new THREE.SphereGeometry(0.05*s,10,8),0x1d2430,0,(1.25+k*0.17)*s,(0.44-Math.abs(k-1)*0.015)*s,g,true);
+  mesh(new THREE.ConeGeometry(0.06*s,0.3*s,12),0xff8a3c,0,2.03*s,0.44*s,g).rotation.x=Math.PI/2;
+  mesh(new THREE.TorusGeometry(0.3*s,0.07*s,10,32),0xd8352a,0,1.78*s,0,g).rotation.x=Math.PI/2;blk(0.14*s,0.4*s,0.04*s,0.18*s,1.58*s,0.3*s,0xd8352a,g);
+  mesh(new THREE.CylinderGeometry(0.34*s,0.34*s,0.04*s,24),0x1d2430,0,2.33*s,0,g);mesh(new THREE.CylinderGeometry(0.22*s,0.22*s,0.38*s,24),0x1d2430,0,2.53*s,0,g);
+  colCirc(x,z,0.62*s);reserve(x,z,1.4*s)}
+function sledge(x,z,ry,col){const g=sgroup(x,0,z,ry);for(let k=0;k<5;k++)blk(0.56,0.04,0.2,0,0.28,-0.5+k*0.25,0xc58a3a,g);
+  [-1,1].forEach(s=>{blk(0.04,0.04,1.3,s*0.26,0.05,0,col,g);mesh(new THREE.TorusGeometry(0.12,0.02,8,16,Math.PI),col,s*0.26,0.17,0.65,g).rotation.y=Math.PI/2;
+    [-0.4,0.4].forEach(o=>blk(0.03,0.22,0.03,s*0.26,0.16,o,0x2b3a42,g))});colCirc(x,z,0.6)}
+function cocoaHut(x,z){const g=sgroup(x,0,z,Math.PI/2);
+  blk(3,2.4,2,0,1.2,-0.3,0x8a5a3b,g);blk(3.2,0.12,0.8,0,1.05,0.95,0xb5773e,g);blk(3.0,0.95,0.1,0,0.5,0.72,0xd8352a,g);blk(3.4,0.22,2.6,0,2.5,-0.2,0xf4f8fb,g);
+  const aw=new THREE.Mesh(new THREE.PlaneGeometry(3.3,1.0),new THREE.MeshStandardMaterial({map:stripeFlat(0xd8352a,5),side:THREE.DoubleSide,roughness:0.9}));aw.position.set(0,2.2,1.2);aw.rotation.x=-Math.PI/2+0.45;aw.castShadow=true;g.add(aw);
+  mesh(new THREE.CylinderGeometry(0.5,0.44,0.9,32),0xfffaf0,0,3.06,-0.3,g);mesh(new THREE.CylinderGeometry(0.45,0.45,0.03,32),0x6b3a1f,0,3.46,-0.3,g);
+  mesh(new THREE.TorusGeometry(0.24,0.07,10,24),0xfffaf0,0.55,3.06,-0.3,g);[[0.15,0.1],[-0.12,-0.05],[0.02,-0.2]].forEach(([a,b])=>blk(0.13,0.13,0.13,a,3.52,-0.3+b,0xfffaf0,g));
+  const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.4,0.62),new THREE.MeshBasicMaterial({map:signTex(['Hot Cocoa','10 cups − 3 cups = ?'],640,170),toneMapped:false}));sg.position.set(0,1.75,0.73);g.add(sg);
+  colBox(x-1.4,x+1.0,z-1.7,z+1.7);reserve(x,z,3)}
+function iceBlock(x,z,n){mesh(new THREE.CylinderGeometry(0.42,0.5,0.4,20),matSnowBall,x,0.2,z);
+  const c=new THREE.Mesh(new THREE.BoxGeometry(0.75,0.75,0.75),new THREE.MeshStandardMaterial({map:numberTex(String(n),'#cdeefc','#1d5a7a'),roughness:0.15,transparent:true,opacity:0.92}));c.position.set(x,0.8,z);c.castShadow=true;scene.add(c);
+  const ph=n*0.7;anims.push(t=>{c.rotation.y=Math.sin(t*0.4+ph)*0.6});colCirc(x,z,0.5);reserve(x,z,1)}
+function snowballs(x,z){[[0,0,0],[0.28,0,0.05],[-0.26,0,0.1],[0.02,0,-0.27],[0.03,0.22,-0.05],[0.12,0.2,0.12]].forEach(([a,b,c])=>mesh(new THREE.SphereGeometry(0.15,16,12),matSnowBall,x+a,0.14+b,z+c));colCirc(x,z,0.4)}
+function snowDrifts(zTop,zBot){for(const s of [-1,1])for(let z=zTop-2;z>zBot+2;z-=4+RS()*3){const m=mesh(new THREE.SphereGeometry(1,24,12),matSnowBall,s*(AW-0.6),0,z+(RS()-0.5)*2,scene,false);m.scale.set(1.4+RS()*0.6,0.45+RS()*0.3,2+RS()*1.2)}}
+function snowfall(zTop,zBot){const n=1500,H=14,g=new THREE.BufferGeometry(),P=new Float32Array(n*3),R=mulberry32(321),sp=[];
+  for(let i=0;i<n;i++){P[i*3]=-AW-4+R()*(AW*2+8);P[i*3+1]=R()*H;P[i*3+2]=zBot+R()*(zTop-zBot);sp.push(0.5+R()*0.7,R()*6.28)}
+  g.setAttribute('position',new THREE.BufferAttribute(P,3));
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({map:sprayTex,color:0xffffff,size:0.13,transparent:true,opacity:0.95,depthWrite:false,sizeAttenuation:true}));pts.frustumCulled=false;scene.add(pts);
+  anims.push((t,dt)=>{const near=pz<zTop+40&&pz>zBot-40;pts.visible=near;if(!near)return;
+    for(let i=0;i<n;i++){let y=P[i*3+1]-dt*sp[i*2];if(y<0)y+=H;P[i*3+1]=y;P[i*3]+=Math.sin(t*0.8+sp[i*2+1])*dt*0.3}g.attributes.position.needsUpdate=true})}
+function buildSnow(z0){
+  snowGround(z0-AREA/2,AREA);snowDrifts(z0,z0-AREA);
+  paths([[[0,z0-1],[0,z0-67.5]]],3,0,SNOWPATH);
+  frozenPond(-13,z0-24,8.5,6);bench(-13,z0-16,'s');bench(-3,z0-24,'w');
+  igloo(15,z0-12,2.8,-Math.PI/2);
+  snowman(6,z0-8,1,-Math.PI/2);snowman(-8.5,z0-40,1.1,Math.PI/2);snowman(19,z0-34,1.25,-Math.PI/2);snowman(12,z0-61,0.9,0);snowman(-22,z0-10,0.8,Math.PI/2);
+  house(18,z0-46,8,7,'w',0x8a5a3b,0xf4f8fb,0);
+  cocoaHut(-15,z0-47);
+  sledge(-6.5,z0-14,0.4,0xd8352a);sledge(13.5,z0-24.5,1.9,0x3d7cc9);sledge(-21,z0-62,0.8,0x2f9d6a);
+  [10,8,6,4,2].forEach((n,i)=>iceBlock(-2.7,z0-50-i*3,n));
+  snowballs(4,z0-36);snowballs(-21,z0-38);snowballs(21,z0-56);
+  lamp(2.2,z0-5);lamp(-2.2,z0-32);lamp(2.2,z0-42);lamp(2.2,z0-62);
+  snowfall(z0+GAP,z0-AREA);
+  chimneys.filter(c=>c[2]<z0+1&&c[2]>z0-AREA-1).forEach(c=>chimneySmoke(c[0],c[1],c[2]));
+}
+// the frosty path between the glasshouse and the snow: snow on the ground, a frozen puddle and a snowman to say hello
+function buildFrostLink(gz,c){snowGround(c,GAP);snowDrifts(gz,gz-GAP);
+  frozenPond(13,c+1,4,2.6);snowman(-5.5,c+3,0.9,Math.PI/2);snowballs(5,c-6);bench(3,c-3,'w')}
+
 /* ---------- links between the places: rivers with bridges, and garden walks ---------- */
 // a big kingfisher perched on the bridge handrail: glossy blue back with a bright cyan stripe, orange breast and
 // cheeks, white throat and neck flash, a long dagger bill and little red feet wrapped round the rail.
@@ -1768,7 +1964,7 @@ function buildRiver(gz,o){const c=gz-GAP/2,hw=3.4,L=hw+1.8,H=0.85,deck=o.stone?0
   if(o.name==='Kingfisher Creek')kingfisher(1.75,H+0.95,c+0.7,Math.PI/2);
 }
 function buildGardenLink(gz,o){const c=gz-GAP/2;
-  paths([[[0,gz-0.6],[0,gz-GAP+0.6]]],3);
+  paths([[[0,gz-0.6],[0,gz-GAP+0.6]]],3,0,o.kind==='frost'?SNOWPATH:undefined);
   if(o.kind==='roses'){
     let last=gz-4;
     for(let z=gz-4;z>gz-GAP+4;z-=2.4){last=z;mesh(new THREE.TorusGeometry(1.9,0.06,10,48,Math.PI),0xfffaf0,0,1.1,z);[-1.9,1.9].forEach(x=>{blk(0.12,1.15,0.12,x,0.57,z,0xfffaf0);colCirc(x,z,0.12)});
@@ -1783,11 +1979,11 @@ function buildGardenLink(gz,o){const c=gz-GAP/2;
     for(const s of [-1,1])for(let x=4;x<AW-2;x+=1.25)for(let z=gz-3;z>gz-GAP+3;z-=1.3){const fx=s*x+(RS()-0.5)*0.3,fz=z+(RS()-0.5)*0.3,h=1.3+RS()*0.6;
       INST.stem.push({x:fx,y:0,z:fz,s:2.4,sy:h});INST.flower.push({x:fx,y:h,z:fz,s:2.6+RS()*0.6,c:pick([0xffc61a,0xffb400,0xffd23f]),ry:(RS()-0.5)*0.6,rx:1.0,k:'sun'});INST.bush.push({x:fx,y:h*0.45,z:fz,s:0.3,sy:0.3,c:0x4f9a3a,ry:RS()*6})}
     [[2.8,gz-7],[2.8,gz-8.4],[2.8,gz-9.8]].forEach(([x,z])=>beehive(x,z));scarecrow(-2.9,c);bench(3,gz-GAP+5.5,'w');butterflies(0,c,10,30);
-  }else{
+  }else if(o.kind==='lavender'){
     for(const s of [-1,1])for(let x=4.2;x<AW-1.5;x+=1.7)for(let z=gz-2.6;z>gz-GAP+2.6;z-=0.8){const fx=s*x;INST.bush.push({x:fx,y:0.32,z,s:0.55,sy:0.55,c:pick([0x8d72c9,0x9b7fd6,0x7f66b8]),ry:RS()*6});
       if(RS()<0.6)INST.flower.push({x:fx+(RS()-0.5)*0.3,y:0.55,z,s:1.6,c:0xb48cff,ry:RS()*6,rx:(RS()-0.5)*0.3,k:'lav'})}
     bench(2.9,c,'w');bench(-2.9,c-4,'e');butterflies(0,c,12,30);
-  }
+  }else if(o.kind==='frost')buildFrostLink(gz,c);
   lamp(2.4,gz-2.5);lamp(-2.4,gz-GAP+5);
 }
 
@@ -1864,7 +2060,7 @@ function buildFinish(z0){
 const confetti=[];
 
 /* ---------- build everything ---------- */
-buildArea0(z0s[0]);buildArea1(z0s[1]);buildArea2(z0s[2]);buildArea3(z0s[3]);buildArea4(z0s[4]);buildBeach(z0s[5]);buildCastle(z0s[6]);buildFinish(zF0);
+buildArea0(z0s[0]);buildArea1(z0s[1]);buildArea2(z0s[2]);buildArea3(z0s[3]);buildArea4(z0s[4]);buildBeach(z0s[5]);buildCastle(z0s[6]);buildGreenhouse(z0s[7]);buildSnow(z0s[8]);buildFinish(zF0);
 CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);else buildGardenLink(gz,o)});
 
 // stone archway with a big name board facing people walking up to it, plus a roadside sign by the gate
@@ -1894,7 +2090,7 @@ function buildApproach(){
   flowerBed(-7.6,4.6,1.4);flowerBed(7.6,4.6,1.4);
   lamp(2.4,11);lamp(-2.4,24);lamp(2.4,35.5);lamp(3.3,2.6);
   bench(-3.3,17.5,'e');bench(3.3,28.5,'w');
-  signPost(3.7,APP-9,['Welcome to Number Grove','Seven maths places. Follow the road!'],-0.5);
+  signPost(3.7,APP-9,['Welcome to Number Grove','Nine maths places. Follow the road!'],-0.5);
   // cottages over the fence, for something to look at
   house(-19,24,7,6,'e',0xf6e3c6,0xb5523b,0);house(19.5,13,6,6,'w',0xdfe6f7,0x3f6fa8,0);
 }
@@ -2016,9 +2212,9 @@ layCables();
 function scatterArea(zTop,zBot,o){
   const XW=o.xw||AW;const rx=(a,b)=>(a+RS()*(b-a))*XW/AW;
   let n=0,tries=0;
-  while(n<o.trees&&tries++<600){const x=rx(-AW+1.6,AW-1.6),z=rnd(zBot+2,zTop-2);if(!isFree(x,z,1.6)||inWater(x,z,1.5)||!flatAt(x,z,1.3))continue;addTree(x,z,{type:RS()<0.18?'blossom':undefined});n++}
+  while(n<o.trees&&tries++<600){const x=rx(-AW+1.6,AW-1.6),z=rnd(zBot+2,zTop-2);if(!isFree(x,z,1.6)||inWater(x,z,1.5)||!flatAt(x,z,1.3))continue;if(o.snow)snowPine(x,z,0.95+RS()*0.6);else addTree(x,z,{type:RS()<0.18?'blossom':undefined});n++}
   n=0;tries=0;while(n<o.bushes&&tries++<600){const x=rx(-AW+1,AW-1),z=rnd(zBot+1.5,zTop-1.5);if(!isFree(x,z,0.8)||inWater(x,z,0.8)||!flatAt(x,z,0.7))continue;const s=0.7+RS()*0.6;addBush(x,z,s);reserve(x,z,0.9*s);n++}
-  for(let i=0;i<o.rocks;i++){const x=rx(-AW+1,AW-1),z=rnd(zBot+1,zTop-1);if(!isFree(x,z,0.4)||inWater(x,z,0.4))continue;const s=0.4+RS()*0.7;INST.rock.push({x,y:groundAt(x,z)+0.12*s,z,s,sy:s*0.6,ry:RS()*6,c:pick([0xa9a59c,0xb9b4a8,0x9a968c])});if(s>0.8)colCirc(x,z,0.4*s)}
+  for(let i=0;i<o.rocks;i++){const x=rx(-AW+1,AW-1),z=rnd(zBot+1,zTop-1);if(!isFree(x,z,0.4)||inWater(x,z,0.4))continue;const s=0.4+RS()*0.7;INST.rock.push({x,y:groundAt(x,z)+0.12*s,z,s,sy:s*0.6,ry:RS()*6,c:o.snow?pick([0xe4ebf0,0xd7dfe6,0xc9d2d9]):pick([0xa9a59c,0xb9b4a8,0x9a968c])});if(s>0.8)colCirc(x,z,0.4*s)}
   for(let i=0;i<o.flowers;i++){const x=rx(-AW+0.8,AW-0.8),z=rnd(zBot+1,zTop-1);if(!isFree(x,z,-0.4)||inWater(x,z,0.3))continue;flowersAt(x,z,4,0.5)}
   for(let i=0;i<o.grass;i++){const x=rx(-AW+0.5,AW-0.5),z=rnd(zBot+0.5,zTop-0.5);if(!isFree(x,z,-0.6)||inWater(x,z,0.2))continue;INST.grass.push({x,y:groundAt(x,z),z,s:0.75+RS()*0.45,ry:RS()*6,c:pick(GRASSC)})}
 }
@@ -2031,9 +2227,9 @@ scatterArea(APP-0.5,1.6,{xw:11.4,trees:0,bushes:10,rocks:6,flowers:100,grass:400
 for(let i=0;i<60;i++){const side=RS()<0.5?-1:1,x=side*(13.5+RS()*(AW+4-13.5)),z=2+RS()*(APP+4);if(!isFree(x,z,1.5))continue;addTree(x,z,{collide:false,near:true,s:1+RS()*0.6})}
 for(let i=0;i<2800;i++){const side=RS()<0.5?-1:1,x=side*(12.5+RS()*(AW+4-12.5)),z=1.6+RS()*(APP+6);if(!isFree(x,z,-0.6))continue;INST.grass.push({x,y:0,z,s:0.8+RS()*0.5,ry:RS()*6,c:pick(GRASSC)})}
 for(let i=0;i<120;i++){const side=RS()<0.5?-1:1,x=side*(13+RS()*14),z=2+RS()*APP;if(!isFree(x,z,-0.4))continue;flowersAt(x,z,4,0.6)}
-for(let i=0;i<1300;i++){const side=RS()<0.5?-1:1,x=side*(AW+3+Math.pow(RS(),0.7)*110),z=APP+30-RS()*(LEN+APP+90);if(Math.abs(x)<AW+6&&z>0)continue;addTree(x,z,{collide:false,s:1+RS()*1.2,type:RS()<0.1?'blossom':undefined})}
+for(let i=0;i<1300;i++){const side=RS()<0.5?-1:1,x=side*(AW+3+Math.pow(RS(),0.7)*110),z=APP+30-RS()*(LEN+APP+90);if(Math.abs(x)<AW+6&&z>0)continue;addTree(x,z,{collide:false,s:1+RS()*1.2,type:snowAmt(z)>0.3?'pine':RS()<0.1?'blossom':undefined})}
 for(let i=0;i<80;i++){const x=(RS()-0.5)*(AW*2+60),z=RS()<0.5?APP+4+RS()*60:-LEN-8-RS()*60;addTree(x,z,{collide:false,s:1+RS()*1.2})}
-for(let i=0;i<6000;i++){const side=RS()<0.5?-1:1,x=side*(AW+1.5+RS()*30),z=APP+8-RS()*(LEN+APP+20);INST.grass.push({x,y:hillH(x,z),z,s:0.9+RS()*0.6,ry:RS()*6,c:pick(GRASSC)})}
+for(let i=0;i<6000;i++){const side=RS()<0.5?-1:1,x=side*(AW+1.5+RS()*30),z=APP+8-RS()*(LEN+APP+20);if(RS()<snowAmt(z))continue;INST.grass.push({x,y:hillH(x,z),z,s:0.9+RS()*0.6,ry:RS()*6,c:pick(GRASSC)})}
 
 hiDetail(false);
 /* ---------- detailed instanced vegetation with levels of detail (LOD) ---------- */
@@ -2235,7 +2431,9 @@ const CRIT={
   splashy:{body:0x6fb8ff,belly:0xdcefff,ear:'fin',earC:0x3d7cc9,tail:'fin',tailC:0x3d7cc9},
   starbit:{body:0xffd23f,belly:0xfff3c4,ear:'antenna',earC:0xff9f43,tail:'puff',tailC:0xff9f43},
   pincher:{body:0xff6b57,belly:0xffd6cc,ear:'stalk',earC:0xff6b57,tail:'none',claws:true},
-  drakelet:{body:0xb48cff,belly:0xf0e8ff,ear:'horn',earC:0xffd23f,tail:'spike',tailC:0x8a6ee0,wings:true}};
+  drakelet:{body:0xb48cff,belly:0xf0e8ff,ear:'horn',earC:0xffd23f,tail:'spike',tailC:0x8a6ee0,wings:true},
+  petalpip:{body:0xffb3c7,belly:0xfff0f4,ear:'leaf',earC:0xff6b9a,tail:'leaf',tailC:0x3f8f45},
+  frostbun:{body:0xf2f7ff,belly:0xd6e9fb,ear:'long',earC:0xc4dcf2,tail:'puff',tailC:0xffffff}};
 function critterGeo(K){const parts=[],E=new THREE.Euler(),Mx=new THREE.Matrix4();
   const add=(g,c,x,y,z,sx,sy,sz,rx,ry,rz)=>{g.scale(sx||1,sy||sx||1,sz||sx||1);if(rx||ry||rz){E.set(rx||0,ry||0,rz||0);g.applyMatrix4(Mx.makeRotationFromEuler(E))}g.translate(x,y,z);parts.push([g,c])};
   const S=r=>new _G.Sph(r,22,16);
@@ -2288,7 +2486,7 @@ function critter(kind,x,z,a,sc){const geo=CRITG[kind]||(CRITG[kind]=critterGeo(C
     m.rotation.y=h;m.rotation.z=st==='walk'?Math.sin(hop)*0.08:0;sh.position.set(p.x,heightAt(p.x,p.z)+0.03,p.z)})}
 function critters(kind,n,zTop,zBot,sc){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
   for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3));made++}}
-[[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',4],['starbit',2]]]
+[[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',4],['starbit',2]],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]]]
   .forEach((list,r)=>list.forEach(([k,n])=>critters(k,n,z0s[r],z0s[r]-AREA,1)));
 Object.keys(CRIT).forEach(k=>critters(k,1,zF0,zF0-FIN,1.15));
 
@@ -2400,6 +2598,7 @@ function ambUpdate(dt,ts){if(!AMB.ready)return;
   for(const k in LOOPDEF){const c=AMB[k],b=best[k],D=LOOPDEF[k];let v=0,pn=0;if(b&&b.d<D.r){v=D.v*Math.pow(1-b.d/D.r,2);pn=panOf(b.ax,b.az)}
     if(k==='sea')v*=0.6+0.4*Math.sin(ts*0.45)*Math.sin(ts*0.45);if(k==='river')v*=0.85+0.15*Math.sin(ts*1.7);
     c.g.gain.setTargetAtTime(v,now,0.25);if(c.p)c.p.pan.setTargetAtTime(pn*0.7,now,0.25)}
+  AMB.wind.g.gain.setTargetAtTime(0.008+0.035*snowAmt(cz),now,0.8);
   AMB.out.gain.setTargetAtTime(muted?0:1,now,0.05)}
 
 /* ---------- sound ---------- */
