@@ -63,7 +63,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
 <div id="crosshair" hidden></div>
 <div id="prompt" hidden></div>
 <div id="hud" hidden>
-  <div><span id="roomName">Adding Garden</span><span id="roomTopic">Adding up</span></div>
+  <div><span id="roomName">Place Value Castle</span><span id="roomTopic">Ordering numbers</span></div>
   <div id="pips"></div>
   <div id="total">0 of 72 panels solved</div>
 </div>
@@ -79,7 +79,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
     <p class="eyebrow">A walking maths puzzle garden</p>
     <h1>Number <em>Grove</em></h1>
     <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
-    <p>Explore a park, a village, a duck pond, a market, a windmill hill, a sandy beach, a castle, a glass greenhouse and a snowy hollow, with rivers and gardens in between. Each place has 8 puzzle panels that start easy and get harder. Draw one line from the big circle to the rounded end so the numbers follow the rule. Follow the yellow cables to find the next panel, and solve them all to open each gate. Turn your sound on to hear the chickens, ducks and windmills, and look out for the little critters hopping about.</p>
+    <p>Explore a castle, a windmill hill, a park, a village, a duck pond, a snowy hollow, a glass greenhouse, a market and a sandy beach, from the easiest place to the hardest, with rivers and gardens in between. Each place has 8 puzzle panels that start easy and get harder. Draw one line from the big circle to the rounded end so the numbers follow the rule. Follow the yellow cables to find the next panel, and solve them all to open each gate. Turn your sound on to hear the chickens, ducks and windmills, and look out for the little critters hopping about.</p>
     <dl class="how">
       <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
       <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
@@ -87,7 +87,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
       <dt>Step back</dt><dd>Esc, right-click, or the Step back button</dd>
       <dt>Sit</dt><dd>Look at a bench and click (or press E) to sit. Press E again to stand.</dd>
     </dl>
-    <ul class="rooms"><li>Adding</li><li>Times tables</li><li>Odd and even</li><li>Matching sums</li><li>Counting in steps</li><li>Number bonds</li><li>Ordering numbers</li><li>Doubles and halves</li><li>Taking away</li></ul>
+    <ul class="rooms"><li>Ordering numbers</li><li>Counting in steps</li><li>Adding</li><li>Times tables</li><li>Odd and even</li><li>Taking away</li><li>Doubles and halves</li><li>Matching sums</li><li>Number bonds</li></ul>
     <div class="row"><button id="startBtn" type="button" class="sun">Start exploring</button><button id="resetBtn" type="button" class="ghost" hidden>Start over</button></div>
   </div>
 </div>
@@ -111,7 +111,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
   <div class="card">
     <p class="eyebrow">Every gate is open</p>
     <h2>You finished Number Grove!</h2>
-    <p>You solved all 72 panels: adding, times tables, odd and even, matching sums, counting in steps, number bonds, ordering numbers, doubles and halves, and taking away. That is a lot of maths thinking.</p>
+    <p>You solved all 72 panels: ordering numbers, counting in steps, adding, times tables, odd and even, taking away, doubles and halves, matching sums and number bonds. That is a lot of maths thinking.</p>
     <div class="row"><button id="doneClose" type="button" class="sun">Keep exploring</button></div>
   </div>
 </div>
@@ -418,9 +418,18 @@ const ROOMS=[
     {type:'take',W:7,H:7,maxVal:25,density:0.32,minTarget:55,maxTarget:150,minOn:7,minOff:10,wind:0.6,round:100,extra:[10,80]}]}
 ];
 // little links between the places: rivers with bridges and garden walks
-const CONN=[{name:'Willow River',kind:'river'},{name:'Rose Walk',kind:'roses'},{name:'Stepping Stone Brook',kind:'river',stone:true},
+const CONN0=[{name:'Willow River',kind:'river'},{name:'Rose Walk',kind:'roses'},{name:'Stepping Stone Brook',kind:'river',stone:true},
   {name:'Sunflower Lane',kind:'sun',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},{name:'Kingfisher Creek',kind:'river'},{name:'Lavender Path',kind:'lavender',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},
   {name:'Otter Stream',kind:'river'},{name:'Frosty Pine Path',kind:'frost',scatter:{trees:8,bushes:0,rocks:6,flowers:0,grass:0,snow:true}}];
+// every place keeps a key and its original number: its puzzles and saved progress follow it wherever it sits
+const ROOM_KEYS=['adding','times','oddeven','match','windmill','beach','castle','glass','snow'];ROOMS.forEach((r,i)=>{r.key=ROOM_KEYS[i];r.orig=i});
+// the order you meet the places in, easiest first. line rules that tell you what to touch come first (ordering, counting
+// in steps), then searching for sums, sorting by times tables, then the fence puzzles that split the grid into areas
+// (odd/even, then taking away's heavier sums, doubles and halves, mixed sums), and number bonds, the hardest, come last
+const ROOM_ORDER=['castle','windmill','adding','times','oddeven','snow','glass','match','beach'];
+ROOMS.sort((a,b)=>ROOM_ORDER.indexOf(a.key)-ROOM_ORDER.indexOf(b.key));const RI=k=>ROOMS.findIndex(r=>r.key===k);
+// the links between places keep their order, except the frosty path, which always leads into Snowflake Hollow
+const CONN=(()=>{const fr=CONN0.find(c=>c.kind==='frost'),rest=CONN0.filter(c=>c!==fr),out=[];for(let k=0;k<ROOMS.length-1;k++)out.push(k===RI('snow')-1?fr:rest.shift());return out})();
 const NR=ROOMS.length, z0s=ROOMS.map((_,r)=>-r*(AREA+GAP)), zF0=z0s[NR-1]-AREA, LEN=-zF0+FIN;
 
 const PANELS=[];
@@ -429,7 +438,7 @@ ROOMS.forEach((room,r)=>{room.list=[];room.panels.forEach((def0,i)=>{
   // if a strict level can't be built, relax its extra rules a step at a time instead of failing
   for(let s=0;s<36&&!p;s++){
     const def=s<30?def0:Object.assign({},def0,{minTiles:0,minOn:2,minOff:1,minTarget:4,maxTarget:def0.maxTarget?def0.maxTarget*2:0,minRegions:2});
-    const rng=mulberry32(1000+PANELS.length*7919+s*104729);
+    const rng=mulberry32(1000+(room.orig*8+i)*7919+s*104729);   // seeded by the place's original number, so its puzzles never change
     const W=def.W,H=def.H,start=def.start||[0,H-1],end=def.end||[W-1,0];
     const minLen=def.minLen||Math.ceil(W*H*(def.wind||0.45));
     for(let a=0;a<300&&!p;a++){
@@ -438,7 +447,7 @@ ROOMS.forEach((room,r)=>{room.list=[];room.panels.forEach((def0,i)=>{
       if(GEN[def.type](c,path,rng)){c.solution=path;p=c}
     }
   }
-  p.nub=nubDir(p.W,p.H,p.end);p.room=r;p.ri=i;p.index=PANELS.length;p.id=r+'-'+i;
+  p.nub=nubDir(p.W,p.H,p.end);p.room=r;p.ri=i;p.index=PANELS.length;p.id=room.orig+'-'+i;
   p.path=[];p.pend=null;p.atEnd=false;p.solved=false;p.complete=false;p.flash=null;p.err=null;
   PANELS.push(p);room.list.push(p);
 })});
@@ -743,7 +752,7 @@ function hillH(x,z){const dx=Math.max(0,Math.abs(x)-(AW+5)),dz=Math.max(0,z-(APP
   const s=Math.min(1,d/50),n=Math.sin(x*0.045)*Math.cos(z*0.037)*0.5+0.5+Math.sin(x*0.11+z*0.07)*0.25;return s*s*(5+20*n)}
 const groundAt=(x,z)=>Math.max(heightAt(x,z),hillH(x,z));
 // the snowy part of the world: the frosty path and Snowflake Hollow, fading out over 14 m on either side
-const SNOWR=8,SNOW_TOP=z0s[SNOWR-1]-AREA,SNOW_BOT=z0s[SNOWR]-AREA;
+const SNOWR=RI('snow'),SNOW_TOP=z0s[SNOWR-1]-AREA,SNOW_BOT=z0s[SNOWR]-AREA;
 function snowAmt(z){const d=Math.max(z-SNOW_TOP,SNOW_BOT-z,0);return Math.max(0,1-d/14)}
 function blocked(x,z,curH){
   const r=0.32;
@@ -2467,7 +2476,7 @@ function buildFinish(z0){
 const confetti=[];
 
 /* ---------- build everything ---------- */
-buildArea0(z0s[0]);buildArea1(z0s[1]);buildArea2(z0s[2]);buildArea3(z0s[3]);buildArea4(z0s[4]);buildBeach(z0s[5]);buildCastle(z0s[6]);buildGreenhouse(z0s[7]);buildSnow(z0s[8]);buildFinish(zF0);
+{const BUILD={adding:buildArea0,times:buildArea1,oddeven:buildArea2,match:buildArea3,windmill:buildArea4,beach:buildBeach,castle:buildCastle,glass:buildGreenhouse,snow:buildSnow};ROOMS.forEach((room,r)=>BUILD[room.key](z0s[r]))}buildFinish(zF0);
 CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);else buildGardenLink(gz,o)});
 
 // stone archway with a big name board facing people walking up to it, plus a roadside sign by the gate
@@ -2547,7 +2556,7 @@ ROOMS.forEach((room,r)=>{
    side path is routed on a 0.5 m grid (around walls, water, benches, beds and other panels) to the nearest walkway ---------- */
 (function panelPaths(){const CG=0.5,DI=[1,-1,0,0],DJ=[0,0,1,-1];
   ROOMS.forEach((room,r)=>{const z0=z0s[r],x0=-AW+0.8,zT=z0-0.6,NX=Math.floor((2*AW-1.6)/CG)+1,NZ=Math.floor((AREA-1.2)/CG)+1,N=NX*NZ,X=i=>x0+i*CG,Z=j=>zT-j*CG;
-    const col=r===5?0xb98a5a:r===SNOWR?SNOWPATH:PATHC,near=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z0-AREA-2&&c.minZ<z0+2:c.t==='circ'?Math.abs(c.z-(z0-AREA/2))<AREA/2+2:false));
+    const col=ROOMS[r].key==='beach'?0xb98a5a:r===SNOWR?SNOWPATH:PATHC,near=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z0-AREA-2&&c.minZ<z0+2:c.t==='circ'?Math.abs(c.z-(z0-AREA/2))<AREA/2+2:false));
     const blk=new Uint8Array(N),tgt=new Uint8Array(N),m=0.75;
     for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=X(i),z=Z(j),k=j*NX+i;if(onWalk(x,z,-0.45)||heightAt(x,z)>0.05){tgt[k]=1;continue}
       if(inWater(x,z,0.4)){blk[k]=1;continue}for(const c of near){if(c.t==='box'?(x>c.minX-m&&x<c.maxX+m&&z>c.minZ-m&&z<c.maxZ+m):((x-c.x)**2+(z-c.z)**2<(c.r+m)**2)){blk[k]=1;break}}}
@@ -3007,22 +3016,22 @@ function addScarf(m){const mat=new THREE.MeshStandardMaterial({map:stripeFlat(pi
 function critters(kind,n,zTop,zBot,sc,scarf,variant){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
   for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3),scarf,variant);made++}}
 [[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown'],['drakelet',1,-45]],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]]]
-  .forEach((list,r)=>list.forEach(([k,n,zt,zb,v])=>critters(k,n,z0s[r]+(zt||0),z0s[r]+(zb!=null?zb:-AREA),1,r===SNOWR,v)));   // the castle's field pets wear clown make-up
+  .forEach((list,o)=>{const r=ROOMS.findIndex(q=>q.orig===o);list.forEach(([k,n,zt,zb,v])=>critters(k,n,z0s[r]+(zt||0),z0s[r]+(zb!=null?zb:-AREA),1,r===SNOWR,v))});   // the castle's field pets wear clown make-up
 // pets having a swim at Number Bond Beach, each in a stripy rubber ring, paddling slow loops in the sea
 function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=critterMesh(kind);m.position.y=-0.36;g.add(m);
   const ring=new THREE.Mesh(new _G.Tor(0.34,0.11,14,36),new THREE.MeshStandardMaterial({map:stripeFlat(col,6),roughness:0.35}));ring.rotation.x=Math.PI/2;ring.position.y=0.07;ring.castShadow=true;g.add(ring);
   RIPPLERS.push({o:g.position});const sp=0.12+RS()*0.06;
   anims.push((t,dt)=>{const a=t*sp+ph,x=cx+Math.cos(a)*rx,z=cz+Math.sin(a)*rz;g.position.set(x,Math.sin(t*1.8+ph)*0.03,z);g.rotation.y=Math.atan2(-Math.sin(a)*rx,Math.cos(a)*rz);
     g.rotation.z=Math.sin(t*1.3+ph)*0.08;g.rotation.x=Math.sin(t*1.1+ph)*0.05;m.rotation.x=Math.sin(t*6+ph)*0.06})}
-{const zb=z0s[5];[['splashy',17,-12,3,2,0,0xff6b57],['puffle',22,-22,2.5,3,2,0x3d7cc9],['starbit',16.5,-45,2.5,2.5,4,0x7cc35a],['pincher',21,-50,3,2.2,1,0xffd23f],['splashy',15.5,-26,1.6,1.6,3,0xff9ecf]]
+{const zb=z0s[RI('beach')];[['splashy',17,-12,3,2,0,0xff6b57],['puffle',22,-22,2.5,3,2,0x3d7cc9],['starbit',16.5,-45,2.5,2.5,4,0x7cc35a],['pincher',21,-50,3,2.2,1,0xffd23f],['splashy',15.5,-26,1.6,1.6,3,0xff9ecf]]
   .forEach(([k,x,z,rx,rz,ph,c])=>swimmer(k,x,zb+z,rx,rz,ph,c))}
 // a pet flying the kite in Adding Garden: it stands by the picnic blanket holding the string up in one paw
-{const ax=-19,az=z0s[0]-49,g=new THREE.Group();g.position.set(ax+1.5,0,az+0.6);g.rotation.y=Math.atan2(2.5,-5.6);scene.add(g);
+{const ax=-19,az=z0s[RI('adding')]-49,g=new THREE.Group();g.position.set(ax+1.5,0,az+0.6);g.rotation.y=Math.atan2(2.5,-5.6);scene.add(g);
  const sc=1.25,m=critterMesh('hopbun','reach');m.scale.setScalar(sc);g.add(m);
  const paw=new THREE.Object3D();paw.position.set(0.31,0.73,0.11);m.add(paw);KITE.a.hand=paw;colCirc(g.position.x,g.position.z,0.45);
  anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.4))*0.05;g.rotation.z=Math.sin(t*1.3)*0.05})}
 // a second pet flies the blue kite on the other side of the blanket (its string heads away from the first pet)
-{const ax=-19,az=z0s[0]-49,g=new THREE.Group();g.position.set(ax-1.9,0,az+0.9);g.rotation.y=Math.atan2(-2.6,-6.9);scene.add(g);
+{const ax=-19,az=z0s[RI('adding')]-49,g=new THREE.Group();g.position.set(ax-1.9,0,az+0.9);g.rotation.y=Math.atan2(-2.6,-6.9);scene.add(g);
  const sc=1.15,m=critterMesh('puffle','reach');m.scale.setScalar(sc);g.add(m);
  const paw=new THREE.Object3D();paw.position.set(0.31,0.73,0.11);m.add(paw);KITE.b.hand=paw;colCirc(g.position.x,g.position.z,0.45);
  anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.1+1))*0.05;g.rotation.z=Math.sin(t*1.1+2)*0.05})}
@@ -3036,7 +3045,7 @@ if(MAYPOLE.top){const T=MAYPOLE.top,sc=1.1,a=0.7,rE=0.42+2.43,E=[Math.cos(a)*rE,
   anims.push(t=>{m.rotation.z=Math.sin(t*6)*0.05;m.getWorldPosition(wp);col.x=wp.x;col.z=wp.z})}
 // about a third of the benches have a pet sitting on one end, leaving the middle of the bench free for you
 // while you sit on the same bench, now and then it turns to look at you for a few seconds
-const otterC=z0s[6]-AREA-GAP/2,inOtterStream=b=>Math.abs(b.z-otterC)<GAP/2;
+const otterC=z0s[CONN.findIndex(c=>c.name==='Otter Stream')]-AREA-GAP/2,inOtterStream=b=>Math.abs(b.z-otterC)<GAP/2;
 function benchBuddy(b,obj,ry,ph,turn){let look=0,tm=2+RS()*3;
   return(t,dt)=>{const mine=mode==='sit'&&sitB===b;tm-=dt;if(tm<0){look=mine&&!look&&RS()<0.75?1:0;tm=look?2.5+RS()*2.5:2+RS()*4}if(!mine)look=0;
     let want=ry+Math.sin(t*0.4+ph)*0.25;if(look){let d=Math.atan2(camera.position.x-obj.position.x,camera.position.z-obj.position.z)-ry;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;want=ry+Math.max(-turn,Math.min(turn,d))}
@@ -3583,7 +3592,7 @@ $('#startBtn').addEventListener('click',()=>{
 (function(){
   const ids=new Set(loadSave());if(!ids.size)return;
   PANELS.forEach(p=>{if(ids.has(p.id)){p.solved=true;p.complete=true;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}}});
-  let r=0;while(r<NR&&roomDone(r)){openGate(r,true);r++}
+  ROOMS.forEach((_,q)=>{if(roomDone(q))openGate(q,true)});let r=0;while(r<NR&&roomDone(r))r++;
   pz=r<NR?z0s[r]-3:zF0-3;
   $('#startBtn').textContent='Continue';$('#resetBtn').hidden=false;
 })();

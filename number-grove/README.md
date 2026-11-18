@@ -2,17 +2,19 @@
 
 A 3D walking maths puzzle garden for the browser. Explore nine places, each with 8 line-drawing puzzle panels that get harder as you go:
 
-| Place | Maths topic |
-|---|---|
-| Adding Garden | Adding up |
-| Times Table Village | Times tables |
-| Odd and Even Pond | Odd and even numbers |
-| Match Maker Market | Adding, taking away, times |
-| Windmill Hill | Counting in steps |
-| Number Bond Beach | Number bonds |
-| Place Value Castle | Ordering numbers |
-| Glasshouse Gardens | Doubles and halves |
-| Snowflake Hollow | Taking away |
+Places are met in order of difficulty, easiest first:
+
+| # | Place | Maths topic |
+|---|---|---|
+| 1 | Place Value Castle | Ordering numbers |
+| 2 | Windmill Hill | Counting in steps |
+| 3 | Adding Garden | Adding up |
+| 4 | Times Table Village | Times tables |
+| 5 | Odd and Even Pond | Odd and even numbers |
+| 6 | Snowflake Hollow | Taking away |
+| 7 | Glasshouse Gardens | Doubles and halves |
+| 8 | Match Maker Market | Adding, taking away, times |
+| 9 | Number Bond Beach | Number bonds |
 
 ## Play
 
