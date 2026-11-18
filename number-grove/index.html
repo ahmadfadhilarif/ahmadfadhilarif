@@ -407,7 +407,7 @@ const ROOMS=[
     {type:'grp',W:6,H:6,ops:'dx',vmin:12,vmax:60,even:true,minRegions:4,fill:0.75,minTiles:15,wind:0.65,start:[2,5],end:[3,0]},
     {type:'grp',W:7,H:7,ops:'d+x',vmin:12,vmax:80,even:true,minRegions:5,fill:0.6,minTiles:18,wind:0.6}]},
   {name:'Snowflake Hollow',topic:'Taking away',scatter:{trees:22,bushes:0,rocks:14,flowers:0,grass:0,snow:true},
-   spots:[[-3.6,-8,'e'],[9,-17,'w'],[-13,-34.5,'n'],[12,-30,'w'],[-4,-44,'e'],[8,-56,'w'],[-16,-58,'e'],[7,-64,'s']],panels:[
+   spots:[[-3.6,-8,'e'],[9,-17,'w'],[-13,-22.5,'n'],[-4.5,-32,'e'],[4.5,-40,'w'],[8,-56,'w'],[-16,-58,'e'],[7,-64,'s']],panels:[
     {type:'take',W:3,H:3,maxVal:5,density:0.75,maxTarget:9,round:10,extra:[1,5]},
     {type:'take',W:3,H:3,maxVal:9,density:0.8,minTarget:6,maxTarget:15,round:10,extra:[2,8],end:[2,2]},
     {type:'take',W:4,H:4,maxVal:9,density:0.5,minTarget:10,maxTarget:20,minOn:3,round:10,extra:[3,15]},
@@ -718,6 +718,8 @@ const sgroup=(x,y,z,ry)=>{const g=new THREE.Group();g.userData.st=1;g.position.s
 function flat(geo,col,x,y,z){geo.rotateX(-Math.PI/2);const m=mesh(geo,col,x,y,z,scene,true);return m}
 const FACES={s:[0,1],n:[0,-1],e:[1,0],w:[-1,0]};
 const anims=[];const redrawers=[];
+// things swimming on water leave ripples behind them (see the ripple section)
+const RIPPLERS=[];
 // things in the world that make noises (chickens, fountains, windmills...). see the ambient sound section
 const SNDS=[];
 const RS=mulberry32(99);const rnd=(a,b)=>a+RS()*(b-a);const pick=a=>a[Math.floor(RS()*a.length)];
@@ -941,7 +943,7 @@ function duck(cx,cz,rx,rz,ph,spd,kind,sc){const K=DUCKS[kind],g=new THREE.Group(
   const tail=mk(new _G.Cone(0.06,0.13,24),fMat(K.wing),0,0.2,-0.3);tail.rotation.x=-1.05;tail.scale.set(1,1,0.4);
   const wakes=[0,0.5].map(o=>{const m=new THREE.Mesh(new _G.Ring(0.22,0.27,64),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.3,depthWrite:false}));m.rotation.x=-Math.PI/2;m.userData.o=o;scene.add(m);return m});
   const bob=RS()*6;if(kind!=='duckling')SNDS.push({k:'quack',o:g.position,t:RS()*14});
-  anims.push(t=>{const a=t*spd+ph;g.position.set(cx+Math.cos(a)*rx,0.05+Math.sin(t*2.2+bob)*0.012,cz+Math.sin(a)*rz);g.rotation.y=Math.atan2(-Math.sin(a)*rx*Math.sign(spd),Math.cos(a)*rz*Math.sign(spd));
+  RIPPLERS.push({o:g.position});anims.push(t=>{const a=t*spd+ph;g.position.set(cx+Math.cos(a)*rx,0.05+Math.sin(t*2.2+bob)*0.012,cz+Math.sin(a)*rz);g.rotation.y=Math.atan2(-Math.sin(a)*rx*Math.sign(spd),Math.cos(a)*rz*Math.sign(spd));
     head.rotation.y=Math.sin(t*0.9+bob)*0.35;head.rotation.x=Math.max(0,Math.sin(t*0.37+bob))*0.25;
     wakes.forEach(w=>{const p=(t*0.6+w.userData.o)%1,s=(sc||1)*(1+p*2.6);w.scale.set(s,s,1);w.material.opacity=0.32*(1-p);w.position.set(g.position.x,0.075,g.position.z)})});
 }
@@ -1244,8 +1246,10 @@ function chickenModel(white,b){const col=white?0xf4efe4:0xb5683b,hack=white?0xfa
   const add=(geo,mat,x,y,z,p,s,r)=>{const m=new THREE.Mesh(geo,typeof mat==='number'?dbl(mat,{side:THREE.FrontSide,roughness:0.55}):mat);m.position.set(x,y,z);if(s)m.scale.set(s[0],s[1],s[2]);if(r)m.rotation.set(r[0],r[1],r[2]);m.castShadow=true;(p||b).add(m);return m};
   add(chickBody,fMat(col),0,0.37,0);
   add(new _G.Sph(0.13,28,18),fMat(col),0,0.34,0.14,null,[1.05,1.05,0.9]);
-  for(let k=0;k<12;k++){const a=k/12*Math.PI*2;add(new _G.Sph(0.05,14,10),fMat(hack),Math.cos(a)*0.065,0.5,0.17+Math.sin(a)*0.05,null,[0.45,1.2,0.5],[0.5+Math.sin(a)*0.3,0,-Math.cos(a)*0.5])}
-  add(new _G.Cyl(0.05,0.085,0.2,20),fMat(hack),0,0.55,0.18,null,null,[0.3,0,0]);
+  // the neck (with its ruff of hackle feathers) is its own group so it can bend down when the chicken pecks
+  const neck=new THREE.Group();neck.position.set(0,0.5,0.17);b.add(neck);
+  for(let k=0;k<12;k++){const a=k/12*Math.PI*2;add(new _G.Sph(0.05,14,10),fMat(hack),Math.cos(a)*0.065,0,Math.sin(a)*0.05,neck,[0.45,1.2,0.5],[0.5+Math.sin(a)*0.3,0,-Math.cos(a)*0.5])}
+  add(new _G.Cyl(0.05,0.085,0.2,20),fMat(hack),0,0.05,0.01,neck,null,[0.3,0,0]);
   [-1,1].forEach(s=>{const w=new THREE.Group();w.position.set(s*0.17,0.42,0.0);w.rotation.set(-0.12,0,s*0.1);b.add(w);
     add(new _G.Sph(0.1,24,16),fMat(col),0,0,0.02,w,[0.33,0.72,1.45]);
     for(let k=0;k<4;k++)add(new _G.Sph(0.06,14,10),fMat(k%2?tailC:col),s*0.008,-0.035-k*0.012,-0.08-k*0.04,w,[0.16,0.42,1.5],[0.2+k*0.05,0,0])});
@@ -1259,14 +1263,16 @@ function chickenModel(white,b){const col=white?0xf4efe4:0xb5683b,hack=white?0xfa
   const legs=[-1,1].map(s=>{const L=new THREE.Group();L.position.set(s*0.06,0.25,0.02);b.add(L);add(new _G.Sph(0.065,16,12),fMat(col),0,0.03,0,L,[0.9,1.2,1]);
     add(new _G.Cyl(0.014,0.012,0.2,10),yel,0,-0.115,0,L);for(let k=0;k<5;k++)add(new _G.Tor(0.014,0.003,5,12),0xc99a3a,0,-0.05-k*0.032,0,L,null,[Math.PI/2,0,0]);
     [-0.5,0,0.5,Math.PI].forEach(a=>{const ft=new THREE.Group();ft.position.set(0,-0.222,0);ft.rotation.y=a;L.add(ft);add(toeG,yel,0,0,0,ft,a===Math.PI?[1,1,0.6]:null);add(clawG,0x6b5a3a,0,0,0,ft,a===Math.PI?[1,1,0.6]:null)});return L});
-  return{head,legs}}
+  return{head,legs,neck}}
 function chickenFlock(n,area){for(let i=0;i<n;i++){const g=new THREE.Group();scene.add(g);const b=new THREE.Group();b.scale.setScalar(0.8);g.add(b);
-  const {head,legs}=chickenModel(i%3!==0,b);
+  const {head,legs,neck}=chickenModel(i%3!==0,b);
+  // pose: the whole body tips forward from the feet, the neck bends down and the head follows the end of the neck
+  const pose=(bp,nk,hr,hz)=>{b.rotation.x=bp;neck.rotation.x=nk;head.position.set(0,0.5+0.17*Math.cos(nk)-0.04*Math.sin(nk),0.17+0.17*Math.sin(nk)+0.04*Math.cos(nk)+(hz||0));head.rotation.x=nk*0.6+hr;return bp};
   let x=area.x0+RS()*(area.x1-area.x0),z=area.z0+RS()*(area.z1-area.z0),h=RS()*6,tx=x,tz=z,st='peck',tm=RS()*3,w=0;g.position.set(x,0,z);if(i%2===0)SNDS.push({k:'cluck',o:g.position,t:RS()*8});
-  anims.push((t,dt)=>{const p=g.position;if(st==='peck'){tm-=dt;{const pk=Math.max(0,Math.sin(t*9+i));head.position.y=0.67-pk*0.3;head.position.z=0.21+pk*0.08;head.rotation.x=pk*1.0}if(tm<0){tx=area.x0+RS()*(area.x1-area.x0);tz=area.z0+RS()*(area.z1-area.z0);st='walk'}}
-    else{head.position.y=0.67;head.position.z=0.21+Math.sin(w*0.5)*0.025;head.rotation.x=0;const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);let df=Math.atan2(dx,dz)-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=Math.max(-dt*3,Math.min(dt*3,df));if(Math.abs(df)<0.8){p.x+=Math.sin(h)*dt*0.6;p.z+=Math.cos(h)*dt*0.6;w+=dt*14}
+  anims.push((t,dt)=>{const p=g.position;let bp=0;if(st==='peck'){tm-=dt;{const pk=Math.pow(Math.max(0,Math.sin(t*9+i)),0.7);bp=pose(pk*0.42,pk*1.05,pk*0.25)}if(tm<0){tx=area.x0+RS()*(area.x1-area.x0);tz=area.z0+RS()*(area.z1-area.z0);st='walk'}}
+    else{pose(0,Math.sin(w*0.5)*0.12,0);const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);let df=Math.atan2(dx,dz)-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=Math.max(-dt*3,Math.min(dt*3,df));if(Math.abs(df)<0.8){p.x+=Math.sin(h)*dt*0.6;p.z+=Math.cos(h)*dt*0.6;w+=dt*14}
       if(d<0.2){st='peck';tm=1.5+RS()*4}}
-    g.rotation.y=h;const s=st==='walk'?Math.sin(w)*0.5:0;legs[0].rotation.x=s;legs[1].rotation.x=-s})}}
+    g.rotation.y=h;const s=st==='walk'?Math.sin(w)*0.5:0;legs[0].rotation.x=s-bp;legs[1].rotation.x=-s-bp})}}
 function birds(cx,cz,n,col){SNDS.push({k:col?'gull':'tweet',x:cx,z:cz,t:RS()*6});for(let i=0;i<n;i++){const g=new THREE.Group();scene.add(g);const add=(geo,col)=>{const m=new THREE.Mesh(geo,dbl(col,{roughness:0.7}));g.add(m);return m};
   const bd=add(new _G.Sph(0.08,20,14),col||0x3a3f48);bd.scale.set(0.8,0.8,1.8);add(new _G.Sph(0.055,16,12),col||0x3a3f48).position.set(0,0.03,0.14);
   const wing=(()=>{const s=new THREE.Shape();s.moveTo(0,0.06);s.quadraticCurveTo(0.2,0.08,0.38,-0.02);s.quadraticCurveTo(0.2,-0.04,0,-0.06);return new THREE.ShapeGeometry(s,10)})();
@@ -1318,6 +1324,26 @@ function well(x,z){
   [1.5,1.68].forEach(y=>mesh(new THREE.TorusGeometry(y<1.6?0.142:0.162,0.008,8,48),0x2b3a42,x,y,z).rotation.x=Math.PI/2);
   blk(0.05,0.3,0.05,x+1.15,2.25,z,0x2b3a42);blk(0.2,0.05,0.05,x+1.15,2.1,z+0.08,0x2b3a42);colCirc(x,z,1.4);reserve(x,z,2.6);
 }
+// a little robin perched on the well's rim: it dips down to drink (a ripple spreads on the water), lifts its
+// head to swallow, looks about and fluffs its wings now and then
+function drinkingBird(x,z,ry){const g=new THREE.Group();g.position.set(x,1.02,z);g.rotation.y=ry;scene.add(g);const tilt=new THREE.Group();g.add(tilt);
+  const add=(geo,mat,px,py,pz,p,sc,r)=>{const m=new THREE.Mesh(geo,mat);m.position.set(px,py,pz);if(sc)m.scale.set(sc[0],sc[1],sc[2]);if(r)m.rotation.set(r[0],r[1],r[2]);m.castShadow=true;(p||tilt).add(m);return m};
+  const BR=fMat(0x8a6a4a),OR=fMat(0xe0662c),CR=fMat(0xefe4d0),DK=new THREE.MeshStandardMaterial({color:lin(0x2a2420),roughness:0.4}),EY=new THREE.MeshPhysicalMaterial({color:lin(0x080606),roughness:0.1,clearcoat:1}),LG=new THREE.MeshStandardMaterial({color:lin(0x8a6a50),roughness:0.6});
+  add(new _G.Sph(0.075,24,16),BR,0,0.1,0,null,[0.9,0.85,1.25]);add(new _G.Sph(0.06,24,16),OR,0,0.095,0.045,null,[0.95,1,0.8]);add(new _G.Sph(0.05,20,14),CR,0,0.07,0.01,null,[0.9,0.7,1.1]);
+  const head=new THREE.Group();head.position.set(0,0.16,0.07);tilt.add(head);
+  add(new _G.Sph(0.048,24,16),BR,0,0,0,head);add(new _G.Sph(0.038,20,14),OR,0,-0.012,0.022,head,[1,0.9,0.8]);
+  add(new _G.Cone(0.011,0.04,12),DK,0,-0.006,0.058,head,null,[Math.PI/2,0,0]);
+  [-1,1].forEach(sd=>{add(new _G.Sph(0.011,12,8),EY,sd*0.032,0.01,0.03,head);add(new _G.Sph(0.003,6,4),new THREE.MeshBasicMaterial({color:0xffffff}),sd*0.036,0.014,0.036,head)});
+  const wings=[-1,1].map(sd=>add(new _G.Sph(0.05,16,12),BR,sd*0.06,0.11,-0.02,null,[0.25,0.7,1.25],[0.15,0,sd*0.1]));
+  add(new _G.Sph(0.04,14,10),fMat(0x6b4a32),0,0.12,-0.11,null,[0.5,0.18,1.3],[-0.35,0,0]);
+  [-1,1].forEach(sd=>{add(new _G.Cyl(0.005,0.004,0.05,6),LG,sd*0.022,0.025,0.01,g);for(let k=-1;k<=1;k++)add(new _G.Cyl(0.003,0.003,0.03,5),LG,sd*0.022+k*0.007,0.002,0.022,g,null,[Math.PI/2,0,k*0.4])});
+  SNDS.push({k:'tweet',x,z,t:2});
+  let st=0,tm=2,ph=0,drank=false;anims.push((t,dt)=>{tm-=dt;
+    if(st===0){tilt.rotation.x*=Math.max(0,1-dt*8);head.rotation.y=Math.sin(t*1.7)*0.6*(Math.sin(t*0.6)>0?1:0);if(tm<0){st=1;ph=0;drank=false}}
+    else{ph+=dt;const k=ph<0.5?ph/0.5:ph<1.3?1:Math.max(0,1-(ph-1.3)/0.4);tilt.rotation.x=k*1.15;head.rotation.y=0;head.rotation.x=k*0.4;
+      if(k===1&&!drank){drank=true;ripple(x,0.912,z-0.55*Math.cos(ry)*-1,0.35,1.6)}
+      if(ph>1.7){st=0;tm=1.5+RS()*3;head.rotation.x=0;if(RS()<0.4)ph=-1}}
+    const f=Math.sin(t*0.9)>0.97?Math.sin(t*40)*0.25:0;wings[0].rotation.z=0.1+f;wings[1].rotation.z=-0.1-f})}
 function fence(x1,z1,x2,z2){const len=Math.hypot(x2-x1,z2-z1),ux=(x2-x1)/len,uz=(z2-z1)/len;
   for(let s=0;s<=len;s+=0.35)INST.picket.push({x:x1+ux*s,y:0.45,z:z1+uz*s,s:1,ry:Math.atan2(ux,uz)});
   [0.3,0.65].forEach(y=>{const b=blk(Math.abs(ux)>0.5?len:0.05,0.06,Math.abs(uz)>0.5?len:0.05,(x1+x2)/2,y,(z1+z2)/2,0xfffaf0)});
@@ -1328,7 +1354,7 @@ function hopscotch(x,z){const tex=canvasTex(256,640,c=>{c.clearRect(0,0,256,640)
 function buildArea1(z0){
   paths([[[0,z0-1],[0,z0-12]],[[0,z0-36],[0,z0-43.5]]],3);
   const plaza=flat(new THREE.PlaneGeometry(26,24),triPatch(new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.9}),cobbleTex,0.28,0.03),0,0.023,z0-24);plaza.receiveShadow=true;reserve(0,z0-24,13.5);
-  hopscotch(0,z0-6.5);well(0,z0-24);
+  hopscotch(0,z0-6.5);well(0,z0-24);drinkingBird(0,z0-24+1.22,Math.PI);
   house(-16,z0-11,8,7,'e',0xf6e3c6,0xc9573f,-1.6);
   house(16,z0-14,8,7,'w',0xd8ecf2,0x3f6fa8,1.6);
   house(-16,z0-31,8,7,'e',0xf2d4d9,0x6d4a8f,0);
@@ -1448,13 +1474,14 @@ function buildArea4(z0){
    ===================================================================== */
 function bale(x,z){mesh(baleGeo,0xe8c766,x,0.6,z);[-0.3,0.3].forEach(o=>mesh(new THREE.TorusGeometry(0.612,0.012,8,96),0x8a6a3a,x+o,0.6,z).rotation.y=Math.PI/2);
   [-0.602,0.602].forEach(o=>[0.12,0.22,0.32,0.41,0.5].forEach(rr=>mesh(new THREE.TorusGeometry(rr,0.014,6,72),0xcfa64a,x+o,0.6,z,scene,true).rotation.y=Math.PI/2));colCirc(x,z,0.8);reserve(x,z,1.2)}
+const KITE={hand:null},_kv=new THREE.Vector3();
 function kite(ax,az){const k=new THREE.Group();scene.add(k);const s=new THREE.Shape();s.moveTo(0,0.7);s.lineTo(0.45,0);s.lineTo(0,-0.9);s.lineTo(-0.45,0);s.closePath();
   k.add(new THREE.Mesh(new THREE.ShapeGeometry(s),new THREE.MeshStandardMaterial({color:lin(0xff6b57),side:THREE.DoubleSide,roughness:0.8})));
   const x2=new THREE.Mesh(new THREE.PlaneGeometry(0.03,1.6),new THREE.MeshBasicMaterial({color:0x7a4a2c}));x2.position.y=-0.1;k.add(x2);
   for(let i=0;i<4;i++){const b=new THREE.Mesh(new THREE.PlaneGeometry(0.22,0.12),new THREE.MeshBasicMaterial({color:lin([0xffd23f,0x3d7cc9,0x7cc35a,0xff9ecf][i]),side:THREE.DoubleSide}));b.position.set(Math.sin(i)*0.15,-1.15-i*0.4,0);k.add(b)}
   const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),new THREE.LineBasicMaterial({color:0xffffff}));line.frustumCulled=false;scene.add(line);
   anims.push(t=>{k.position.set(ax+4+Math.sin(t*0.5)*1.5,11+Math.sin(t*0.9)*0.8,az-5+Math.cos(t*0.4));k.rotation.set(-0.3,0.4,Math.sin(t*1.3)*0.3);
-    const p=line.geometry.attributes.position;p.setXYZ(0,ax+0.6,0.5,az);p.setXYZ(1,k.position.x,k.position.y-0.6,k.position.z);p.needsUpdate=true})}
+    const p=line.geometry.attributes.position;if(KITE.hand){KITE.hand.getWorldPosition(_kv);p.setXYZ(0,_kv.x,_kv.y,_kv.z)}else p.setXYZ(0,ax+0.6,0.5,az);p.setXYZ(1,k.position.x,k.position.y-0.6,k.position.z);p.needsUpdate=true})}
 function sundial(x,z){mesh(lathe([[0.32,0],[0.3,0.08],[0.18,0.16],[0.14,0.3],[0.12,0.85],[0.16,0.95],[0.3,1.0],[0.3,1.06],[0,1.06]],48,40),0xd9cfb8,x,0.3,z);
   mesh(new THREE.CylinderGeometry(0.42,0.42,0.04,48),matBrass,x,1.38,z);const s=new THREE.Shape();s.moveTo(0,0);s.lineTo(0.34,0);s.lineTo(0,0.26);s.closePath();mesh(new THREE.ExtrudeGeometry(s,{depth:0.02,bevelEnabled:false}),matBrass,x-0.17,1.4,z-0.01)}
 function maypole(x,z){const H=6.2;mesh(new THREE.CylinderGeometry(0.08,0.13,H,24),0xfffaf0,x,H/2,z);mesh(new THREE.SphereGeometry(0.2,20,14),matBrass,x,H+0.12,z);
@@ -1472,6 +1499,24 @@ function pond(cx,cz,rx,rz,ducks){flat(new THREE.CircleGeometry(1,64),0xe6d2a0,cx
 function scarecrow(x,z){rod([x,0,z],[x,2.1,z],0.05,0x8a5a3b);rod([x-0.8,1.55,z],[x+0.8,1.55,z],0.04,0x8a5a3b);
   mesh(new THREE.CylinderGeometry(0.26,0.36,0.8,16),0x3d7cc9,x,1.3,z);[-1,1].forEach(s=>mesh(new THREE.CylinderGeometry(0.1,0.12,0.6,12),0x3d7cc9,x+s*0.5,1.55,z).rotation.z=Math.PI/2);
   mesh(new THREE.SphereGeometry(0.22,20,14),0xe8c766,x,2.0,z);mesh(new THREE.CylinderGeometry(0.42,0.42,0.04,24),0x6b4a2f,x,2.18,z);mesh(new THREE.ConeGeometry(0.22,0.4,20),0x6b4a2f,x,2.38,z);colCirc(x,z,0.3)}
+// friendly bumblebees: round and fluffy with big shiny eyes, rosy cheeks, a smile, bobbly antennae and fast
+// see-through wings (no sting). they drift lazily over the sunflowers
+const beeMats={y:new THREE.MeshPhysicalMaterial({color:lin(0xffcf33),roughness:0.7,sheen:new THREE.Color(0.6,0.55,0.3)}),k:new THREE.MeshStandardMaterial({color:lin(0x2a2420),roughness:0.6}),
+  w:new THREE.MeshPhysicalMaterial({color:0xffffff,transparent:true,opacity:0.45,roughness:0.1,clearcoat:1,side:THREE.DoubleSide,depthWrite:false}),
+  eye:new THREE.MeshPhysicalMaterial({color:lin(0x14100e),roughness:0.08,clearcoat:1}),wh:new THREE.MeshBasicMaterial({color:0xffffff}),pink:new THREE.MeshStandardMaterial({color:lin(0xff8fb3),roughness:0.6})};
+function cuteBees(cx,cz,n,sx,sz){for(let i=0;i<n;i++){const g=new THREE.Group();g.scale.setScalar(2.4);scene.add(g);
+  const add=(geo,mat,x,y,z,sc,r,p)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sc)m.scale.set(sc[0],sc[1],sc[2]);if(r)m.rotation.set(r[0],r[1],r[2]);m.castShadow=true;(p||g).add(m);return m};
+  add(new _G.Sph(0.09,24,18),beeMats.y,0,0,-0.02,[1,0.95,1.2]);[0,1].forEach(k=>add(new _G.Tor(0.083-k*0.01,0.018,8,28),beeMats.k,0,0,-0.045-k*0.05,[1,0.95,1]));
+  add(new _G.Sph(0.072,24,18),beeMats.y,0,0.02,0.1);
+  [-1,1].forEach(s=>{add(new _G.Sph(0.022,14,10),beeMats.eye,s*0.03,0.035,0.158);add(new _G.Sph(0.007,8,6),beeMats.wh,s*0.034,0.044,0.176);add(new _G.Sph(0.014,10,8),beeMats.pink,s*0.05,0.005,0.15,[1,0.6,0.5]);
+    add(new _G.Cyl(0.004,0.004,0.08,6),beeMats.k,s*0.025,0.11,0.12,null,[0.4,0,-s*0.35]);add(new _G.Sph(0.014,10,8),beeMats.k,s*0.04,0.15,0.135)});
+  add(new _G.Tor(0.016,0.0035,6,16,Math.PI),beeMats.k,0,0.0,0.165,null,[0,0,Math.PI]);
+  const wings=[-1,1].map(s=>{const w=new THREE.Group();w.position.set(s*0.03,0.08,0);g.add(w);add(new _G.Cir(0.07,20),beeMats.w,s*0.06,0,-0.01,[1,0.6,1],[-Math.PI/2,0,0],w);return w});
+  const ph=RS()*6,a=0.25+RS()*0.2,b=0.17+RS()*0.15,hy=1.5+RS()*0.6,px0=new THREE.Vector3();
+  anims.push((t,dt)=>{px0.copy(g.position);g.position.set(cx+Math.sin(t*a+ph)*sx,hy+Math.sin(t*1.3+ph)*0.25,cz+Math.sin(t*b+ph*2)*sz);
+    const dx=g.position.x-px0.x,dz=g.position.z-px0.z;if(dx*dx+dz*dz>1e-8)g.rotation.y=Math.atan2(dx,dz);g.rotation.z=Math.sin(t*2+ph)*0.15;
+    const f=Math.sin(t*55+ph)*0.6;wings[0].rotation.z=0.3+f;wings[1].rotation.z=-0.3-f})}
+  SNDS.push({k:'bees',x:cx,z:cz})}
 function beehive(x,z){blk(0.7,0.25,0.7,x,0.12,z,0x8a5a3b);[0,1,2].forEach(i=>blk(0.6,0.32,0.6,x,0.42+i*0.34,z,0xf5efe2));blk(0.8,0.1,0.8,x,1.45,z,0x7a4a2c);colCirc(x,z,0.45);SNDS.push({k:'bees',x,z})}
 function butterflies(cx,cz,n,spread){const wg=(()=>{const s=new THREE.Shape();s.moveTo(0,0);s.quadraticCurveTo(0.12,0.12,0.1,-0.02);s.quadraticCurveTo(0.06,-0.1,0,0);return new THREE.ShapeGeometry(s,6)})();
   for(let i=0;i<n;i++){const g=new THREE.Group();scene.add(g);const m=new THREE.MeshBasicMaterial({color:lin(pick([0xffd23f,0xff9ecf,0x7ab8ff,0xffffff,0xff8a1c])),side:THREE.DoubleSide});
@@ -1747,7 +1792,7 @@ function pottedPlant(x,y,z,k){mesh(potGeo,0xb5653a,x,y,z,scene,true);
 function pottingBench(x,z,len){blk(1.6,0.08,len,x,0.85,z,0xb98a5a);[-1,1].forEach(a=>[-1,1].forEach(b=>blk(0.08,0.85,0.08,x+a*0.7,0.42,z+b*(len/2-0.1),0x8a5a3b)));
   blk(1.5,0.05,len-0.2,x,0.25,z,0xb98a5a);colBox(x-0.8,x+0.8,z-len/2,z+len/2);
   for(let s=-len/2+0.4,k=0;s<len/2-0.2;s+=0.55,k++)pottedPlant(x+(k%2?0.35:-0.35),0.89,z+s,k%3)}
-function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=3.2,RH=6.2,DW=1.6,GH=WH-0.6;
+function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=4.6,RH=7.6,DW=1.6,DH=3.9,GH=WH-0.6;
   flat(new THREE.PlaneGeometry(W,L),0xd9cfb8,cx,0.018,cz);
   const glass=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,matGlass);m.position.set(x,y,z);m.rotation.y=ry||0;m.renderOrder=3;scene.add(m);return m};
   // low brick wall, then glass sides and ends with a door gap in the middle of each end
@@ -1756,8 +1801,8 @@ function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=
     for(let k=0;k<=14;k++)blk(0.08,GH,0.08,xx,0.6+GH/2,z0+k*L/14,FRAME)});
   const rise=RH-WH,sl=Math.hypot(W/2,rise),ang=Math.atan2(rise,W/2);
   [z0,z1].forEach(zz=>{[-1,1].forEach(s=>{const sw=W/2-DW;blk(sw,0.6,0.3,cx+s*(DW+sw/2),0.3,zz,0x9c5b44);glass(new THREE.PlaneGeometry(sw,GH),cx+s*(DW+sw/2),0.6+GH/2,zz);colBox(s<0?x0:cx+DW,s<0?cx-DW:x1,zz-0.15,zz+0.15);
-      for(let k=0;k<=4;k++)blk(0.08,GH,0.08,cx+s*(DW+k*sw/4),0.6+GH/2,zz,FRAME);blk(0.12,2.6,0.12,cx+s*DW,1.3,zz,FRAME)});
-    blk(W,0.08,0.1,cx,1.9,zz,FRAME);blk(DW*2,0.12,0.12,cx,2.6,zz,FRAME);blk(W+0.2,0.14,0.14,cx,WH,zz,FRAME);glass(new THREE.PlaneGeometry(DW*2,WH-2.6),cx,2.6+(WH-2.6)/2,zz);
+      for(let k=0;k<=4;k++)blk(0.08,GH,0.08,cx+s*(DW+k*sw/4),0.6+GH/2,zz,FRAME);blk(0.12,DH,0.12,cx+s*DW,DH/2,zz,FRAME)});
+    [-1,1].forEach(s=>blk(W/2-DW,0.08,0.1,cx+s*(DW+(W/2-DW)/2),1.9,zz,FRAME));blk(DW*2,0.12,0.12,cx,DH,zz,FRAME);blk(W+0.2,0.14,0.14,cx,WH,zz,FRAME);glass(new THREE.PlaneGeometry(DW*2,WH-DH),cx,DH+(WH-DH)/2,zz);
     const sh=new THREE.Shape();sh.moveTo(-W/2,0);sh.lineTo(W/2,0);sh.lineTo(0,rise);sh.closePath();glass(new THREE.ShapeGeometry(sh),cx,WH,zz);
     for(let k=1;k<8;k++){const gx=-W/2+k*W/8,h=rise*(1-Math.abs(gx)/(W/2));blk(0.08,h,0.08,cx+gx,WH+h/2,zz,FRAME)}
     [-1,1].forEach(s=>blk(sl,0.12,0.12,cx+s*W/4,WH+rise/2,zz,FRAME).rotation.z=-s*ang)});
@@ -1768,13 +1813,31 @@ function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=
   glass(new THREE.BoxGeometry(1.6,1.0,1.6),cx,RH+0.5,cz);[-1,1].forEach(a=>[-1,1].forEach(b=>blk(0.07,1.0,0.07,cx+a*0.8,RH+0.5,cz+b*0.8,FRAME)));
   const cr=mesh(new THREE.ConeGeometry(1.25,0.8,4),FRAME,cx,RH+1.4,cz);cr.rotation.y=Math.PI/4;mesh(new THREE.SphereGeometry(0.13,16,12),matBrass,cx,RH+1.9,cz);
   // hanging baskets
-  [[-3.2,-6],[3.2,-6],[-3.2,6],[3.2,6]].forEach(([a,b])=>{const hx=cx+a,hz=cz+b,hy=WH+rise*(1-Math.abs(a)/(W/2));rod([hx,hy,hz],[hx,3.3,hz],0.012,0x2b3a42);
-    mesh(new THREE.SphereGeometry(0.32,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),0x8a5a3b,hx,3.3,hz,scene,true);INST.bush.push({x:hx,y:3.25,z:hz,s:0.42,sy:0.4,c:pick(LEAFC),ry:RS()*6});
-    for(let f=0;f<6;f++){const an=RS()*6.28;INST.flower.push({x:hx+Math.cos(an)*0.3,y:3.1+RS()*0.3,z:hz+Math.sin(an)*0.3,s:1,c:pick(FLOWC),ry:RS()*6,rx:(RS()-0.5)*1.5})}});
+  [[-3.2,-6],[3.2,-6],[-3.2,6],[3.2,6]].forEach(([a,b])=>{const hx=cx+a,hz=cz+b,hy=WH+rise*(1-Math.abs(a)/(W/2));rod([hx,hy,hz],[hx,4.2,hz],0.012,0x2b3a42);
+    mesh(new THREE.SphereGeometry(0.32,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),0x8a5a3b,hx,4.2,hz,scene,true);INST.bush.push({x:hx,y:4.15,z:hz,s:0.42,sy:0.4,c:pick(LEAFC),ry:RS()*6});
+    for(let f=0;f<6;f++){const an=RS()*6.28;INST.flower.push({x:hx+Math.cos(an)*0.3,y:4.0+RS()*0.3,z:hz+Math.sin(an)*0.3,s:1,c:pick(FLOWC),ry:RS()*6,rx:(RS()-0.5)*1.5})}});
   for(let x=x0+1;x<x1;x+=2)for(let z=z0+1;z<z1;z+=2)reserve(x,z,2.3);
 }
-function pumpkin(x,z,s){const m=mesh(new THREE.SphereGeometry(0.45*s,24,16),0xf28c28,x,0.3*s,z);m.scale.y=0.68;
-  mesh(new THREE.TorusGeometry(0.3*s,0.12*s,10,24),0xe07a1c,x,0.3*s,z).rotation.x=Math.PI/2;mesh(new THREE.CylinderGeometry(0.04*s,0.06*s,0.18*s,8),0x5a7a2a,x,0.6*s,z);colCirc(x,z,0.42*s)}
+// pumpkins: ribbed and flattened, with dimples top and bottom, darker grooves, a twisted ridged stem,
+// a curly tendril, and big lobed leaves round about
+const pumpkinGeo=(()=>{const g=new _G.Sph(1,72,44),p=g.attributes.position,C=[],v=new THREE.Vector3(),R=10;
+  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i);const phi=Math.atan2(v.z,v.x),sn=Math.abs(Math.sin(phi*R/2)),bul=Math.pow(sn,0.38),side=Math.sqrt(Math.max(0,1-v.y*v.y));
+    const r=0.86+0.14*bul*(0.35+0.65*side),x=v.x*r,z=v.z*r,d2=x*x+z*z;let y=v.y*0.68;y-=Math.sign(v.y)*0.24*Math.exp(-d2/0.05);
+    p.setXYZ(i,x,y,z);const sh=(0.58+0.42*bul)*(0.85+0.15*side);C.push(sh,sh*0.96,sh*0.86)}
+  g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.computeVertexNormals();return g})();
+const pumpkinStem=(()=>{const g=new _G.Cyl(0.045,0.08,0.3,7,8),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const y=p.getY(i)+0.15,t=y/0.3,x=p.getX(i),z=p.getZ(i),a=t*0.9,ca=Math.cos(a),sa=Math.sin(a),fl=1+0.6*Math.max(0,0.15-t)/0.15;p.setXYZ(i,(x*ca-z*sa)*fl+0.09*t*t,y,(x*sa+z*ca)*fl)}
+  g.computeVertexNormals();return g})();
+const pumpkinLeaf=(()=>{const s=new THREE.Shape(),n=5;s.moveTo(0,0);for(let k=0;k<=n;k++){const a=-1.2+k*2.4/n,b=a-1.2/n,r=0.55+0.15*Math.cos(k*1.7);
+    s.quadraticCurveTo(Math.sin(b)*r*0.75,Math.cos(b)*r*0.75,Math.sin(a)*r,Math.cos(a)*r)}s.lineTo(0,0);const g=new THREE.ShapeGeometry(s,6);g.rotateX(-Math.PI/2);return g})();
+const PUMPM={};const pumpMat=c=>PUMPM[c]||(PUMPM[c]=new THREE.MeshStandardMaterial({color:lin(c),vertexColors:true,roughness:0.42}));
+const leafMatP=dbl(0x4f8a3a,{roughness:0.6}),stemMatP=new THREE.MeshStandardMaterial({color:lin(0x8a8a4a),roughness:0.8});
+function pumpkin(x,z,s,c){const sc=0.45*s,m=mesh(pumpkinGeo,pumpMat(c||0xf28c28),x,0.3*s,z);m.userData.st=0;m.scale.setScalar(sc);   // kept out of the static merge so its vertex colours survive
+  m.rotation.y=RS()*6;m.rotation.z=(RS()-0.5)*0.12;
+  mesh(pumpkinStem,stemMatP,x,0.3*s+0.2*s,z).scale.setScalar(s*0.9);
+  {const pts=[];for(let k=0;k<=24;k++){const t=k/24,a=t*Math.PI*5;pts.push([x+0.05*s+t*0.25*s+Math.cos(a)*0.05*s*(1-t*0.5),0.5*s+0.08*s*Math.sin(t*3),z+Math.sin(a)*0.05*s])}mesh(tube(pts,0.006*s,48),stemMatP,0,0,0,scene,true)}
+  for(let k=0;k<2;k++){const a=RS()*6.28,d=0.55*s+0.25,l=mesh(pumpkinLeaf,leafMatP,x+Math.cos(a)*d,0.04+k*0.02,z+Math.sin(a)*d,scene,true);l.rotation.y=-a+Math.PI/2;l.rotation.x=(RS()-0.5)*0.4;l.scale.setScalar(0.9+RS()*0.5)}
+  colCirc(x,z,0.42*s)}
 function wheelbarrow(x,z,ry){const g=sgroup(x,0,z,ry);mesh(new THREE.TorusGeometry(0.22,0.06,10,24),0x2b3a42,0,0.25,0.75,g).rotation.y=Math.PI/2;
   const tg=new THREE.CylinderGeometry(0.55,0.35,0.4,4,1,true);tg.rotateY(Math.PI/4);tg.scale(0.85,1,1.2);const t=mesh(tg,dbl(0x3f8f6a,{roughness:0.5}),0,0.62,0.1,g);t.rotation.x=0.1;
   [-1,1].forEach(s=>{rod([s*0.3,0.45,0.6],[s*0.32,0.6,-0.95],0.025,0x8a5a3b,g);rod([s*0.28,0.45,-0.35],[s*0.28,0,-0.4],0.025,0x2b3a42,g)});colCirc(x,z,0.8)}
@@ -1791,8 +1854,9 @@ function buildGreenhouse(z0){const gz=z0-34;
   [[12,-6,'cabbage'],[18.5,-6,'tomato'],[12,-10.5,'flowers'],[18.5,-10.5,'cabbage'],[12,-17,'tomato'],[18.5,-17,'flowers']].forEach(([x,z,k])=>raisedBed(x,z0+z,5,2,k));
   // pumpkin patch
   flat(new THREE.CircleGeometry(3.6,40),0x6b4a2f,-13,0.019,z0-9);reserve(-13,z0-9,4);
-  [[-14.5,-7.5,1.2],[-11.8,-8,0.9],[-13,-10.6,1.4],[-15.4,-10.2,0.8],[-11,-10.8,1],[-13.6,-6.2,0.7],[-10.6,-6.8,0.8]].forEach(([x,z,s])=>pumpkin(x,z0+z,s));
-  for(let i=0;i<14;i++){const a=RS()*6.28,d=Math.sqrt(RS())*3.2;INST.bush.push({x:-13+Math.cos(a)*d,y:0.12,z:z0-9+Math.sin(a)*d,s:0.4,sy:0.25,c:pick(LEAFC),ry:RS()*6})}
+  [[-14.5,-7.5,1.2,0xf28c28],[-11.8,-8,0.9,0xe8731a],[-13,-10.6,1.4,0xf28c28],[-15.4,-10.2,0.8,0xf5a03a],[-11,-10.8,1,0xf1e3c4],[-13.6,-6.2,0.7,0xe8731a],[-10.6,-6.8,0.8,0xf28c28]].forEach(([x,z,s,c])=>pumpkin(x,z0+z,s,c));
+  {const pts=[[-15.8,0.03,-6.4],[-14.5,0.04,-7.5],[-13,0.03,-8.8],[-13,0.04,-10.6],[-11,0.03,-10.8],[-10.2,0.03,-9]];mesh(tube(pts.map(q=>[q[0],q[1],z0+q[2]]),0.025,80),stemMatP,0,0,0,scene,true);
+   const p2=[[-13.6,0.03,-6.2],[-12.6,0.04,-7.2],[-11.8,0.03,-8],[-10.6,0.03,-6.8]];mesh(tube(p2.map(q=>[q[0],q[1],z0+q[2]]),0.022,60),stemMatP,0,0,0,scene,true)}
   // sunflowers along the left hedge
   for(let x=-28;x<-25;x+=1.15)for(let z=z0-3;z>z0-31;z-=1.3){const fx=x+(RS()-0.5)*0.3,fz=z+(RS()-0.5)*0.3,h=1.4+RS()*0.6;
     INST.stem.push({x:fx,y:0,z:fz,s:2.4,sy:h});INST.flower.push({x:fx,y:h,z:fz,s:2.6+RS()*0.6,c:pick([0xffc61a,0xffb400,0xffd23f]),ry:Math.PI/2+(RS()-0.5)*0.6,rx:1.0,k:'sun'});INST.bush.push({x:fx,y:h*0.45,z:fz,s:0.3,sy:0.3,c:0x4f9a3a,ry:RS()*6});reserve(fx,fz,0.6)}
@@ -1833,14 +1897,52 @@ function igloo(x,z,r,ry){const g=sgroup(x,0,z,ry),mat=new THREE.MeshStandardMate
   const tg=new THREE.CylinderGeometry(1.0,1.0,1.8,32,1,true,Math.PI/2,Math.PI);tg.rotateX(Math.PI/2);mesh(tg,mat,0,0,r-0.1,g);
   mesh(new THREE.CircleGeometry(0.85,24,0,Math.PI),new THREE.MeshBasicMaterial({color:0x1d2a33}),0,0,r+0.79,g,true);
   colCirc(x,z,r);colCirc(x+Math.sin(ry)*(r+0.3),z+Math.cos(ry)*(r+0.3),1.0);reserve(x,z,r+2)}
-function snowman(x,z,s,ry){const g=sgroup(x,0,z,ry);
+const bigIglooTex=canvasTex(512,256,c=>{c.fillStyle='#f2f7fb';c.fillRect(0,0,512,256);c.strokeStyle='rgba(110,145,175,0.55)';c.lineWidth=4;const rows=4;
+  for(let j=0;j<rows;j++){const y=j*256/rows,n=6,off=(j%2)*0.5;c.beginPath();c.moveTo(0,y);c.lineTo(512,y);c.stroke();for(let i=0;i<=n;i++){const x=(i+off)*512/n;c.beginPath();c.moveTo(x,y);c.lineTo(x,y+256/rows);c.stroke()}}},[7,3]);
+// the great igloo: a huge snow-block dome you can walk into through tall tunnels at both ends. inside it glows icy blue,
+// light falls through a hole at the top onto a turning ice snowflake, lanterns stand round the walls, and two puzzles wait
+function bigIgloo(cx,cz,R,H){const DW=2.3,DH=3.4,sy=H/R,rt=DW+0.25;
+  const sg=new _G.Sph(R,80,30,0,Math.PI*2,0,Math.PI/2),pos=sg.attributes.position,idx=sg.index.array,keep=[];
+  for(let i=0;i<idx.length;i+=3){let mx=0,my=0;for(let k=0;k<3;k++){mx+=pos.getX(idx[i+k])/3;my+=pos.getY(idx[i+k])*sy/3}if(Math.abs(mx)<DW&&my<DH)continue;if(my>H*0.988)continue;keep.push(idx[i],idx[i+1],idx[i+2])}
+  sg.setIndex(keep);sg.scale(1,sy,1);sg.computeVertexNormals();
+  const outer=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({map:bigIglooTex,roughness:0.8}));outer.position.set(cx,0,cz);outer.castShadow=outer.receiveShadow=true;scene.add(outer);
+  const inner=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({map:bigIglooTex,roughness:0.6,side:THREE.BackSide,color:lin(0xdcecf8),emissive:lin(0x4f86b8),emissiveIntensity:0.5}));inner.position.copy(outer.position);inner.receiveShadow=true;scene.add(inner);
+  const tm=new THREE.MeshStandardMaterial({map:bigIglooTex,roughness:0.75,side:THREE.DoubleSide}),rim=new THREE.MeshStandardMaterial({color:lin(0xcfe8f5),roughness:0.15});
+  [-1,1].forEach(s=>{const zA=cz+s*(R*Math.sqrt(1-(DH/H)**2)-0.6),zB=cz+s*(R+3.2),len=Math.abs(zB-zA),zc=(zA+zB)/2,ky=(DH+0.4)/rt;
+    const tg=new _G.Cyl(rt,rt,len,48,1,true,Math.PI/2,Math.PI);tg.rotateX(Math.PI/2);tg.scale(1,ky,1);const tu=new THREE.Mesh(tg,tm);tu.position.set(cx,0,zc);tu.castShadow=tu.receiveShadow=true;scene.add(tu);
+    const ar=new THREE.Mesh(new _G.Tor(rt,0.22,12,48,Math.PI),rim);ar.scale.set(1,ky,1);ar.position.set(cx,0,zB);ar.castShadow=true;scene.add(ar);
+    for(let k=1;k<12;k++){const a=k/12*Math.PI,ic=new THREE.Mesh(new _G.Cone(0.07,0.35+((k*7)%3)*0.15,8),rim);ic.rotation.x=Math.PI;ic.position.set(cx+Math.cos(a)*rt*0.97,Math.sin(a)*rt*ky-0.25,zB+s*0.1);scene.add(ic)}
+    [-1,1].forEach(sd=>colBox(cx+sd*rt-0.25,cx+sd*rt+0.25,Math.min(zA,zB),Math.max(zA,zB)))});
+  for(let a=0;a<Math.PI*2;a+=0.07){const sx=Math.sin(a)*(R-0.2);if(Math.abs(sx)<rt+0.1)continue;colCirc(cx+sx,cz+Math.cos(a)*(R-0.2),0.45)}
+  for(let x=-R+1;x<R;x+=2)for(let z=-R+1;z<R;z+=2)if(x*x+z*z<R*R)reserve(cx+x,cz+z,2.3);
+  // sunbeam through the vent, ice snowflake on a plinth, lanterns and ice benches round the walls
+  const bm=new THREE.Mesh(new _G.Cone(1.6,H,32,1,true),new THREE.MeshBasicMaterial({color:0xfff6d8,transparent:true,opacity:0.07,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false}));bm.rotation.x=Math.PI;bm.position.set(cx,H/2,cz);scene.add(bm);
+  mesh(new THREE.CylinderGeometry(1.5,1.7,0.6,40),matSnowBall,cx,0.3,cz);mesh(new THREE.CylinderGeometry(1.35,1.35,0.06,40),matIce,cx,0.63,cz);colCirc(cx,cz,1.75);
+  const fl=new THREE.Group();fl.position.set(cx,2.7,cz);scene.add(fl);const im=new THREE.MeshStandardMaterial({color:lin(0xbfe6ff),roughness:0.08,metalness:0.1,emissive:lin(0x2a6a9a),emissiveIntensity:0.4,transparent:true,opacity:0.92});
+  for(let k=0;k<6;k++){const arm=new THREE.Group();arm.rotation.z=k*Math.PI/3;fl.add(arm);const bar=(w,h,x,y,rz)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,0.12),im);b.position.set(x,y,0);b.rotation.z=rz||0;b.castShadow=true;arm.add(b)};
+    bar(0.16,1.7,0,0.85);[0.55,1.05].forEach((y,i)=>{const l=0.5-i*0.15;bar(0.11,l,0.14,y+0.12,-0.8);bar(0.11,l,-0.14,y+0.12,0.8)});const tip=new THREE.Mesh(new THREE.OctahedronGeometry(0.14),im);tip.position.y=1.75;arm.add(tip)}
+  fl.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.3),im));mesh(new THREE.CylinderGeometry(0.06,0.06,2.1,8),im,cx,1.6,cz);
+  anims.push(t=>{fl.rotation.y=t*0.25;fl.position.y=2.7+Math.sin(t*0.8)*0.08});
+  [50,130,230,310].forEach(d=>{const a=d*Math.PI/180,lx=cx+Math.sin(a)*(R-1.6),lz=cz+Math.cos(a)*(R-1.6);mesh(new THREE.BoxGeometry(0.5,1.3,0.5),matSnowBall,lx,0.65,lz);mesh(new THREE.SphereGeometry(0.2,20,14),matGlow,lx,1.5,lz,scene,true);colCirc(lx,lz,0.4)});
+  [90,270].forEach(d=>{const a=d*Math.PI/180,lx=cx+Math.sin(a)*(R-1.3),lz=cz+Math.cos(a)*(R-1.3),b=mesh(new THREE.BoxGeometry(0.7,0.45,2.2),matSnowBall,lx,0.22,lz);flat(new THREE.CircleGeometry(0.9,32),new THREE.MeshStandardMaterial({color:lin(d===90?0xd8352a:0x3d7cc9),roughness:0.95}),lx-Math.sign(lx-cx)*1.6,0.025,lz);colBox(lx-0.4,lx+0.4,lz-1.15,lz+1.15)});
+}
+function snowman(x,z,s,ry){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);
   mesh(new THREE.SphereGeometry(0.62*s,28,20),matSnowBall,0,0.55*s,0,g);mesh(new THREE.SphereGeometry(0.45*s,28,20),matSnowBall,0,1.4*s,0,g);mesh(new THREE.SphereGeometry(0.32*s,28,20),matSnowBall,0,2.05*s,0,g);
   [-1,1].forEach(sd=>{mesh(new THREE.SphereGeometry(0.045*s,10,8),0x1d2430,sd*0.11*s,2.13*s,0.28*s,g,true);rod([sd*0.4*s,1.5*s,0],[sd*1.0*s,1.85*s,0.05*s],0.025*s,0x6b4a2f,g)});
   for(let k=0;k<3;k++)mesh(new THREE.SphereGeometry(0.05*s,10,8),0x1d2430,0,(1.25+k*0.17)*s,(0.44-Math.abs(k-1)*0.015)*s,g,true);
   mesh(new THREE.ConeGeometry(0.06*s,0.3*s,12),0xff8a3c,0,2.03*s,0.44*s,g).rotation.x=Math.PI/2;
   mesh(new THREE.TorusGeometry(0.3*s,0.07*s,10,32),0xd8352a,0,1.78*s,0,g).rotation.x=Math.PI/2;blk(0.14*s,0.4*s,0.04*s,0.18*s,1.58*s,0.3*s,0xd8352a,g);
   mesh(new THREE.CylinderGeometry(0.34*s,0.34*s,0.04*s,24),0x1d2430,0,2.33*s,0,g);mesh(new THREE.CylinderGeometry(0.22*s,0.22*s,0.38*s,24),0x1d2430,0,2.53*s,0,g);
-  colCirc(x,z,0.62*s);reserve(x,z,1.4*s)}
+  // it shuffles about near home, waddling as it goes, and never walks into things or into you
+  const col={t:'circ',x,z,r:0.62*s,on:true,dyn:true};colliders.push(col);reserve(x,z,2.4+0.6*s);
+  let h=ry,tx=x,tz=z,st='idle',tm=1+RS()*4,w=0;const R=0.62*s;
+  const free=(nx,nz)=>{col.on=false;let ok=(nx-px)**2+(nz-pz)**2>(R+0.8)**2;for(const [ox,oz] of [[0,0],[R*0.7,0],[-R*0.7,0],[0,R*0.7],[0,-R*0.7]])if(ok&&blocked(nx+ox,nz+oz,0))ok=false;col.on=true;return ok};
+  anims.push((t,dt)=>{const p=g.position;if((p.x-px)**2+(p.z-pz)**2>3600)return;
+    if(st==='idle'){tm-=dt;g.rotation.z*=0.9;p.y*=0.8;if(tm<0){for(let k=0;k<6;k++){const a=RS()*6.28,d=0.6+RS()*1.4,nx=x+Math.cos(a)*d,nz=z+Math.sin(a)*d;if(free(nx,nz)){tx=nx;tz=nz;st='walk';break}}tm=2+RS()*4}}
+    else{const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz);let df=Math.atan2(dx,dz)-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=Math.max(-dt*1.5,Math.min(dt*1.5,df));
+      if(Math.abs(df)<0.5){const sp=dt*0.45,nx=p.x+Math.sin(h)*sp,nz=p.z+Math.cos(h)*sp;if(free(nx,nz)){p.x=nx;p.z=nz;w+=dt*7}else{st='idle';tm=1+RS()*2}}
+      g.rotation.z=Math.sin(w)*0.07;p.y=Math.abs(Math.sin(w))*0.04;if(d<0.15){st='idle';tm=2+RS()*5}}
+    g.rotation.y=h;col.x=p.x;col.z=p.z})}
 function sledge(x,z,ry,col){const g=sgroup(x,0,z,ry);for(let k=0;k<5;k++)blk(0.56,0.04,0.2,0,0.28,-0.5+k*0.25,0xc58a3a,g);
   [-1,1].forEach(s=>{blk(0.04,0.04,1.3,s*0.26,0.05,0,col,g);mesh(new THREE.TorusGeometry(0.12,0.02,8,16,Math.PI),col,s*0.26,0.17,0.65,g).rotation.y=Math.PI/2;
     [-0.4,0.4].forEach(o=>blk(0.03,0.22,0.03,s*0.26,0.16,o,0x2b3a42,g))});colCirc(x,z,0.6)}
@@ -1864,16 +1966,17 @@ function snowfall(zTop,zBot){const n=1500,H=14,g=new THREE.BufferGeometry(),P=ne
     for(let i=0;i<n;i++){let y=P[i*3+1]-dt*sp[i*2];if(y<0)y+=H;P[i*3+1]=y;P[i*3]+=Math.sin(t*0.8+sp[i*2+1])*dt*0.3}g.attributes.position.needsUpdate=true})}
 function buildSnow(z0){
   snowGround(z0-AREA/2,AREA);snowDrifts(z0,z0-AREA);
-  paths([[[0,z0-1],[0,z0-67.5]]],3,0,SNOWPATH);
-  frozenPond(-13,z0-24,8.5,6);bench(-13,z0-16,'s');bench(-3,z0-24,'w');
+  const ic=z0-36;paths([[[0,z0-1],[0,ic+3.6]],[[0,ic-3.6],[0,z0-67.5]]],3,0,SNOWPATH);flat(new THREE.RingGeometry(1.9,3.4,48),SNOWPATH,0,0.021,ic);
+  bigIgloo(0,ic,10,6.5);
+  frozenPond(-15,z0-14,7,4.5);bench(-15,z0-6.6,'s');
   igloo(15,z0-12,2.8,-Math.PI/2);
-  snowman(6,z0-8,1,-Math.PI/2);snowman(-8.5,z0-40,1.1,Math.PI/2);snowman(19,z0-34,1.25,-Math.PI/2);snowman(12,z0-61,0.9,0);snowman(-22,z0-10,0.8,Math.PI/2);
+  snowman(6,z0-8,1,-Math.PI/2);snowman(-14,z0-40,1.1,Math.PI/2);snowman(19,z0-34,1.25,-Math.PI/2);snowman(14,z0-62,0.9,0);snowman(-25,z0-24,0.8,Math.PI/2);
   house(18,z0-46,8,7,'w',0x8a5a3b,0xf4f8fb,0);
   cocoaHut(-15,z0-47);
-  sledge(-6.5,z0-14,0.4,0xd8352a);sledge(13.5,z0-24.5,1.9,0x3d7cc9);sledge(-21,z0-62,0.8,0x2f9d6a);
-  [10,8,6,4,2].forEach((n,i)=>iceBlock(-2.7,z0-50-i*3,n));
-  snowballs(4,z0-36);snowballs(-21,z0-38);snowballs(21,z0-56);
-  lamp(2.2,z0-5);lamp(-2.2,z0-32);lamp(2.2,z0-42);lamp(2.2,z0-62);
+  sledge(-5.5,z0-20,0.4,0xd8352a);sledge(13.5,z0-24.5,1.9,0x3d7cc9);sledge(-21,z0-62,0.8,0x2f9d6a);
+  [10,8,6,4,2].forEach((n,i)=>iceBlock(-2.7,z0-51-i*3,n));
+  snowballs(-6,z0-50);snowballs(-21,z0-38);snowballs(21,z0-56);
+  lamp(2.2,z0-5);lamp(-2.2,z0-20);lamp(2.2,z0-53);lamp(2.2,z0-62);
   snowfall(z0+GAP,z0-AREA);
   chimneys.filter(c=>c[2]<z0+1&&c[2]>z0-AREA-1).forEach(c=>chimneySmoke(c[0],c[1],c[2]));
 }
@@ -1885,7 +1988,7 @@ function buildFrostLink(gz,c){snowGround(c,GAP);snowDrifts(gz,gz-GAP);
 // a big kingfisher perched on the bridge handrail: glossy blue back with a bright cyan stripe, orange breast and
 // cheeks, white throat and neck flash, a long dagger bill and little red feet wrapped round the rail.
 // it looks about, bobs, and flicks its tail now and then
-function kingfisher(x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=ry;scene.add(g);const b=new THREE.Group();b.scale.setScalar(2.6);g.add(b);
+function kingfisher(x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=ry;scene.add(g);const b=new THREE.Group();b.scale.setScalar(5.2);g.add(b);
   const km=(c,feather,o)=>{const m=new THREE.MeshPhysicalMaterial(Object.assign({color:lin(c),roughness:0.4,clearcoat:0.6,clearcoatRoughness:0.25,map:feather?featherTex:null},o||{}));if(feather)m.color.multiplyScalar(1.3);return m};
   const BL=km(0x1677c0,true),CY=km(0x35d2ee,false,{roughness:0.25,clearcoat:1}),OR=km(0xe8722a,true,{clearcoat:0.2}),WH=km(0xf6f1e6,true,{clearcoat:0.1}),BK=km(0x111316,false,{roughness:0.25}),RD=km(0xe0452c,false);
   const add=(geo,mat,px,py,pz,p,s,r)=>{const m=new THREE.Mesh(geo,mat);m.position.set(px,py,pz);if(s)m.scale.set(s[0],s[1],s[2]);if(r)m.rotation.set(r[0],r[1],r[2]);m.castShadow=true;(p||b).add(m);return m};
@@ -1903,6 +2006,17 @@ function kingfisher(x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z);g.
     add(new _G.Sph(0.008,12,8),BL,s*0.022,-0.017,0.022,head,[0.5,0.6,1.6])});
   add(new _G.Sph(0.014,16,10),WH,0,-0.026,0.02,head,[1,0.7,0.9]);
   add(new _G.Cone(0.0085,0.06,16),BK,0,-0.006,0.058,head,[1,0.75,1],[Math.PI/2,0,0]);
+  // extra detail (it is big now): a two-tone bill, nostrils, a barred cyan crown, speckled wing coverts,
+  // layered dark flight feathers, a fanned tail and a soft orange breast with fine streaks
+  add(new _G.Cone(0.0072,0.05,16),km(0xd8552a,false,{roughness:0.3}),0,-0.0115,0.052,head,[1,0.6,1],[Math.PI/2+0.06,0,0]);
+  [-1,1].forEach(s=>{add(new _G.Sph(0.0016,6,4),BK,s*0.0035,-0.0005,0.042,head);add(new _G.Tor(0.0068,0.0012,6,20),BK,s*0.0232,0.004,0.0195,head,null,[0,s*0.95,0])});
+  for(let k=0;k<22;k++){const th=0.25+(k%11)/11*1.05,ph=(k<11?0:Math.PI)+(k%11)*0.42-1.9;add(new _G.Sph(0.0032,8,6),CY,Math.sin(th)*Math.cos(ph)*0.033,Math.cos(th)*0.031,Math.sin(th)*Math.sin(ph)*0.036-0.004,head,[1,0.5,1.4])}
+  const BD=km(0x0d4a85,true),BW=km(0x1b86cf,true);
+  [-1,1].forEach(s=>{for(let r=0;r<3;r++)for(let c=0;c<4;c++)add(new _G.Sph(0.0034,8,6),CY,s*0.0352,0.032-c*0.012-r*0.004,-0.004-r*0.008,body,[0.5,1,1]);
+    for(let k=0;k<5;k++)add(new _G.Sph(0.012,14,10),k%2?BD:BW,s*(0.024-k*0.0015),-0.03-k*0.007,-0.028-k*0.003,body,[0.28,1.9,0.3],[0.25,0,s*0.04]);
+    add(new _G.Sph(0.018,16,10),BW,s*0.03,0.03,-0.01,body,[0.45,0.8,1.1])});
+  for(let k=-1;k<=1;k++)add(new _G.Sph(0.014,14,10),k?BD:BL,k*0.007,-0.024,-0.006,tail,[0.45,1.8,0.25],[0.4,0,k*0.18]);
+  for(let k=0;k<10;k++)add(new _G.Sph(0.0028,6,4),km(0xc4561c,false),((k%5)-2)*0.007,-0.012+Math.floor(k/5)*0.016,0.034-Math.abs((k%5)-2)*0.003,body,[0.6,1.6,0.4]);
   // feet: red toes wrapping the rail (the rail runs across the bird's body)
   [-1,1].forEach(s=>{add(new _G.Cyl(0.0035,0.003,0.02,8),RD,s*0.011,0.026,0.004);for(let k=-1;k<=1;k++){const t=add(new _G.Tor(0.019,0.0032,6,14,Math.PI*1.1),RD,s*0.011+k*0.004,0,0);t.rotation.set(0,Math.PI/2,-0.05)}});
   SNDS.push({k:'tweet',x,z,t:RS()*6});
@@ -1911,21 +2025,24 @@ function kingfisher(x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z);g.
     tail.rotation.x=Math.sin(t*1.3)>0.97?-0.5:0})}
 // a giant, gentle butterfly resting on the rose beds: wide shimmering blue wings fading to violet and a warm
 // sunset band, soft white dots along the edges, fine veins, fuzzy body, curled antennae; its wings slowly open and close
-const bflyTex=(()=>{const S=512,cv=document.createElement('canvas');cv.width=cv.height=S;const c=cv.getContext('2d');c.clearRect(0,0,S,S);
+function makeBflyTex(F,Hc){const S=512,cv=document.createElement('canvas');cv.width=cv.height=S;const c=cv.getContext('2d');c.clearRect(0,0,S,S);
   const fore=new Path2D('M8,232 C70,120 210,30 470,40 C505,44 508,70 495,105 C470,170 420,215 330,240 C230,262 110,262 8,262 Z'),hind=new Path2D('M8,262 C110,262 250,260 340,300 C400,330 400,420 330,470 C260,510 150,480 90,420 C50,380 20,320 8,262 Z');
   const paint=(p,g)=>{c.save();c.clip(p);c.fillStyle=g;c.fillRect(0,0,S,S);c.restore()};
-  let g=c.createRadialGradient(10,250,10,10,250,470);g.addColorStop(0,'#1b3a8a');g.addColorStop(0.25,'#2a7be0');g.addColorStop(0.55,'#46c4f5');g.addColorStop(0.8,'#8f7cf0');g.addColorStop(1,'#c46ad8');paint(fore,g);
-  g=c.createRadialGradient(10,262,10,10,262,430);g.addColorStop(0,'#1b3a8a');g.addColorStop(0.35,'#2a7be0');g.addColorStop(0.62,'#5fd0f0');g.addColorStop(0.82,'#ffb36b');g.addColorStop(1,'#ff7fa8');paint(hind,g);
+  let g=c.createRadialGradient(10,250,10,10,250,470);[0,0.25,0.55,0.8,1].forEach((o,i)=>g.addColorStop(o,F[i]));paint(fore,g);
+  g=c.createRadialGradient(10,262,10,10,262,430);[0,0.35,0.62,0.82,1].forEach((o,i)=>g.addColorStop(o,Hc[i]));paint(hind,g);
   c.save();c.clip(fore);c.strokeStyle='rgba(20,25,60,0.55)';c.lineWidth=3;[[60,90],[150,60],[260,45],[360,60],[440,90],[470,150],[420,210]].forEach(([ex,ey])=>{c.beginPath();c.moveTo(10,248);c.quadraticCurveTo((10+ex)/2,(248+ey)/2+20,ex,ey);c.stroke()});
   c.lineWidth=22;c.strokeStyle='rgba(15,20,55,0.85)';c.stroke(fore);c.restore();
   c.save();c.clip(hind);c.strokeStyle='rgba(20,25,60,0.5)';c.lineWidth=3;[[200,290],[320,320],[360,410],[290,480],[170,470],[90,410]].forEach(([ex,ey])=>{c.beginPath();c.moveTo(10,264);c.quadraticCurveTo((10+ex)/2,(264+ey)/2-10,ex,ey);c.stroke()});
   c.lineWidth=20;c.strokeStyle='rgba(15,20,55,0.85)';c.stroke(hind);c.restore();
   c.fillStyle='rgba(255,255,255,0.92)';[[455,62,7],[478,96,6],[470,135,5],[440,180,5],[400,212,4],[350,232,4],[385,312,6],[388,360,6],[372,410,6],[340,452,5],[290,478,5],[230,484,4]].forEach(([x,y,r])=>{c.beginPath();c.arc(x,y,r,0,7);c.fill()});
   c.fillStyle='rgba(255,240,180,0.35)';for(let i=0;i<260;i++){const x=40+Math.random()*420,y=60+Math.random()*400;if(c.isPointInPath(fore,x,y)||c.isPointInPath(hind,x,y)){c.beginPath();c.arc(x,y,1.2,0,7);c.fill()}}
-  const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=maxAniso;return t})();
-function giantButterfly(x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=ry;g.scale.setScalar(1.6);scene.add(g);
-  const wm=new THREE.MeshStandardMaterial({map:bflyTex,alphaTest:0.5,side:THREE.DoubleSide,roughness:0.35,metalness:0.2,emissive:new THREE.Color(0xffffff),emissiveMap:bflyTex,emissiveIntensity:0.18});
-  const wd=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:bflyTex,alphaTest:0.5,side:THREE.DoubleSide});
+  const t=new THREE.CanvasTexture(cv);t.encoding=THREE.sRGBEncoding;t.anisotropy=maxAniso;return t}
+const bflyTex=makeBflyTex(['#1b3a8a','#2a7be0','#46c4f5','#8f7cf0','#c46ad8'],['#1b3a8a','#2a7be0','#5fd0f0','#ffb36b','#ff7fa8']);
+// lavender path butterflies: deep violet to lilac and soft pink, to match the lavender
+const lavBflyTex=makeBflyTex(['#2e1a5e','#5a35a8','#8f6ad8','#c3a2f2','#f3dcff'],['#2e1a5e','#6a42b8','#a982ec','#e3c4ff','#ffd0ec']);
+function giantButterfly(x,y,z,ry,tex){tex=tex||bflyTex;const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=ry;g.scale.setScalar(1.6);scene.add(g);
+  const wm=new THREE.MeshStandardMaterial({map:tex,alphaTest:0.5,side:THREE.DoubleSide,roughness:0.35,metalness:0.2,emissive:new THREE.Color(0xffffff),emissiveMap:tex,emissiveIntensity:0.18});
+  const wd=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:tex,alphaTest:0.5,side:THREE.DoubleSide});
   const wg=new THREE.PlaneGeometry(1.7,1.7,10,10);wg.rotateX(Math.PI/2);wg.translate(0.85,0,0);{const p=wg.attributes.position;for(let i=0;i<p.count;i++){const px=p.getX(i);p.setY(i,0.06*px*px-0.03*px)}wg.computeVertexNormals()}
   const wings=[-1,1].map(s=>{const w=new THREE.Group();w.position.set(s*0.05,0,0.05);w.scale.x=s;g.add(w);const m=new THREE.Mesh(wg,wm);m.customDepthMaterial=wd;m.castShadow=true;w.add(m);return w});
   const fz=new THREE.MeshPhysicalMaterial({color:lin(0x2a2238),roughness:0.85,sheen:new THREE.Color(0.55,0.5,0.7)}),gold=new THREE.MeshStandardMaterial({color:lin(0xffcf5a),metalness:0.4,roughness:0.3});
@@ -1940,6 +2057,30 @@ function giantButterfly(x,y,z,ry){const g=new THREE.Group();g.position.set(x,y,z
     const slow=0.55+0.45*Math.sin(t*0.9+ph),quick=flap>0?Math.abs(Math.sin(flap*Math.PI*6))*0.5:0,open=Math.min(1.1,0.1+slow*0.55+quick);
     wings[0].rotation.z=-open;wings[1].rotation.z=open;g.position.y=y+Math.sin(t*0.9+ph)*0.025});
   colCirc(x,z,1.6);reserve(x,z,3.5)}
+// river otters: sleek brown bodies with a pale face and chest, little round ears, whiskers and a long tapering tail.
+// 'back' floats belly-up holding a pebble and drifts in slow circles, 'swim' paddles a loop with its head up,
+// 'sit' stands up on the bank like a periscope and looks around
+const otterM={b:new THREE.MeshPhysicalMaterial({color:lin(0x6b4a32),roughness:0.45,sheen:new THREE.Color(0.4,0.3,0.2),clearcoat:0.3,clearcoatRoughness:0.5}),
+  l:new THREE.MeshPhysicalMaterial({color:lin(0xc9a37e),roughness:0.55,sheen:new THREE.Color(0.4,0.35,0.3)}),k:new THREE.MeshPhysicalMaterial({color:lin(0x14100c),roughness:0.15,clearcoat:1}),
+  wh:new THREE.MeshBasicMaterial({color:0xffffff}),pb:new THREE.MeshStandardMaterial({color:lin(0x9aa3a8),roughness:0.4})};
+function otterModel(){const g=new THREE.Group(),add=(geo,mat,x,y,z,sc,r,p)=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(sc)m.scale.set(sc[0],sc[1],sc[2]);if(r)m.rotation.set(r[0],r[1],r[2]);m.castShadow=true;(p||g).add(m);return m};
+  add(new _G.Sph(0.16,28,18),otterM.b,0,0,0,[1,0.85,2.3]);add(new _G.Sph(0.13,24,16),otterM.l,0,-0.035,0.12,[0.9,0.6,1.6]);
+  const head=new THREE.Group();head.position.set(0,0.06,0.38);g.add(head);
+  add(new _G.Sph(0.12,28,20),otterM.b,0,0,0,[1,0.88,1.05],null,head);add(new _G.Sph(0.085,24,16),otterM.l,0,-0.035,0.06,[1,0.75,1],null,head);
+  add(new _G.Sph(0.024,14,10),otterM.k,0,0.0,0.135,[1.3,0.85,0.9],null,head);
+  [-1,1].forEach(s=>{add(new _G.Sph(0.017,14,10),otterM.k,s*0.055,0.04,0.09,null,null,head);add(new _G.Sph(0.005,6,4),otterM.wh,s*0.06,0.046,0.103,null,null,head);
+    add(new _G.Sph(0.028,14,10),otterM.b,s*0.085,0.075,-0.02,[1,1,0.5],null,head);
+    for(let k=0;k<3;k++)add(new _G.Cyl(0.0018,0.0018,0.11,4),otterM.wh,s*0.06,-0.015+k*0.01,0.12,null,[0,0,s*(1.35+k*0.12)],head);
+    add(new _G.Sph(0.04,14,10),otterM.b,s*0.11,-0.05,0.22,[0.7,0.6,1]);add(new _G.Sph(0.04,14,10),otterM.b,s*0.1,-0.06,-0.22,[0.7,0.6,1.2])});
+  const tail=new THREE.Group();tail.position.set(0,0,-0.34);g.add(tail);add(new _G.Cone(0.075,0.55,16),otterM.b,0,0,-0.25,[1,0.6,1],[-Math.PI/2,0,0],tail);
+  return{g,head,tail}}
+function otter(cx,cz,mode,ph){const {g,head,tail}=otterModel();scene.add(g);g.scale.setScalar(1.25);
+  if(mode==='back'){g.rotation.z=Math.PI;head.rotation.x=0.5;const pb=new THREE.Mesh(new _G.Sph(0.035,12,8),otterM.pb);pb.position.set(0,-0.15,0.2);pb.scale.set(1.3,0.6,1);g.add(pb)}
+  if(mode==='sit'){g.rotation.x=-1.25;head.rotation.x=1.15;g.position.set(cx,0.42,cz);colCirc(cx,cz,0.3)}else RIPPLERS.push({o:g.position});
+  anims.push((t,dt)=>{const a=t*(mode==='swim'?0.32:0.12)+ph;
+    if(mode==='back'){g.position.set(cx+Math.cos(a)*0.7,0.07+Math.sin(t*1.6+ph)*0.015,cz+Math.sin(a)*0.35);g.rotation.y=a*1.5;tail.rotation.y=Math.sin(t*1.2+ph)*0.3;head.rotation.y=Math.sin(t*0.5+ph)*0.3}
+    else if(mode==='swim'){const x=cx+Math.cos(a)*5,z=cz+Math.sin(a)*1.6;g.position.set(x,0.0+Math.sin(t*3)*0.01,z);g.rotation.y=Math.atan2(-Math.sin(a)*5,Math.cos(a)*1.6);tail.rotation.y=Math.sin(t*5)*0.35;head.rotation.x=-0.15}
+    else{head.rotation.y=Math.sin(t*0.7)*0.9;g.position.y=0.42+Math.abs(Math.sin(t*0.4))*0.02}})}
 function buildRiver(gz,o){const c=gz-GAP/2,hw=3.4,L=hw+1.8,H=0.85,deck=o.stone?0xd8cbb0:0xb98a5a;
   flat(new THREE.PlaneGeometry(AW*2,hw*2+2.6),0xe6d2a0,0,0.024,c);
   flat(new THREE.PlaneGeometry(AW*2,hw*2),matWater,0,0.07,c);flat(new THREE.PlaneGeometry(AW*2,hw*2-1.6),0x2d7fae,0,0.05,c);
@@ -1962,6 +2103,7 @@ function buildRiver(gz,o){const c=gz-GAP/2,hw=3.4,L=hw+1.8,H=0.85,deck=o.stone?0
   [[-8,1],[-18,-1],[8,-1],[19,1]].forEach(([x,s])=>addTree(x,c+s*(hw+3.2),{type:'round',big:1.25,c:0x7cb35a,s:1.3}));
   bench(5.5,c+hw+1.9,'n');bench(-6.5,c-hw-1.9,'s');lamp(2.4,c+L+0.6);lamp(-2.4,c-L-0.6);
   if(o.name==='Kingfisher Creek')kingfisher(1.75,H+0.95,c+0.7,Math.PI/2);
+  if(o.name==='Otter Stream'){otter(-23,c+0.6,'back',0);otter(-21.6,c-0.4,'back',1.4);otter(21,c,'swim',0);otter(9.5,c-hw-0.9,'sit',0)}
 }
 function buildGardenLink(gz,o){const c=gz-GAP/2;
   paths([[[0,gz-0.6],[0,gz-GAP+0.6]]],3,0,o.kind==='frost'?SNOWPATH:undefined);
@@ -1974,15 +2116,16 @@ function buildGardenLink(gz,o){const c=gz-GAP/2;
     [-1,1].forEach(s=>{for(let z=gz-3;z>gz-GAP+2;z-=4){mesh(new THREE.CylinderGeometry(0.07,0.09,0.9,10),0x7a5236,s*5.2,0.45,z);INST.bush.push({x:s*5.2,y:1.25,z,s:0.85,sy:0.85,c:0x2f6a44,ry:RS()*6});INST.blob.push({x:s*5.2,y:0.036,z,s:1.2,ry:0});colCirc(s*5.2,z,0.35);reserve(s*5.2,z,1)}
       flowerBed(s*13,c,2.0);flowerBed(s*22,gz-6,1.6);flowerBed(s*22,gz-GAP+6,1.6);bench(s*3.6,c+(s>0?3.6:-3.6),s>0?'w':'e')});
     butterflies(0,c,10,30);
-    giantButterfly(-13,1.3,c,0.9);
+    giantButterfly(-7.4,1.3,c-1,Math.PI/2);
   }else if(o.kind==='sun'){
     for(const s of [-1,1])for(let x=4;x<AW-2;x+=1.25)for(let z=gz-3;z>gz-GAP+3;z-=1.3){const fx=s*x+(RS()-0.5)*0.3,fz=z+(RS()-0.5)*0.3,h=1.3+RS()*0.6;
       INST.stem.push({x:fx,y:0,z:fz,s:2.4,sy:h});INST.flower.push({x:fx,y:h,z:fz,s:2.6+RS()*0.6,c:pick([0xffc61a,0xffb400,0xffd23f]),ry:(RS()-0.5)*0.6,rx:1.0,k:'sun'});INST.bush.push({x:fx,y:h*0.45,z:fz,s:0.3,sy:0.3,c:0x4f9a3a,ry:RS()*6})}
-    [[2.8,gz-7],[2.8,gz-8.4],[2.8,gz-9.8]].forEach(([x,z])=>beehive(x,z));scarecrow(-2.9,c);bench(3,gz-GAP+5.5,'w');butterflies(0,c,10,30);
+    [[2.8,gz-7],[2.8,gz-8.4],[2.8,gz-9.8]].forEach(([x,z])=>beehive(x,z));scarecrow(-2.9,c);cuteBees(-7,c,6,3.2,8);cuteBees(7,c,6,3.2,8);cuteBees(4.5,gz-8.4,3,1.6,2);bench(3,gz-GAP+5.5,'w');butterflies(0,c,10,30);
   }else if(o.kind==='lavender'){
     for(const s of [-1,1])for(let x=4.2;x<AW-1.5;x+=1.7)for(let z=gz-2.6;z>gz-GAP+2.6;z-=0.8){const fx=s*x;INST.bush.push({x:fx,y:0.32,z,s:0.55,sy:0.55,c:pick([0x8d72c9,0x9b7fd6,0x7f66b8]),ry:RS()*6});
       if(RS()<0.6)INST.flower.push({x:fx+(RS()-0.5)*0.3,y:0.55,z,s:1.6,c:0xb48cff,ry:RS()*6,rx:(RS()-0.5)*0.3,k:'lav'})}
     bench(2.9,c,'w');bench(-2.9,c-4,'e');butterflies(0,c,12,30);
+    giantButterfly(-7.4,1.55,c+3,Math.PI/2,lavBflyTex);giantButterfly(7.4,1.55,c-5,-Math.PI/2,lavBflyTex);
   }else if(o.kind==='frost')buildFrostLink(gz,c);
   lamp(2.4,gz-2.5);lamp(-2.4,gz-GAP+5);
 }
@@ -2389,6 +2532,19 @@ buildLOD([{geo:grassGeo(7,4,11),mat:grassMat,d:26},{geo:grassGeo(4,2,23),mat:gra
 
 /* ---------- merge static meshes into a few big ones per material and chunk (far fewer draw calls).
    small details (window frames, posts, fruit...) go in their own chunks that are hidden when far away ---------- */
+/* ---------- water ripples: rings spread and fade on every water surface near you, and behind anything swimming ---------- */
+const WSURF=[];scene.updateMatrixWorld(true);
+scene.traverse(o=>{if(o.isMesh&&o.material===matWater){const b=new THREE.Box3().setFromObject(o);WSURF.push({minX:b.min.x,maxX:b.max.x,minZ:b.min.z,maxZ:b.max.z,y:b.max.y,circ:o.geometry.type==='CircleGeometry'})}});
+function waterY(x,z){for(const w of WSURF){if(x<w.minX||x>w.maxX||z<w.minZ||z>w.maxZ)continue;
+  if(w.circ){const cx=(w.minX+w.maxX)/2,cz=(w.minZ+w.maxZ)/2,rx=(w.maxX-w.minX)/2,rz=(w.maxZ-w.minZ)/2;if(((x-cx)/rx)**2+((z-cz)/rz)**2>0.92)continue}return w.y}return null}
+const RIP={pool:[],i:0};{const g=new THREE.RingGeometry(0.8,1,56);g.rotateX(-Math.PI/2);
+  for(let i=0;i<80;i++){const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xeaf6ff,transparent:true,opacity:0,depthWrite:false}));m.visible=false;m.renderOrder=4;scene.add(m);RIP.pool.push({m,t:1,life:1,size:1})}}
+function ripple(x,y,z,size,life){if(!RIP.pool.length)return;const r=RIP.pool[RIP.i++%RIP.pool.length];r.m.position.set(x,y+0.006,z);r.t=0;r.life=life||1.8;r.size=size||0.8;r.m.visible=true}
+anims.push((t,dt)=>{
+  for(let k=Math.random()<(dt*40)%1?1:0,n=Math.floor(dt*40)+k;n>0;n--){const x=px+(Math.random()-0.5)*60,z=pz+(Math.random()-0.5)*60,y=waterY(x,z);if(y!=null)ripple(x,y,z,0.3+Math.random()*0.6,1.4+Math.random()*1.2)}
+  for(const r of RIPPLERS){const o=r.o;if((o.x-px)**2+(o.z-pz)**2>2500)continue;r.t=(r.t||0)-dt;if(r.lx===undefined){r.lx=o.x;r.lz=o.z}
+    const mv=(o.x-r.lx)**2+(o.z-r.lz)**2;if(r.t<0&&(mv>0.06||r.t<-1.6)){const y=waterY(o.x,o.z);if(y!=null)ripple(o.x,y,o.z,0.55,2);r.t=0.45;r.lx=o.x;r.lz=o.z}}
+  for(const r of RIP.pool){if(!r.m.visible)continue;r.t+=dt;const k=r.t/r.life;if(k>=1){r.m.visible=false;continue}r.m.scale.setScalar(r.size*(0.12+k));r.m.material.opacity=0.5*Math.pow(1-k,1.6)}});
 (function mergeStatic(){
   scene.updateMatrixWorld(true);const buckets=new Map(),wp=new THREE.Vector3();
   scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||!o.userData.st)return;for(let a=o.parent;a&&a!==scene;a=a.parent)if(!a.userData.st)return;
@@ -2466,10 +2622,12 @@ function critterGeo(K){const parts=[],E=new THREE.Euler(),Mx=new THREE.Matrix4()
     if(g.index)for(let i=0;i<g.index.count;i++)I.push(g.index.getX(i)+off);else for(let i=0;i<p.count;i++)I.push(i+off);off+=p.count});
   return geoFrom(P,Nn,null,I,C)}
 // soft fur: fine strands in the texture and bump, with a velvety sheen at the edges
-const critMat=triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.75,sheen:new THREE.Color(0.5,0.48,0.45)}),TX2.fur,7,0.035,true),CRITG={};
+// pets: a soft, smooth, gently mottled skin (the old fur texture and bump looked spotty up close)
+const softTex=makeTex(256,(c,s)=>{noiseFill(c,s,57,4,228,255,3)});
+const critMat=triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.6,sheen:new THREE.Color(0.3,0.28,0.26)}),softTex,2.2,0,true),CRITG={};
 const critBlob=new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false,color:0x000000}),critBlobGeo=new THREE.PlaneGeometry(0.75,0.75).rotateX(-Math.PI/2);
 function critOK(x,z,a){return x>a.x0&&x<a.x1&&z<a.z0&&z>a.z1&&!blocked(x,z,heightAt(x,z))&&!(inWater(x,z,0.2)&&!onDeck(x,z))}
-function critter(kind,x,z,a,sc){const geo=CRITG[kind]||(CRITG[kind]=critterGeo(CRIT[kind])),m=new THREE.Mesh(geo,critMat);m.castShadow=true;m.scale.setScalar(sc);scene.add(m);
+function critter(kind,x,z,a,sc,scarf){const geo=CRITG[kind]||(CRITG[kind]=critterGeo(CRIT[kind])),m=new THREE.Mesh(geo,critMat);m.castShadow=true;m.scale.setScalar(sc);scene.add(m);if(scarf||kind==='frostbun')addScarf(m);
   const sh=new THREE.Mesh(critBlobGeo,critBlob);sh.renderOrder=1;sh.scale.setScalar(sc);scene.add(sh);
   let h=RS()*6,tx=x,tz=z,st='idle',tm=RS()*4,hop=RS()*6;const ph=RS()*6;m.position.set(x,heightAt(x,z),z);
   SNDS.push({k:'squeak',o:m.position,t:3+RS()*14});
@@ -2484,10 +2642,28 @@ function critter(kind,x,z,a,sc){const geo=CRITG[kind]||(CRITG[kind]=critterGeo(C
       p.y=heightAt(p.x,p.z)+Math.abs(Math.sin(hop))*0.24*sc;
       if(d<0.3){st='idle';tm=2+RS()*5}}
     m.rotation.y=h;m.rotation.z=st==='walk'?Math.sin(hop)*0.08:0;sh.position.set(p.x,heightAt(p.x,p.z)+0.03,p.z)})}
-function critters(kind,n,zTop,zBot,sc){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
-  for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3));made++}}
+// a cosy striped scarf round a pet's neck, with one end hanging down the front
+const SCARFC=[0xd8352a,0x2f9d6a,0x3d7cc9,0xff9f43,0x8a5ad6];
+function addScarf(m){const mat=new THREE.MeshStandardMaterial({map:stripeFlat(pick(SCARFC),4),roughness:0.85});const r=new THREE.Mesh(new _G.Tor(0.2,0.07,12,32),mat);r.position.set(0,0.49,0.01);r.rotation.x=Math.PI/2;r.castShadow=true;m.add(r);
+  const e=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.28,0.04),mat);e.position.set(0.09,0.38,0.2);e.rotation.set(0.2,0,0.25);e.castShadow=true;m.add(e)}
+function critters(kind,n,zTop,zBot,sc,scarf){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
+  for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3),scarf);made++}}
 [[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',4],['starbit',2]],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]]]
-  .forEach((list,r)=>list.forEach(([k,n])=>critters(k,n,z0s[r],z0s[r]-AREA,1)));
+  .forEach((list,r)=>list.forEach(([k,n])=>critters(k,n,z0s[r],z0s[r]-AREA,1,r===SNOWR)));
+// pets having a swim at Number Bond Beach, each in a stripy rubber ring, paddling slow loops in the sea
+function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=new THREE.Mesh(CRITG[kind]||(CRITG[kind]=critterGeo(CRIT[kind])),critMat);m.position.y=-0.36;m.castShadow=true;g.add(m);
+  const ring=new THREE.Mesh(new _G.Tor(0.34,0.11,14,36),new THREE.MeshStandardMaterial({map:stripeFlat(col,6),roughness:0.35}));ring.rotation.x=Math.PI/2;ring.position.y=0.07;ring.castShadow=true;g.add(ring);
+  RIPPLERS.push({o:g.position});const sp=0.12+RS()*0.06;
+  anims.push((t,dt)=>{const a=t*sp+ph,x=cx+Math.cos(a)*rx,z=cz+Math.sin(a)*rz;g.position.set(x,Math.sin(t*1.8+ph)*0.03,z);g.rotation.y=Math.atan2(-Math.sin(a)*rx,Math.cos(a)*rz);
+    g.rotation.z=Math.sin(t*1.3+ph)*0.08;g.rotation.x=Math.sin(t*1.1+ph)*0.05;m.rotation.x=Math.sin(t*6+ph)*0.06})}
+{const zb=z0s[5];[['splashy',17,-12,3,2,0,0xff6b57],['puffle',22,-22,2.5,3,2,0x3d7cc9],['starbit',16.5,-45,2.5,2.5,4,0x7cc35a],['pincher',21,-50,3,2.2,1,0xffd23f],['splashy',15.5,-26,1.6,1.6,3,0xff9ecf]]
+  .forEach(([k,x,z,rx,rz,ph,c])=>swimmer(k,x,zb+z,rx,rz,ph,c))}
+// a pet flying the kite in Adding Garden: it stands by the picnic blanket holding the string up in one paw
+{const ax=-19,az=z0s[0]-49,g=new THREE.Group();g.position.set(ax+1.5,0,az+0.6);g.rotation.y=Math.atan2(2.5,-5.6);scene.add(g);
+ const sc=1.25,m=new THREE.Mesh(CRITG.hopbun||(CRITG.hopbun=critterGeo(CRIT.hopbun)),critMat);m.scale.setScalar(sc);m.castShadow=true;g.add(m);
+ const arm=new THREE.Mesh(new _G.Cyl(0.05,0.06,0.36,12),new THREE.MeshStandardMaterial({color:lin(CRIT.hopbun.body),roughness:0.6}));arm.position.set(0.27*sc,0.56*sc,0.12*sc);arm.rotation.set(-0.5,0,-0.35);arm.scale.setScalar(sc);arm.castShadow=true;g.add(arm);
+ const paw=new THREE.Object3D();paw.position.set(0.34*sc,0.76*sc,0.22*sc);g.add(paw);KITE.hand=paw;colCirc(g.position.x,g.position.z,0.45);
+ anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.4))*0.05;g.rotation.z=Math.sin(t*1.3)*0.05;arm.rotation.x=-0.5+Math.sin(t*1.7)*0.12;paw.position.y=0.76*sc+Math.sin(t*1.7)*0.03+m.position.y})}
 Object.keys(CRIT).forEach(k=>critters(k,1,zF0,zF0-FIN,1.15));
 
 /* ---------- the guide owl and the cable glow ----------
