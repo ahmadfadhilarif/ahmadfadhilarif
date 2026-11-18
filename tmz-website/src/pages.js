@@ -2,6 +2,7 @@
 const { page, esc, icon, waLink } = require('./layout');
 const C = require('./components');
 const { site } = require('./data');
+const catSlug = (c) => String(c).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 const arrows = () => `<button class="carousel-arrow prev" aria-label="Previous">${icon('chevLeft')}</button><button class="carousel-arrow next" aria-label="Next">${icon('chevRight')}</button>`;
 
@@ -69,8 +70,8 @@ ${C.ctaBand()}`;
 }
 
 // =========================================================================== PRODUCT
-function productPage(p, ctx) {
-  const R = '../';
+function productBody(p, ctx) {
+  const R = ctx.productR === undefined ? '../' : ctx.productR;
   const list = ctx.siblings(p);
   const idx = list.indexOf(p);
   const prev = list[(idx - 1 + list.length) % list.length];
@@ -99,7 +100,7 @@ function productPage(p, ctx) {
       <div class="field"><label for="f-date">Estimated delivery date</label><div class="input-icon">${icon('calendar')}<input id="f-date" name="date" type="date"></div></div>
       <div class="field"><label for="f-notes">Notes (sizes, collar, fabric…)</label><textarea id="f-notes" name="notes" placeholder="e.g. 10 pcs: 2 S, 4 M, 4 L · ARCTIX fabric"></textarea></div>
       <button class="btn btn-dark btn-block" type="submit" style="min-height:46px;text-transform:none;font-size:14px">Send order request ${icon('arrowRight')}</button>
-      <div class="notice" id="order-ok" hidden style="margin:14px 0 0">Thanks! Your request is ready to send on WhatsApp. If it didn’t open, <a href="#" target="_blank" rel="noopener"><b>tap here</b></a>.</div>
+      <div class="notice" id="order-ok" hidden style="margin:14px 0 0">Your order request is ready. <a href="#" target="_blank" rel="noopener"><b>Open WhatsApp to send it</b></a>.</div>
     </form>
     <div class="or-sep">OR</div>
     ${waChat}
@@ -114,7 +115,7 @@ function productPage(p, ctx) {
     <div class="cashback"><i>${icon('money')}</i><div><b>Get RM${cashback} cashback</b><a href="${R}tmz-loyalty.html">Join free and get RM4 now.</a></div></div>
     <div class="buy-row"><div class="qty small"><button type="button" data-step="-" aria-label="Decrease">-</button><input type="number" min="1" value="1" aria-label="Quantity"><button type="button" data-step="+" aria-label="Increase">+</button></div><button class="btn btn-outline" type="button" data-add style="text-transform:none;font-size:14px">Add to bag</button><button class="btn btn-dark" type="button" data-buy style="text-transform:none;font-size:14px">Buy now</button></div>
     <div class="note">Please check your size measurement below and key in data before checkout.</div>
-    <div class="meta"><div><b>SKU:</b> N/A</div><div><b>Category:</b> ${p.cats.map((c) => `<a href="${R}shop.html?cat=${encodeURIComponent(c)}">${esc(c)}</a>`).join(', ')}</div><div><b>Tags:</b> ${esc(p.name.toUpperCase())}, ${esc(p.cats[p.cats.length - 1])}</div>${share}</div>`;
+    <div class="meta"><div><b>SKU:</b> N/A</div><div><b>Category:</b> ${p.cats.map((c) => `<a href="${R}shop.html#${catSlug(c)}">${esc(c)}</a>`).join(', ')}</div><div><b>Tags:</b> ${esc(p.name.toUpperCase())}, ${esc(p.cats[p.cats.length - 1])}</div>${share}</div>`;
   }
 
   const details = p.type === 'teamwear'
@@ -145,7 +146,10 @@ function productPage(p, ctx) {
 </div>
 <div class="container related"><h2>Related products</h2><div class="products cols-6">${related.map((r) => C.card(r, R)).join('')}</div></div>
 <div class="sticky-atc"><div class="container"><img src="${R + p.img}" alt=""><span class="t">${esc(p.name)}</span>${p.price ? `<span class="p">${C.money(p.price)}</span><button class="btn btn-outline" type="button" data-choose style="text-transform:none">Choose size</button><button class="btn btn-dark" type="button" data-choose style="text-transform:none">Buy now</button>` : `<button class="btn btn-dark" type="button" data-choose style="text-transform:none">Send order request</button>`}</div></div>`;
-  return page({ body, depth: 1, current: p.type === 'teamwear' ? 'teamwear' : p.type === 'club' ? 'collab' : 'solo', title: p.name, description: `${p.name} – ${p.type === 'teamwear' ? p.seriesName + ' series custom jersey' : p.catLabel} by ${site.brand}.` });
+  return { body, depth: R ? 1 : 0, current: p.type === 'teamwear' ? 'teamwear' : p.type === 'club' ? 'collab' : 'solo', title: p.name, description: `${p.name} – ${p.type === 'teamwear' ? p.seriesName + ' series custom jersey' : p.catLabel} by ${site.brand}.` };
+}
+function productPage(p, ctx) {
+  return page(productBody(p, ctx));
 }
 
 // =========================================================================== SOLO
@@ -292,7 +296,7 @@ function loyaltyPage() {
 }
 
 // =========================================================================== CONTACT
-function contactPage() {
+function contactPage(ctx) {
   const body = `
 <div class="container contact">
   <div>
@@ -305,7 +309,9 @@ function contactPage() {
     <p>Whether you’re looking for answers, would like to solve a problem, or just want to let us know how we did, you’ll find it here.</p>
     <a class="btn btn-dark" href="${waLink(`Hi ${site.brand}!`)}" target="_blank" rel="noopener">Write a message</a>
   </div>
-  <div class="map"><iframe title="Map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(site.mapQuery)}&z=13&output=embed"></iframe></div>
+  ${ctx && ctx.artifact
+    ? `<a class="map map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.mapQuery)}" target="_blank" rel="noopener"><span class="pin"></span><b>${esc(site.address.city)}</b><span>Open in Google Maps &rarr;</span></a>`
+    : `<div class="map"><iframe title="Map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(site.mapQuery)}&z=13&output=embed"></iframe></div>`}
 </div>`;
   return page({ body, title: 'Contact Us', description: `Get in touch with ${site.brand}.` });
 }
@@ -344,6 +350,7 @@ function trackPage() {
       <div class="field" style="margin:0"><label for="t-mail">Billing email</label><input id="t-mail" name="Billing email" type="email" required placeholder="Email you used during checkout."></div>
       <button class="btn btn-dark" type="submit">Track</button>
     </form>
+    <div class="notice" data-wa-ok hidden style="margin-top:16px;text-align:left">Your request is ready. <a href="#" target="_blank" rel="noopener"><b>Open WhatsApp to send it</b></a> and our team will reply with your order status.</div>
   </div>
   <div class="ship">
     <div>
@@ -387,7 +394,7 @@ function checkoutPage() {
     <label class="pay-opt"><input type="radio" name="payment" value="Credit / Debit Card"> Credit / Debit Card (Visa, Mastercard)</label>
     <p style="font-size:12px;margin-top:15px">Your personal data will be used to process your order and for other purposes described in our <a href="privacy.html">privacy policy</a>.</p>
     <button class="btn btn-dark btn-block" type="submit" style="min-height:50px">Place order</button>
-    <div class="notice" id="checkout-ok" hidden style="margin-top:14px">Thank you! We’ve opened WhatsApp with your order summary. Our team will confirm your order and send a payment link.</div>
+    <div class="notice" id="checkout-ok" hidden style="margin-top:14px">Your order summary is ready. <a href="#" target="_blank" rel="noopener"><b>Open WhatsApp to send it</b></a>. Our team will confirm your order and send a payment link.</div>
   </div></div>
 </form></div>`;
   return page({ title: 'Checkout', body });
@@ -447,4 +454,4 @@ function notFound() {
   return page({ title: 'Page not found', body });
 }
 
-module.exports = { home, seriesPage, productPage, soloPage, runningPage, shopPage, clubPage, loyaltyPage, contactPage, aboutPage, trackPage, cartPage, checkoutPage, accountPage, textPage, policies, notFound };
+module.exports = { home, seriesPage, productPage, productBody, soloPage, runningPage, shopPage, clubPage, loyaltyPage, contactPage, aboutPage, trackPage, cartPage, checkoutPage, accountPage, textPage, policies, notFound };

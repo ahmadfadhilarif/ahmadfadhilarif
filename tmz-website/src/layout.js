@@ -171,6 +171,7 @@ ${opts.body}
 ${footer(R)}
 ${toolbar(R)}
 <script>window.TMZ=${JSON.stringify({ root: R, whatsapp: site.whatsapp, brand: site.brand, email: site.email })};</script>
+${(opts.scripts || []).map((src) => `<script src="${R + src}" defer></script>`).join('\n')}
 <script src="${R}assets/js/main.js" defer></script>
 </body>
 </html>

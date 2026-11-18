@@ -1,125 +1,55 @@
 #!/usr/bin/env node
 'use strict';
 /*
- * Builds the static TMZ website into ../site
- *   node src/build.js
+ * Builds the static TMZ website.
+ *
+ *   node src/build.js                      → ../site            (one HTML file per product)
+ *   node src/build.js --artifact <outdir>  → <outdir>           (Claude artifact hosting: one
+ *                                                                 product.html#slug page, fewer files)
  */
 const fs = require('fs');
 const path = require('path');
 const J = require('./jersey');
 const D = require('./data');
 const P = require('./pages');
+const { page } = require('./layout');
+const { build } = require('./catalog');
 
-const OUT = path.join(__dirname, '..', 'site');
-const IMG = 'assets/img/products';
+const argv = process.argv.slice(2);
+const ai = argv.indexOf('--artifact');
+const ARTIFACT = ai !== -1;
+const OUT = ARTIFACT ? path.resolve(argv[ai + 1] || 'site-artifact') : path.join(__dirname, '..', 'site');
+const IMG = ARTIFACT ? 'p' : 'assets/img/products';
+
 const write = (rel, content) => {
   const f = path.join(OUT, rel);
   fs.mkdirSync(path.dirname(f), { recursive: true });
   fs.writeFileSync(f, content);
 };
 
-// ----------------------------------------------------------------- colour family for shop filter
-function family(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, d = max - min;
-  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-  let h = 0;
-  if (d) {
-    if (max === r) h = ((g - b) / d) % 6; else if (max === g) h = (b - r) / d + 2; else h = (r - g) / d + 4;
-    h *= 60; if (h < 0) h += 360;
+const ctx = build(ARTIFACT
+  ? { IMG, productUrl: (slug) => `product.html#${slug}`, productR: '', artifact: true }
+  : { IMG });
+const { all, pitLane } = ctx;
+all.forEach((p) => ctx.template(p)); // register every size-guide template up front
+
+// ----------------------------------------------------------------- clean output
+if (ARTIFACT) {
+  // only ever clear what this build generates inside OUT
+  fs.mkdirSync(OUT, { recursive: true });
+  for (const d of [IMG, 'assets']) fs.rmSync(path.join(OUT, d), { recursive: true, force: true });
+  for (const f of fs.readdirSync(OUT)) if (f.endsWith('.html')) fs.unlinkSync(path.join(OUT, f));
+  const srcSite = path.join(__dirname, '..', 'site');
+  for (const f of ['assets/css/style.css', 'assets/js/main.js', 'assets/img/logo/tmz-logo-black.svg', 'assets/img/logo/tmz-logo-white.svg']) {
+    write(f, fs.readFileSync(path.join(srcSite, f)));
   }
-  if (l < 0.13) return 'Black';
-  if (l > 0.88 && s < 0.5) return 'White';
-  if (s < 0.18) return l > 0.6 ? 'White' : l < 0.25 ? 'Black' : 'Grey';
-  if (h < 15 || h >= 345) return l > 0.7 ? 'Pink' : 'Red';
-  if (h < 45) return 'Orange';
-  if (h < 68) return 'Yellow';
-  if (h < 170) return 'Green';
-  if (h < 255) return 'Blue';
-  if (h < 300) return 'Purple';
-  return 'Pink';
+} else {
+  fs.rmSync(path.join(OUT, IMG), { recursive: true, force: true });
+  for (const f of fs.readdirSync(OUT)) if (f.endsWith('.html')) fs.unlinkSync(path.join(OUT, f));
+  fs.rmSync(path.join(OUT, 'product'), { recursive: true, force: true });
 }
 
-// ----------------------------------------------------------------- assemble catalogue
-const all = [];
-const bySeries = {};
-const seriesBySlug = Object.fromEntries(D.series.map((s) => [s.slug, s]));
-
-D.series.forEach((s) => {
-  bySeries[s.slug] = [];
-  s.designs.forEach((d, di) => {
-    const code = `${s.code}${String(di + 1).padStart(2, '0')}`;
-    d.pals.forEach((pk, ci) => {
-      const pal = D.pal(pk);
-      const colors = { base: pal.base, p1: pal.p1, p2: pal.p2, p3: pal.p3, trim: pal.trim };
-      if (d.layout.sleeve === 'accent' || d.layout.sleeve === 'pattern') colors.sleeve = pal.accent;
-      if (d.layout.sleeve === 'trim') colors.sleeve = pal.trim;
-      if (d.layout.side) colors.side = pal.accent;
-      const name = code + 'ABCDE'[ci];
-      const slug = name.toLowerCase();
-      const p = {
-        slug, name, code, type: 'teamwear', series: s.slug, seriesName: s.name, catLabel: s.name, cats: [s.name], isNew: !!s.isNew,
-        spec: {
-          id: slug, cut: d.cut, raglan: d.raglan, neck: d.neck, pattern: d.pattern, colors,
-          sleevePattern: d.layout.sleeve === 'pattern' ? d.sleevePattern || d.pattern : null,
-          halfZip: d.halfZip, pocket: d.pocket, hemBand: d.cut === 'long',
-          number: d.number ? String(ci + 1 + di * 5) : undefined,
-        },
-      };
-      bySeries[s.slug].push(p);
-      all.push(p);
-    });
-  });
-});
-
-const solo = D.solo.map((x) => ({ ...x, type: 'solo', catLabel: x.cats.join(', '), spec: { id: x.slug, ...x.spec } }));
-const running = D.running.map((x) => ({ ...x, type: 'running', catLabel: 'Running', spec: { id: x.slug, ...x.spec } }));
-const clubProducts = D.clubs.flatMap((c) => c.products.map((x) => ({ ...x, type: 'club', club: c.slug, cats: ['Club', c.name], catLabel: `Club, ${c.name}`, sizes: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'], details: ['TYPE OF COLLAR: ' + (x.spec.neck === 'polo' ? 'Polo Collar' : x.spec.neck === 'hood' ? 'Hood' : 'Round Neck'), 'TYPE OF SLEEVE: ' + (x.spec.cut === 'long' ? 'Long Sleeves' : 'Short Sleeves'), 'CUTTING: Regular Fit'], story: `Official ${c.name} merchandise, designed together with the club and produced by ${D.site.brand}.`, spec: { id: x.slug, ...x.spec } })));
-all.push(...solo, ...running, ...clubProducts);
-
-all.forEach((p) => {
-  p.img = `${IMG}/${p.slug}-front.svg`;
-  p.back = `${IMG}/${p.slug}-back.svg`;
-  p.url = `product/${p.slug}.html`;
-  p.color = family(p.spec.colors.base);
-});
-const bySlug = Object.fromEntries(all.map((p) => [p.slug, p]));
-// shop "Featured" order: retail drops first, then teamwear by series
-[...solo.filter((p) => p.group === 'PIT LANE'), ...clubProducts, ...running, ...solo.filter((p) => p.group !== 'PIT LANE'), ...D.series.flatMap((s) => bySeries[s.slug])].forEach((p, i) => (p.order = i));
-
-// Pit Lane banner variants (hanging long-sleeve cut for the hero slide)
-const pitLane = solo.filter((p) => p.group === 'PIT LANE').map((p) => ({ ...p, bannerImg: `${IMG}/${p.slug}-banner.svg` }));
-
-// placement / size-guide templates
-const templates = {};
-function template(p) {
-  const s = p.spec;
-  const key = `${s.cut}-${s.neck}${s.raglan ? '-r' : ''}`;
-  if (!templates[key]) {
-    templates[key] = { front: `${IMG}/template-${key}-front.svg`, back: `${IMG}/template-${key}-back.svg`, dark: `${IMG}/template-${key}-dark.svg`, spec: { id: 'tpl' + key, cut: s.cut, neck: s.neck, raglan: s.raglan, halfZip: s.halfZip, pattern: null, cuffStripe: false, colors: { base: '#ffffff', p1: '#eeeeee', p2: '#dddddd', p3: '#cccccc', trim: '#f2f2f2' }, logoColor: '#222222' } };
-  }
-  return templates[key];
-}
-
-// ----------------------------------------------------------------- helpers for pages
-function siblings(p) {
-  if (p.type === 'teamwear') return bySeries[p.series];
-  if (p.type === 'club') return clubProducts;
-  if (p.type === 'running') return running;
-  return solo;
-}
-function related(p) {
-  const pool = siblings(p).filter((x) => x !== p && (p.type !== 'teamwear' || x.code !== p.code));
-  const step = Math.max(1, Math.floor(pool.length / 6));
-  const out = [];
-  for (let i = 0; out.length < 6 && i < pool.length; i += step) out.push(pool[i]);
-  return out;
-}
-const ctx = { all, bySeries, bySlug, series: D.series, seriesBySlug, solo, running, clubs: D.clubs, pitLane, floral: solo.filter((p) => p.group === 'FLORAL'), siblings, related, template };
-
-// ----------------------------------------------------------------- write images
-fs.rmSync(path.join(OUT, IMG), { recursive: true, force: true });
+// ----------------------------------------------------------------- images
 let n = 0;
 all.forEach((p) => {
   write(p.img, J.render(p.spec, 'front'));
@@ -130,12 +60,14 @@ pitLane.forEach((p) => {
   write(p.bannerImg, J.render({ ...p.spec, id: p.slug + 'bn', cut: 'long', raglan: true, hemBand: true }, 'front'));
   n++;
 });
+Object.values(ctx.templates).forEach((t) => {
+  write(t.front, J.render(t.spec, 'front'));
+  write(t.back, J.render(t.spec, 'back'));
+  write(t.dark, J.render({ ...t.spec, id: t.spec.id + 'dk', colors: { base: '#0b0b0b', p1: '#0b0b0b', p2: '#0b0b0b', p3: '#0b0b0b', trim: '#0b0b0b', inner: '#0b0b0b' }, logoColor: '#ffffff', outline: '#ffffff', outlineWidth: 2.2 }, 'front'));
+  n += 3;
+});
 
-// ----------------------------------------------------------------- write pages
-// clean previously generated html
-for (const f of fs.readdirSync(OUT)) if (f.endsWith('.html')) fs.unlinkSync(path.join(OUT, f));
-fs.rmSync(path.join(OUT, 'product'), { recursive: true, force: true });
-
+// ----------------------------------------------------------------- pages
 const pages = {
   'index.html': P.home(ctx),
   'solo.html': P.soloPage(ctx),
@@ -153,15 +85,56 @@ const pages = {
 };
 D.series.forEach((s) => (pages[`${s.slug}.html`] = P.seriesPage(s, ctx)));
 Object.entries(P.policies).forEach(([slug, [title, html]]) => (pages[`${slug}.html`] = P.textPage(title, html)));
-all.forEach((p) => (pages[p.url] = P.productPage(p, ctx)));
+
+if (ARTIFACT) {
+  // one product page rendered in the browser from the catalogue
+  pages['product.html'] = page({
+    title: 'Product',
+    body: '<div id="product-app"><div class="container" style="padding:80px 15px;text-align:center">Loading…</div></div>',
+    scripts: ['assets/js/product-app.js'],
+  });
+  write('assets/js/product-app.js', bundle());
+  // the artifact's main page is wrapped in its own document skeleton, so publish only head tags + body content
+  pages['index.html'] = toArtifactPage(pages['index.html'], `${D.site.brand} Sportswear`);
+} else {
+  all.forEach((p) => (pages[p.url] = P.productPage(p, ctx)));
+}
 Object.entries(pages).forEach(([f, html]) => write(f, html));
 
-// templates are registered lazily while rendering product pages
-Object.values(templates).forEach((t) => {
-  write(t.front, J.render(t.spec, 'front'));
-  write(t.back, J.render(t.spec, 'back'));
-  write(t.dark, J.render({ ...t.spec, id: t.spec.id + 'dk', colors: { base: '#0b0b0b', p1: '#0b0b0b', p2: '#0b0b0b', p3: '#0b0b0b', trim: '#0b0b0b', inner: '#0b0b0b' }, logoColor: '#ffffff', outline: '#ffffff', outlineWidth: 2.2 }, 'front'));
-  n += 3;
-});
+function toArtifactPage(html, title) {
+  const head = html.match(/<head>([\s\S]*?)<\/head>/)[1]
+    .replace(/<meta charset[^>]*>\s*/, '')
+    .replace(/<meta name="viewport"[^>]*>\s*/, '')
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`);
+  const body = html.match(/<body[^>]*>([\s\S]*)<\/body>/)[1];
+  return `${head.trim()}\n${body.trim()}\n`;
+}
 
-console.log(`Built ${Object.keys(pages).length} pages, ${all.length} products, ${n} jersey images → ${path.relative(process.cwd(), OUT) || OUT}`);
+// Browser bundle: catalogue + page templates with a tiny require() shim
+function bundle() {
+  const mods = ['icons', 'data', 'layout', 'components', 'catalog', 'pages'];
+  let out = '/* generated by src/build.js --artifact */\n(function () {\nvar D = {}, C = {};\nfunction require(n) { n = n.replace(/^\\.\\//, ""); if (C[n]) return C[n].exports; var m = { exports: {} }; C[n] = m; D[n](m, m.exports); return m.exports; }\n';
+  for (const m of mods) out += `D[${JSON.stringify(m)}] = function (module, exports) {\n${fs.readFileSync(path.join(__dirname, m + '.js'), 'utf8')}\n};\n`;
+  out += `
+var ctx = require("catalog").build({ IMG: ${JSON.stringify(IMG)}, productUrl: function (s) { return "product.html#" + s; }, productR: "", artifact: true });
+var pages = require("pages");
+var root = document.getElementById("product-app");
+var slug = decodeURIComponent(location.hash.slice(1));
+var p = ctx.bySlug[slug];
+if (!p) {
+  root.innerHTML = '<div class="e404"><b>404</b><h1>Product not found</h1><p>Browse the full range in the shop.</p><a class="btn btn-dark" href="shop.html">Go to shop</a></div>';
+} else {
+  var r = pages.productBody(p, ctx);
+  root.insertAdjacentHTML("beforebegin", r.body);
+  root.remove();
+  document.title = r.title + " - ${D.site.brand}";
+}
+window.addEventListener("hashchange", function () { location.reload(); });
+})();
+`;
+  return out;
+}
+
+const files = [];
+(function walk(d) { for (const f of fs.readdirSync(d)) { const p = path.join(d, f); if (fs.statSync(p).isDirectory()) walk(p); else files.push(p); } })(OUT);
+console.log(`Built ${Object.keys(pages).length} pages, ${all.length} products, ${n} jersey images → ${OUT} (${files.length} files)`);

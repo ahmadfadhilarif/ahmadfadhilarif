@@ -19,6 +19,19 @@
     clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2600);
   }
 
+  // ------------------------------------------------------------ WhatsApp hand-off
+  // Opens WhatsApp when the browser allows it, and always reveals a tappable link
+  // (embedded/hosted views can block pop-ups).
+  function sendWA(text, notice) {
+    const url = `https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(text)}`;
+    if (notice) {
+      notice.hidden = false;
+      const a = notice.querySelector('a'); if (a) a.href = url;
+    }
+    try { window.open(url, '_blank', 'noopener'); } catch (e) { /* pop-up blocked: the link above still works */ }
+    return url;
+  }
+
   // ------------------------------------------------------------ sticky header
   const header = $('.header-main');
   const spacer = $('.header-spacer');
@@ -163,10 +176,7 @@
           d.date ? `Estimated delivery date: ${d.date}` : '', d.notes ? `Notes: ${d.notes}` : '',
           `Link: ${location.href}`,
         ].filter(Boolean).join('\n');
-        const url = `https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(lines)}`;
-        const ok = $('#order-ok');
-        if (ok) { ok.hidden = false; ok.querySelector('a').href = url; }
-        window.open(url, '_blank', 'noopener');
+        sendWA(lines, $('#order-ok'));
         form.reset();
       });
     }
@@ -249,8 +259,7 @@
       if (!cc.length) { toast('Your bag is empty.'); return; }
       const d = Object.fromEntries(new FormData(co).entries());
       const msg = [`Hi ${CFG.brand || 'TMZ'}, I would like to place an order:`, ...cc.map((x) => `• ${x.name}${x.size !== '-' ? ' (' + x.size + ')' : ''} × ${x.qty} = ${money(x.price * x.qty)}`), `Total: ${money(cartTotal(cc))}`, '', `Name: ${d.first} ${d.last}`, `Phone: ${d.phone}`, `Email: ${d.email}`, `Address: ${d.address}, ${d.postcode} ${d.city}, ${d.state}`, `Payment: ${d.payment}`, d.notes ? `Notes: ${d.notes}` : ''].filter(Boolean).join('\n');
-      window.open(`https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
-      $('#checkout-ok').hidden = false;
+      sendWA(msg, $('#checkout-ok'));
       saveCart([]);
     });
   }
@@ -260,7 +269,8 @@
     e.preventDefault();
     const d = Object.fromEntries(new FormData(f).entries());
     const msg = (f.dataset.wa || '') + '\n' + Object.entries(d).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`).join('\n');
-    window.open(`https://wa.me/${CFG.whatsapp}?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+    const next = f.nextElementSibling;
+    sendWA(msg, next && next.matches('[data-wa-ok]') ? next : null);
   }));
   $$('form[data-soon]').forEach((f) => f.addEventListener('submit', (e) => { e.preventDefault(); toast(f.dataset.soon); }));
 
@@ -270,8 +280,14 @@
     const cards = $$('.products .product-card', shop);
     const countEl = $('[data-shop-count]');
     const state = { cat: 'all', prices: new Set(), color: null, sort: 'featured' };
-    const params = new URLSearchParams(location.search);
-    if (params.get('cat')) state.cat = params.get('cat');
+    const slug = (c) => String(c).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const fromHash = () => {
+      const h = decodeURIComponent(location.hash.slice(1));
+      const a = h && $$('.shop-cats a').find((x) => x.dataset.cat !== 'all' && slug(x.dataset.cat) === h);
+      state.cat = a ? a.dataset.cat : 'all';
+    };
+    fromHash();
+    window.addEventListener('hashchange', () => { fromHash(); apply(); });
     const grid = $('.products', shop);
     function apply() {
       let visible = cards.filter((c) => {

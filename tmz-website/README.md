@@ -28,7 +28,8 @@ tmz-website/
     ├── layout.js          header / menu / footer
     ├── components.js      cards, banners, product detail panels
     ├── pages.js           page templates
-    ├── build.js           writes everything into /site
+    ├── catalog.js         products, lookups and page helpers (also bundled for the browser)
+    ├── build.js           writes everything into /site (or --artifact <dir>)
     └── tmz-logo-original.jpg
 ```
 
@@ -78,6 +79,19 @@ The three clubs on the Club page (Iron Fit Society, Strikers FC, Pacesetters Run
 
 To take card or FPX payments directly on the site, connect a payment provider (for example a
 Billplz payment form), or move the design onto WooCommerce or Shopify.
+
+## Hosted preview (Claude artifact)
+
+A private hosted copy lives at **https://claude.ai/artifact/S55BEK65j5yqeZjbR2AjUY**. Only you can open
+it until you share it from the page's Share menu.
+
+Artifacts allow at most 511 files, so the hosted copy is built in a compact variant. Every
+product renders from a single `product.html#<slug>` page, the contact map becomes an "Open in
+Google Maps" link, and WhatsApp hand-offs show a tappable link. Build it with:
+
+```bash
+node tmz-website/src/build.js --artifact /path/to/output
+```
 
 ## Deploy
 
