@@ -2193,13 +2193,14 @@ function buildCastle(z0){
    [mz0,mz1].forEach(zz=>{[-1,1].forEach(sd=>{const e=coastX(sd,zz)+0.4,len=e;blk(len,0.22,0.35,sd*len/2,0.11,zz,0xb9ad96,scene,true)})});
    colliders.push({t:'wbox',minX:-W/2,maxX:W/2,minZ:mz1,maxZ:mz0,on:true});waters.push({box:1,minX:-W/2,maxX:W/2,minZ:mz1-0.3,maxZ:mz0+0.3});SNDS.push({k:'water',box:1,minX:-W/2,maxX:W/2,minZ:mz1,maxZ:mz0})}
   // the drawbridge: hinged at the castle side, raised until puzzle 4 is solved, then lowered on its chains
-  {const Lb=mz0-mz1+1.2,pv=new THREE.Group();pv.position.set(0,0.4,mz1-0.6);scene.add(pv);
-   blk(4.4,0.24,Lb,0,-0.12,Lb/2,0x8a5a3b,pv);for(let zz=0.25;zz<Lb;zz+=0.5)blk(4.42,0.02,0.04,0,0.005,zz,0x7a4a2c,pv);[-1,1].forEach(s=>{blk(0.16,0.3,Lb,s*2.15,-0.05,Lb/2,0x6b4226,pv);[0.4,Lb-0.4].forEach(zz=>blk(0.2,0.08,0.2,s*2.05,0.05,zz,0x2b3a42,pv))});
-   const plat={t:'box',minX:-2.2,maxX:2.2,minZ:mz1-0.6,maxZ:mz0+0.6,h:0.4,deck:true,noCable:true};platforms.push(plat);
+  {const hz=zw+1.78,Lb=mz0+0.6-hz,pv=new THREE.Group();pv.position.set(0,0.4,hz);scene.add(pv);
+   blk(4.9,0.24,Lb,0,-0.12,Lb/2,0x8a5a3b,pv);for(let zz=0.25;zz<Lb;zz+=0.5)blk(4.92,0.02,0.04,0,0.005,zz,0x7a4a2c,pv);[-1,1].forEach(s=>{blk(0.16,0.3,Lb,s*2.4,-0.05,Lb/2,0x6b4226,pv);[0.4,Lb-0.4].forEach(zz=>blk(0.2,0.08,0.2,s*2.3,0.05,zz,0x2b3a42,pv))});
+   [1.2,2.6,4.0].forEach(zz=>blk(4.9,0.06,0.14,0,-0.27,zz,0x5a3a26,pv));
+   const plat={t:'box',minX:-2.45,maxX:2.45,minZ:hz-0.6,maxZ:mz0+0.6,h:0.4,deck:true,noCable:true};platforms.push(plat);
    platforms.push({t:'box',minX:2.5,maxX:2.9,minZ:mz1-0.6,maxZ:mz0+0.6,h:0,deck:true,cableOnly:true});   // the cables cross under the moat, beside the bridge
    const chains=[-1,1].map(s=>{const m=new THREE.Mesh(new _G.Cyl(0.035,0.035,1,8),M(0x2b3a42));m.castShadow=true;scene.add(m);return m}),A=new THREE.Vector3(),B=new THREE.Vector3(),Y=new THREE.Vector3(0,1,0);
-   BRIDGE.set=t=>{BRIDGE.t=t;pv.rotation.x=-1.45*(1-t);pv.updateMatrix();const on=t>0.98;plat.minX=on?-2.2:1e9;plat.maxX=on?2.2:-1e9;
-     chains.forEach((m,i)=>{const s=i?1:-1;A.set(s*1.95,6.0,zw+1.32);B.set(s*2.05,0.05,Lb-0.4).applyMatrix4(pv.matrix);const d=B.clone().sub(A),L=d.length();m.position.copy(A).addScaledVector(d,0.5);m.scale.set(1,L,1);m.quaternion.setFromUnitVectors(Y,d.normalize())})};
+   BRIDGE.set=t=>{BRIDGE.t=t;pv.rotation.x=-Math.PI/2*(1-t);pv.updateMatrix();const on=t>0.98;plat.minX=on?-2.45:1e9;plat.maxX=on?2.45:-1e9;
+     chains.forEach((m,i)=>{const s=i?1:-1;A.set(s*2.2,6.0,zw+1.4);B.set(s*2.3,0.05,Lb-0.4).applyMatrix4(pv.matrix);const d=B.clone().sub(A),L=d.length();m.position.copy(A).addScaledVector(d,0.5);m.scale.set(1,L,1);m.quaternion.setFromUnitVectors(Y,d.normalize())})};
    pv.updateMatrix();BRIDGE.set(1);BRIDGE.pv=pv}
   reserve(0,(mz0+mz1)/2,3);
   brazier(-3.4,mz0+1.6);brazier(3.4,mz0+1.6);
@@ -2215,13 +2216,13 @@ function buildCastle(z0){
   [['Th','1000',-21.5],['H','100',-9.5],['T','10',9.5],['O','1',21.5]].forEach(([a,b,x],i)=>banner(x,3.0,zw+1.14,a,b,['#3d7cc9','#d8352a','#2f9d6a','#8a5ad6'][i]));
   // courtyard
   // courtyard: paved from wall to wall and out to the sea on both sides, with a low quay wall along the water
-  {const zA=zw-1.15,zB=z0-AREA+0.45,P=[],I=[],U=[],N=[];let row=0;for(let z=zA;z>=zB-0.01;z-=1,row++){const zz=Math.max(z,zB),xl=-coastX(-1,zz)+0.25,xr=coastX(1,zz)-0.25;P.push(xl,0.022,zz,xr,0.022,zz);N.push(0,1,0,0,1,0);U.push(xl/3,zz/3,xr/3,zz/3);
+  {const zA=zw+1.45,zB=z0-AREA+0.45,P=[],I=[],U=[],N=[];let row=0;for(let z=zA;z>=zB-0.01;z-=1,row++){const zz=Math.max(z,zB),xl=-coastX(-1,zz)+0.25,xr=coastX(1,zz)-0.25;P.push(xl,0.022,zz,xr,0.022,zz);N.push(0,1,0,0,1,0);U.push(xl/3,zz/3,xr/3,zz/3);
      if(row){const o=(row-1)*2;I.push(o,o+2,o+1,o+1,o+2,o+3)}}
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);
    {const o0=I[0]*3,o1=I[1]*3,o2=I[2]*3,ny=(P[o1+2]-P[o0+2])*(P[o2]-P[o0])-(P[o1]-P[o0])*(P[o2+2]-P[o0+2]);if(ny<0)for(let t=0;t<I.length;t+=3){const q=I[t+1];I[t+1]=I[t+2];I[t+2]=q}g.setIndex(I)}
-   const cm=new THREE.MeshStandardMaterial({map:castleFlagTex,roughness:0.9});const m=new THREE.Mesh(g,cm);m.receiveShadow=true;scene.add(m);m.userData.st=1;
+   const cm=new THREE.MeshStandardMaterial({map:castleFlagTex,roughness:0.9});const m=new THREE.Mesh(g,cm);m.position.y=0.003;m.receiveShadow=true;scene.add(m);m.userData.st=1;
    walkRect(-60,60,zB,zA);NOGREEN.push({x0:-80,x1:80,z0:zB-0.5,z1:zA+1.3});
-   for(let z=zA-0.5;z>zB;z-=1.6)[-1,1].forEach(sd=>{const x=sd*(coastX(sd,z)-0.15);blk(0.5,0.55,1.65,x,0.27,z,0xcfc3a8)})}
+   for(let z=zw-1.7;z>zB;z-=1.6)[-1,1].forEach(sd=>{const x=sd*(coastX(sd,z)-0.15);blk(0.5,0.55,1.65,x,0.27,z,0xcfc3a8)})}
 [[-15,-56],[0,-56],[15,-56],[-22,-62],[22,-62]].forEach(([x,z])=>reserve(x,z0+z,7.5));
   castleKeep(-19,z0-57,16,12,13);well(14,z0-58);
   [[21,z0-49.5],[21.8,z0-50.3],[22.4,z0-49.3]].forEach(([x,z])=>barrel(x,z));cart(22,z0-63,0.3);
@@ -2239,9 +2240,9 @@ function buildCastle(z0){
    const S=new THREE.Shape();S.moveTo(-2.2,2.4);S.lineTo(2.2,2.4);S.lineTo(2.2,-0.2);S.quadraticCurveTo(2.15,-2.0,0,-3.0);S.quadraticCurveTo(-2.15,-2.0,-2.2,-0.2);S.closePath();
    const g=new THREE.ExtrudeGeometry(S,{depth:0.3,bevelEnabled:true,bevelThickness:0.08,bevelSize:0.08,bevelSegments:2});tex.repeat.set(1/4.4,1/6.4);tex.offset.set(0.5,3.4/6.4);tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
    const face=new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:0.12,roughness:0.45,metalness:0.2}),rim=new THREE.MeshStandardMaterial({color:lin(0xd4a017),metalness:0.8,roughness:0.3});
-   const sg=new THREE.Mesh(g,[face,rim]);sg.scale.setScalar(1.55);sg.position.set(-19,13+5.4,z0-51.0);sg.castShadow=true;scene.add(sg);SIGIL.mat=face;
-   [-2,2].forEach(dx=>blk(0.4,4.6,0.4,-19+dx,13+2.3,z0-51.7,0x7a6a5a));
-   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19,13+5.2,z0-50.4);halo.scale.set(16,19,1);halo.userData.noCull=1;scene.add(halo);SIGIL.halo=halo}
+   const sg=new THREE.Mesh(g,[face,rim]);sg.scale.setScalar(1.55);sg.position.set(-19+8+0.2,13+6.0,z0-57);sg.rotation.y=Math.PI/2;sg.castShadow=true;scene.add(sg);SIGIL.mat=face;
+   [-2,2].forEach(dz=>blk(0.4,4.8,0.4,-19+7.3,13+2.4,z0-57+dz,0x7a6a5a));
+   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19+8.6,13+5.8,z0-57);halo.scale.set(16,19,1);halo.userData.noCull=1;scene.add(halo);SIGIL.halo=halo}
   birds(0,z0-50,5);
 }
 
@@ -3742,6 +3743,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     x(new _G.Cone(0.1,0.27,24),[0xff6b57,0x3d7cc9,0x7cc35a,0xb48cff][Math.floor(hash3(B,1,2)*4)],0.08,1.04,-0.01,1,1,1,0,0,-0.3);gl(S(0.035),0xffd23f,0.12,1.17,-0.01);x(new _G.Tor(0.1,0.018,8,24),0xfffaf0,0.04,0.915,-0.01,1,1,1,Math.PI/2,0,-0.3)}
   // a knight: breastplate over the tummy with a leather belt, round shoulder plates, a helmet with a brow band and a red
   // plume, a sword raised in the right paw and a red shield with a gold cross on the left
+  const ranged=(variant||'').includes('crossbow')||(variant||'').includes('bowgun');
   if(knight){const ST=0xc4ccd6,DK=0x6b7480,GD=0xd4a017,RD=0xc0302a;
     gl(S(1,32,20),ST,0,0.33,0.035,0.262,0.215,0.25);x(new _G.Tor(0.238,0.02,8,36),0x5a3a26,0,0.205,0.02,1,1,0.95,Math.PI/2,0,0);gl(new THREE.BoxGeometry(0.06,0.045,0.02),GD,0,0.205,0.258);
     [0.29,0.36,0.43].forEach(y=>x(new _G.Tor(0.25-Math.abs(y-0.36)*0.4,0.006,6,36,Math.PI),DK,0,y,0.03,1,1,1,Math.PI/2,0,0));
@@ -3749,10 +3751,21 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     gl(new _G.Sph(1,32,16,0,Math.PI*2,0,Math.PI*0.5),ST,0,0.83,0.0,0.29,0.25,0.28);x(new _G.Tor(0.285,0.022,8,40),DK,0,0.835,0.0,1,1,0.97,Math.PI/2,0,0);
     for(let k=0;k<4;k++)gl(S(0.012,8,6),GD,Math.sin(k*1.57+0.785)*0.285,0.86,Math.cos(k*1.57+0.785)*0.275);
     for(let k=0;k<7;k++){const a=k/6;x(S(1,12,10),RD,0,1.07-a*a*0.12+Math.sin(a*3)*0.02,0.02-a*0.3,0.04,0.06-a*0.015,0.07)}
-    gl(new THREE.BoxGeometry(0.03,0.4,0.008),0xe2e8ee,0.17,0.68,0.3);gl(new THREE.BoxGeometry(0.13,0.02,0.03),GD,0.17,0.47,0.3);x(new _G.Cyl(0.014,0.014,0.09,8),0x5a3a26,0.17,0.42,0.3);gl(S(0.02,10,8),GD,0.17,0.37,0.3);
+    if(ranged){const WD=0x6b4226;x(new THREE.BoxGeometry(0.05,0.05,0.44),WD,0,0.445,0.36);x(new THREE.BoxGeometry(0.34,0.032,0.04),WD,0,0.425,0.27);
+      gl(tube([[-0.23,0.455,0.5],[-0.12,0.455,0.56],[0,0.455,0.575],[0.12,0.455,0.56],[0.23,0.455,0.5]],0.012,16),ST);x(tube([[-0.23,0.455,0.5],[0,0.458,0.4],[0.23,0.455,0.5]],0.003,8),0xe8e0cc);
+      x(tube([[0,0.478,0.39],[0,0.478,0.62]],0.006,4),0x8a6a3a);gl(new _G.Cone(0.012,0.04,8),ST,0,0.478,0.64,1,1,1,Math.PI/2,0,0);gl(new _G.Tor(0.035,0.006,6,16),ST,0,0.43,0.6,1,1,1,0,0,0);
+      if((variant||'').includes('bowgun')){x(new THREE.BoxGeometry(0.05,0.085,0.22),WD,0,0.51,0.42);x(tube([[0,0.55,0.32],[0,0.5,0.2],[0,0.43,0.16]],0.008,8),WD)}}
+    else{gl(new THREE.BoxGeometry(0.03,0.4,0.008),0xe2e8ee,0.17,0.68,0.3);gl(new THREE.BoxGeometry(0.13,0.02,0.03),GD,0.17,0.47,0.3);x(new _G.Cyl(0.014,0.014,0.09,8),0x5a3a26,0.17,0.42,0.3);gl(S(0.02,10,8),GD,0.17,0.37,0.3);
     const sh=new THREE.Shape();sh.moveTo(-0.15,0.16);sh.lineTo(0.15,0.16);sh.lineTo(0.15,0.0);sh.quadraticCurveTo(0.14,-0.13,0,-0.2);sh.quadraticCurveTo(-0.14,-0.13,-0.15,0.0);sh.closePath();
     x(new THREE.ExtrudeGeometry(sh,{depth:0.02,bevelEnabled:true,bevelThickness:0.008,bevelSize:0.008,bevelSegments:1}),RD,-0.17,0.44,0.3);
-    gl(new THREE.BoxGeometry(0.04,0.3,0.012),GD,-0.17,0.44,0.332);gl(new THREE.BoxGeometry(0.24,0.04,0.012),GD,-0.17,0.5,0.332)}
+    gl(new THREE.BoxGeometry(0.04,0.3,0.012),GD,-0.17,0.44,0.332);gl(new THREE.BoxGeometry(0.24,0.04,0.012),GD,-0.17,0.5,0.332)}}
+  // the king: a gold crown with jewels over a red velvet cap, a curled moustache and a red cape with an ermine collar
+  if((variant||'').includes('king')){const GD=0xffc21a;gl(new _G.Cyl(0.155,0.165,0.085,32,1,true),GD,0,0.96,0.0);x(S(1,24,12),0xb0202a,0,0.98,0,0.14,0.07,0.14);
+    for(let k=0;k<8;k++){const a=k/8*Math.PI*2;gl(new _G.Cone(0.028,0.07,8),GD,Math.sin(a)*0.155,1.035,Math.cos(a)*0.155);gl(S(0.014,10,8),GD,Math.sin(a)*0.155,1.075,Math.cos(a)*0.155);gl(S(0.016,10,8),k%2?0xd8202a:0x2a6ad8,Math.sin(a)*0.164,0.965,Math.cos(a)*0.164)}
+    gl(S(0.025,12,10),GD,0,1.06,0);gl(new THREE.BoxGeometry(0.012,0.05,0.012),GD,0,1.1,0);gl(new THREE.BoxGeometry(0.035,0.012,0.012),GD,0,1.11,0);
+    [-1,1].forEach(s=>x(tube([[0,0.648,0.274],[s*0.045,0.642,0.275],[s*0.085,0.65,0.262],[s*0.105,0.672,0.24],[s*0.098,0.69,0.232]],0.011,14),0x4a2c1a));
+    x(new _G.Cyl(0.27,0.36,0.52,32,1,true,Math.PI*0.55,Math.PI*0.9),0xb0202a,0,0.27,-0.01);x(new _G.Tor(0.235,0.045,10,32),0xf8f6f0,0,0.53,0.0,1,1,1,Math.PI/2,0,0);
+    for(let k=0;k<10;k++){const a=k/10*Math.PI*2;x(S(0.008,6,4),0x1d1d1d,Math.sin(a)*0.235,0.56,Math.cos(a)*0.235)}}
   return{body,extra:X.length?partsGeo(X):null,gloss:G.length?partsGeo(G):null,eyes:partsGeo(Y),hi:partsGeo(H)}}
 function critterMesh(kind,variant){const key=kind+(variant||''),P=CRITG[key]||(CRITG[key]=critterParts(CRIT[kind],variant)),m=new THREE.Mesh(P.body,critMat);m.castShadow=true;
   [[P.extra,partMat],[P.gloss,glossMat],[P.eyes,eyeMat],[P.hi,hiMat]].forEach(([g,mt])=>{if(g){const c=new THREE.Mesh(g,mt);c.castShadow=mt!==hiMat;m.add(c)}});return m}
@@ -3782,7 +3795,7 @@ function addScarf(m){const mat=new THREE.MeshStandardMaterial({map:stripeFlat(pi
   const e=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.28,0.04),mat);e.position.set(0.09,0.38,0.2);e.rotation.set(0.2,0,0.25);e.castShadow=true;m.add(e)}
 function critters(kind,n,zTop,zBot,sc,scarf,variant){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
   for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3),scarf,variant);made++}}
-[[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown'],['drakelet',1,-46,undefined,'knight front']],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]],[['sprout',3],['hopbun',2],['petalpip',2]]]
+[[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown'],['drakelet',1,-46,undefined,'knight front'],['puffle',1,-47,undefined,'king']],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]],[['sprout',3],['hopbun',2],['petalpip',2]]]
   .forEach((list,o)=>{const r=ROOMS.findIndex(q=>q.orig===o);list.forEach(([k,n,zt,zb,v])=>critters(k,n,z0s[r]+(zt||0),z0s[r]+(zb!=null?zb:-AREA),1,r===SNOWR,v))});   // the castle's field pets wear clown make-up
 // pets having a swim at Number Bond Beach, each in a stripy rubber ring, paddling slow loops in the sea
 function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=critterMesh(kind);m.position.y=-0.36;g.add(m);
@@ -3820,6 +3833,9 @@ Object.keys(CRIT).forEach(k=>critters(k,1,zF0,zF0-FIN,1.15));
  // a mime in a striped top, beret and white gloves, feeling along an invisible wall
  {const m=perf('hopbun','mime front',-10,z0-30,0.7),x0=m.position.x,z00=m.position.z;anims.push(t=>{const s=Math.sin(t*0.6);m.position.set(x0+Math.cos(0.7)*s*0.35,Math.abs(Math.sin(t*1.2))*0.02,z00-Math.sin(0.7)*s*0.35);m.rotation.z=Math.sin(t*1.2)*0.04})}}
 {const zc0=z0s[RI('castle')];
+// a knight guarding the keep door, and two crossbow guards either side of the gate passage
+[[-9.4,-58.15,Math.PI/2,'hopbun','knight front',0],[-2.6,-47.4,0.3,'starbit','knight crossbow front',0],[2.6,-47.4,-0.3,'splashy','knight bowgun front',0]].forEach(([x,z,ry,k,v,y],i)=>{const m=critterMesh(k,v);m.scale.setScalar(1.05);m.position.set(x,y,zc0+z);m.rotation.y=ry;scene.add(m);if(!y){colCirc(x,zc0+z,0.45);reserve(x,zc0+z,1.4)}
+  const ph=i*1.3+2;anims.push(t=>{m.position.y=y+Math.abs(Math.sin(t*1.1+ph))*0.012;m.rotation.y=ry+Math.sin(t*0.27+ph)*0.22})});
 // two knights stand guard on either side of the path inside the gate
   [[-4.4,'puffle'],[4.4,'embertail']].forEach(([x,k],i)=>{const m=critterMesh(k,'knight front');m.scale.setScalar(1.05);m.position.set(x,0,zc0-48.6);m.rotation.y=i?-0.25:0.25;scene.add(m);colCirc(x,zc0-48.6,0.45);reserve(x,zc0-48.6,1.4);
     const ph=i*1.7;anims.push(t=>{m.position.y=Math.abs(Math.sin(t*1.1+ph))*0.012;m.rotation.y=(i?-0.25:0.25)+Math.sin(t*0.3+ph)*0.15})});
