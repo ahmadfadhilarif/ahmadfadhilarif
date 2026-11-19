@@ -19,6 +19,8 @@ Places are met in order of difficulty, easiest first:
 
 The Welcome Garden has 4 panels and every other place has 8: 76 puzzles in all. In Place Value Castle the drawbridge over the moat comes down once you solve the castle's 4th puzzle. At the end, Finish Meadow launches a rocket from behind the fountain and fireworks burst over the sea.
 
+The island is full of life: fish in the rivers and ponds, a fisherman, farmers, beekeepers, market sellers, ice skaters, a polar bear cub, kingfishers with their chicks, seagulls, a jetski and skimboarders at the beach, and two snack kiosks with picnic tables.
+
 One day on the island lasts one real hour, with sunrise, sunset, a starry night and moonlight. Everything stays easy to see at night.
 
 ## Play
@@ -32,7 +34,7 @@ Open `index.html` in a modern browser. It is a single self-contained file; it lo
 - **Solve:** click a panel, click to start the line at the big circle, trace, click at the rounded end
 - **Solve current:** the button in the corner solves the next unsolved panel for you
 - **Step back:** Esc, right-click, or the Step back button
-- **Sit:** look at a bench and press E or click
+- **Sit:** look at a bench or a picnic-table seat and press E or click
 - **Menu:** M or the Menu button
 
 ## Quality
