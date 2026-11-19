@@ -2720,13 +2720,21 @@ function buildRiver(gz,o){const c=gz-GAP/2,hw=3.4,L=hw+1.8,H=0.85,deck=o.stone?0
 }
 // natural rose colours, one kind per arch: deep red, soft pink, white, yellow, coral, crimson, blush and peach
 const ROSEC=[[0xa8102a,0xb81530],[0xf28aac,0xf59cb9],[0xfaf4ea,0xf6efe0],[0xf5cc3a,0xf7d65a],[0xf27a4e,0xf48a5e],[0xd31e3c,0xdc2c48],[0xf8c3cf,0xf4b3c3],[0xf6b48c,0xf8c29c]];
+const ARCHZ=[];
 function buildGardenLink(gz,o){const c=gz-GAP/2;
   paths([[[0,gz-0.6],[0,gz-GAP+0.6]]],3,0,o.kind==='frost'?SNOWPATH:undefined);
   if(o.kind==='roses'){
     let last=gz-4;
     for(let z=gz-4;z>gz-GAP+4;z-=2.4){last=z;mesh(new THREE.TorusGeometry(1.9,0.06,10,48,Math.PI),0xfffaf0,0,1.1,z);[-1.9,1.9].forEach(x=>{blk(0.12,1.15,0.12,x,0.57,z,0xfffaf0);colCirc(x,z,0.12)});
-      for(let k=0;k<=8;k++){const a=k/8*Math.PI,x=Math.cos(a)*1.9,y=1.1+Math.sin(a)*1.9;INST.bush.push({x,y,z:z+(RS()-0.5)*0.3,s:0.38+RS()*0.1,sy:0.34,c:pick([0x4a9446,0x3f8f45]),ry:RS()*6});
+      for(let k=0;k<=8;k++){const a=k/8*Math.PI,x=Math.cos(a)*1.9,y=1.1+Math.sin(a)*1.9;ARCHZ.push(z);
         for(let f=0;f<3;f++)INST.flower.push({x:x+(RS()-0.5)*0.5,y:y+(RS()-0.5)*0.4,z:z+(RS()-0.5)*0.5,s:1.25+RS()*0.3,c:pick(ROSEC[Math.round((gz-4-z)/2.4)%ROSEC.length]),ry:RS()*6,rx:(RS()-0.5)*2,k:'rose'})}}
+    // thin climbing-rose vines twine up each post and round the arch, with small leaves along them (the roses stay in full view)
+    {const parts=[],arches=[...new Set(ARCHZ)],lf=new THREE.Shape();lf.moveTo(0,0);lf.quadraticCurveTo(0.035,0.03,0,0.085);lf.quadraticCurveTo(-0.035,0.03,0,0);
+     arches.forEach(z=>[0,1].forEach(w=>{const pts=[];for(let i=0;i<=90;i++){const u=i/90;let cx,cy,rx,ry;if(u<0.2){const t=u/0.2;cx=-1.9;cy=t*1.1;rx=1;ry=0}else if(u>0.8){const t=(u-0.8)/0.2;cx=1.9;cy=1.1-t*1.1;rx=1;ry=0}
+        else{const a=Math.PI*(1-(u-0.2)/0.6);cx=Math.cos(a)*1.9;cy=1.1+Math.sin(a)*1.9;rx=Math.cos(a);ry=Math.sin(a)}const ph=u*Math.PI*14+w*Math.PI,rr=0.085;pts.push([cx+rx*Math.cos(ph)*rr,cy+ry*Math.cos(ph)*rr,z+Math.sin(ph)*rr])}
+       parts.push(colGeo(tube(pts,0.012,180),0x4a5a28));const crv=new THREE.CatmullRomCurve3(pts.map(q=>new THREE.Vector3(...q))),v=new THREE.Vector3(),tg=new THREE.Vector3();
+       for(let i=0;i<60;i++){const u=(i+0.5)/60;crv.getPointAt(u,v);crv.getTangentAt(u,tg);const g=new THREE.ShapeGeometry(lf,2);g.rotateZ((i%2?1:-1)*1.0);g.rotateY(Math.atan2(tg.x,tg.z)+(i%2?0.5:-0.5));g.translate(v.x,v.y,v.z);parts.push(colGeo(g,i%3?0x3f7f36:0x5a9a46))}}));
+     const vm=new THREE.Mesh(mergeColored(parts),plantMat);vm.castShadow=true;scene.add(vm);ARCHZ.length=0}
     rod([0,3.0,gz-4],[0,3.0,last],0.04,0xfffaf0);[-1,1].forEach(s=>rod([s*1.34,2.44,gz-4],[s*1.34,2.44,last],0.035,0xfffaf0));
     [-1,1].forEach(s=>{for(let z=gz-3;z>gz-GAP+2;z-=4){mesh(new THREE.CylinderGeometry(0.07,0.09,0.9,10),0x7a5236,s*5.2,0.45,z);INST.bush.push({x:s*5.2,y:1.25,z,s:0.85,sy:0.85,c:0x2f6a44,ry:RS()*6});INST.blob.push({x:s*5.2,y:0.036,z,s:1.2,ry:0});colCirc(s*5.2,z,0.35);reserve(s*5.2,z,1)}
       flowerBed(s*13,c,2.0);flowerBed(s*22,gz-6,1.6);flowerBed(s*22,gz-GAP+6,1.6);bench(s*3.6,c+(s>0?3.6:-3.6),s>0?'w':'e')});
@@ -2861,7 +2869,7 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     ring=(h,dx,col)=>mesh(new _G.Tor(0.07,0.014,10,28),col||0x2b3a42,dx(L-0.2),1.15,0.06,h),
     flower=(p,x,y,zz,col,r)=>{r=r||0.05;mesh(S(r*0.55),0xffd23f,x,y,zz+0.01,p);for(let k=0;k<6;k++){const a=k*Math.PI/3;mesh(S(r*0.6,10,8),col,x+Math.cos(a)*r,y+Math.sin(a)*r,zz,p).scale.set(1,1,0.4)}},
     rose=(p,x,y,zz,col,r)=>{r=r||0.07;const m=mesh(S(r,14,10),col,x,y,zz,p);m.scale.set(1,0.8,1);for(let k=0;k<5;k++){const a=k*1.256;mesh(S(r*0.55,10,8),col,x+Math.cos(a)*r*0.8,y-0.01+Math.sin(a)*r*0.5,zz+Math.sin(a)*r*0.6,p)}};
-  let kind='swing',snd='swing',leaves;
+  let kind='swing',snd=['roses','fin','adding','lavender','glass'].includes(th)?'iron':'swing',leaves;
   if(th==='tulips'){   // tulip gate: green boards topped with a row of tulips, and pots of tulips on the posts
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x2f7a4a);boards(h,dx,8,0x3f9a5a,0x48a462,t=>H-0.55+0.12*Math.sin(t*Math.PI*4));hinges(h,dx);ring(h,dx);
       for(let k=0;k<5;k++){const x=dx(0.2+k*0.28),c=[0xff4f6a,0xffd23f,0xff8a3d,0xc04ad8,0xff7fb0][k];mesh(new _G.Cyl(0.012,0.012,0.4,6),0x3f7f36,x,1.95,0.06,h);mesh(S(0.075,12,10),c,x,2.2,0.06,h).scale.set(1,1.35,1);
@@ -3886,13 +3894,23 @@ const SHOT={
     if(Math.random()<0.12){hiss(o,t+0.04,0.06,'lowpass',1100,0.7,1);blip(o,'sine',150,55,t+0.04,0.09)}},
   splash:(o,t)=>hiss(o,t,0.35,'bandpass',1700,1.2,1),
   squeak:(o,t)=>{blip(o,'sine',900,1500,t,0.12,null,[30,60]);blip(o,'sine',1100,1300,t+0.16,0.1)}};
-// gate sounds, loud and clear: a swing gate clacks its latch, creaks open and bumps against its stop; a portcullis rattles
-// up on its chain with a deep grind and a heavy clunk; sliding doors roll on their track and click into place
-function gateSound(kind){if(!AMB.ready||muted)return;const t=AC.currentTime;
-  if(kind==='lift'){const o=shotOut(0.6,0,t);for(let i=0;i<28;i++)hiss(o,t+i*0.08+Math.random()*0.02,0.05,'bandpass',2200+Math.random()*1800,5,1);blip(o,'sawtooth',62,48,t,2.6,['lowpass',260,1.5]);hiss(o,t,2.6,'lowpass',220,1,0.6);blip(o,'sine',80,40,t+2.55,0.45);hiss(o,t+2.55,0.35,'lowpass',300,1,1)}
-  else if(kind==='slide'){const o=shotOut(0.5,0,t);hiss(o,t,1.7,'bandpass',420,0.8,0.9);blip(o,'triangle',140,120,t,1.6,['lowpass',400,1]);blip(o,'square',2400,1800,t+1.7,0.05,['bandpass',2600,4]);[1568,2093].forEach((f,i)=>blip(o,'sine',f,f,t+1.8+i*0.12,0.5))}
-  else{const o=shotOut(0.55,0,t);blip(o,'square',1900,950,t,0.05,['bandpass',2200,3]);hiss(o,t,0.06,'highpass',2500,1,1);blip(o,'sawtooth',98,60,t+0.12,1.4,['bandpass',560,7],[8,10]);blip(o,'sawtooth',150,95,t+0.45,1.0,['bandpass',820,9],[12,7]);
-    blip(o,'sine',95,45,t+1.75,0.35);hiss(o,t+1.75,0.25,'lowpass',260,1,1)}}
+// gate sounds, built like the real thing:
+//  a wooden gate: the latch clacks, the hinges creak (a stick-slip squeal through the wood's resonance) and the gate
+//    bumps softly against its stop;  an iron gate: a metal latch, a higher, squealing hinge and a clang;
+//  a portcullis or drawbridge: a winch ratchet, a long rattle of chain links, a low grind and a heavy iron clank;
+//  sliding glass doors: rollers rumbling along a track, a soft stop and a faint ring of glass
+function ping(o,f,t,dec,vol){const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dec);os.connect(g);g.connect(o);os.start(t);os.stop(t+dec+0.05)}
+function creak(o,t,dur,rate,form,vol){const os=AC.createOscillator(),g=AC.createGain(),b1=AC.createBiquadFilter(),b2=AC.createBiquadFilter(),mix=AC.createGain();os.type='sawtooth';
+  os.frequency.setValueAtTime(rate,t);for(let u=0.06;u<dur;u+=0.06+Math.random()*0.07)os.frequency.linearRampToValueAtTime(rate*(0.55+Math.random()*0.9),t+u);
+  b1.type=b2.type='bandpass';b1.frequency.value=form;b2.frequency.value=form*2.3;b1.Q.value=18;b2.Q.value=14;os.connect(b1);os.connect(b2);b1.connect(mix);b2.connect(mix);mix.gain.value=Math.min(16,form/50);mix.connect(g);g.connect(o);
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.08);for(let u=0.2;u<dur-0.2;u+=0.15)g.gain.linearRampToValueAtTime(vol*(0.45+Math.random()*0.55),t+u);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);os.start(t);os.stop(t+dur+0.05)}
+function clank(o,t,vol){hiss(o,t,0.12,'bandpass',1400,1.5,vol);[190,433,771,1312,1980].forEach((f,i)=>ping(o,f*(0.97+Math.random()*0.06),t,0.9-i*0.12,vol*0.35/(1+i*0.4)))}
+function chain(o,t,dur,vol){let u=0;while(u<dur){hiss(o,t+u,0.025,'bandpass',2400+Math.random()*3600,8,vol);if(Math.random()<0.35)ping(o,2800+Math.random()*1800,t+u,0.07,vol*0.25);u+=0.035+Math.random()*0.06}}
+function gateSound(kind){if(!AMB.ready||muted)return;const t=AC.currentTime,o=shotOut(0.6,0,t);
+  if(kind==='lift'||kind==='bridge'){const D=kind==='bridge'?4.4:2.6;for(let u=0;u<D;u+=0.125)hiss(o,t+u,0.02,'highpass',3500,1,0.5);chain(o,t+0.05,D-0.1,0.55);hiss(o,t,D,'lowpass',140,1,0.55);clank(o,t+D,0.9)}
+  else if(kind==='slide'){hiss(o,t,1.7,'bandpass',300,1.1,0.7);for(let u=0.15;u<1.6;u+=0.26)hiss(o,t+u,0.018,'bandpass',1800,3,0.15);blip(o,'sine',150,80,t+1.7,0.18);hiss(o,t+1.7,0.08,'lowpass',500,1,0.6);[2610,3920].forEach(f=>ping(o,f,t+1.72,0.45,0.05))}
+  else if(kind==='iron'){hiss(o,t,0.03,'bandpass',4200,3,1);ping(o,2350,t,0.25,0.25);ping(o,3700,t+0.01,0.18,0.15);creak(o,t+0.12,1.5,46,1650,0.32);clank(o,t+1.7,0.55)}
+  else{hiss(o,t,0.03,'bandpass',3200,3,0.9);ping(o,1900,t,0.12,0.18);creak(o,t+0.1,1.55,38,820,0.55);creak(o,t+0.45,0.9,52,1250,0.3);blip(o,'sine',120,60,t+1.7,0.22);hiss(o,t+1.7,0.14,'lowpass',380,1,0.9)}}
 function ambUpdate(dt,ts){if(!AMB.ready)return;
   const cx=camera.position.x,cz=camera.position.z,ry=camera.rotation.y,cr=Math.cos(ry),sr=Math.sin(ry),now=AC.currentTime;
   const panOf=(ax,az)=>{const dx=ax-cx,dz=az-cz,d=Math.hypot(dx,dz);return d<0.6?0:(dx*cr-dz*sr)/d};
