@@ -2627,6 +2627,8 @@ function giantButterfly(x,y,z,ry,tex,fly){tex=tex||bflyTex;const g=new THREE.Gro
 // 'back' floats belly-up holding a pebble and drifts in slow circles, 'swim' paddles a loop with its head up,
 // 'sit' stands up on the bank like a periscope and looks around
 const otterM={pb:new THREE.MeshStandardMaterial({color:lin(0x9aa3a8),roughness:0.4})};
+// fur: every guard hair catches the light a little differently, and the coat lies in faint streaks along the body
+function otFur(c,x,y,z){const h=hash3(Math.floor(x/0.007),Math.floor(y/0.007),Math.floor(z/0.007));c.multiplyScalar(0.95+0.1*h);const st=Math.sin(z*230+Math.sin(x*70)*2.2+y*40);c.multiplyScalar(1-0.05*Math.max(0,st))}
 const OTTER=(()=>{const DK=0x24170e,MD=0x3d2819,LT=0xb08d68;
   const toes=(cx,cy,cz,dir,spread,r,col)=>[0,1,2,3,4].map(k=>{const a=dir+(k-2)*spread;return{t:'e',c:[cx+Math.sin(a)*r,cy,cz+Math.cos(a)*r],r:[0.0105,0.0095,0.017],rot:[0,a,0],col,k:0.008}});
   // on all fours: shoulders and thighs blend into the body, elbows and knees bend, small front paws and big webbed
@@ -2635,14 +2637,14 @@ const OTTER=(()=>{const DK=0x24170e,MD=0x3d2819,LT=0xb08d68;
     {t:'e',c:[s*0.097,-0.16,0.27],r:[0.036,0.015,0.044],col:DK,k:0.02},...toes(s*0.097,-0.162,0.27,s*0.05,0.24,0.042,DK),
     {t:'e',c:[s*0.088,-0.035,-0.215],r:[0.068,0.088,0.095],col:MD,k:0.06},{t:'c',a:[s*0.098,-0.095,-0.235],b:[s*0.105,-0.148,-0.2],ra:0.042,rb:0.03,col:MD,k:0.03},
     {t:'e',c:[s*0.112,-0.16,-0.16],r:[0.052,0.014,0.085],rot:[0,s*0.18,0],col:DK,k:0.02},...toes(s*0.112,-0.161,-0.16,s*0.18,0.22,0.085,DK)];
-  const paintFlat=(c,x,y,z,nx,ny,nz)=>{mixC(c,DK,sstep(0.2,0.8,ny)*0.7);if(y>-0.13){mixC(c,LT,sstep(-0.2,-0.6,ny)*sstep(-0.1,0.15,z)*0.8);if(z>0.25)mixC(c,LT,sstep(-0.05,-0.45,ny))}};
+  const paintFlat=(c,x,y,z,nx,ny,nz)=>{mixC(c,DK,sstep(0.2,0.8,ny)*0.7);if(y>-0.13){mixC(c,LT,sstep(-0.2,-0.6,ny)*sstep(-0.1,0.15,z)*0.8);if(z>0.25)mixC(c,LT,sstep(-0.05,-0.45,ny))}otFur(c,x,y,z)};
   const body=sculpt([{t:'e',c:[0,0,0.17],r:[0.13,0.12,0.19],col:MD,k:0.06},{t:'e',c:[0,0.005,-0.02],r:[0.145,0.125,0.2],col:MD,k:0.08},{t:'e',c:[0,0,-0.22],r:[0.135,0.115,0.17],col:MD,k:0.08},
-    {t:'e',c:[0,0.035,0.33],r:[0.1,0.095,0.12],col:MD,k:0.07},{t:'e',c:[0,-0.01,-0.36],r:[0.08,0.065,0.1],col:MD,k:0.05},...legs(-1),...legs(1)],{h:0.006,blend:0.015,paint:paintFlat});
+    {t:'e',c:[0,0.035,0.33],r:[0.1,0.095,0.12],col:MD,k:0.07},{t:'e',c:[0,-0.01,-0.36],r:[0.08,0.065,0.1],col:MD,k:0.05},...legs(-1),...legs(1)],{h:0.0048,blend:0.015,paint:paintFlat});
   // the tail grows straight out of the hips: thick and muscular at the root, tapering smoothly to a point, a little flattened
   const tail=sculpt([{t:'c',a:[0,0,0.07],b:[0,-0.008,-0.12],ra:0.085,rb:0.072,col:MD,k:0.04},{t:'c',a:[0,-0.008,-0.12],b:[0,-0.018,-0.28],ra:0.072,rb:0.052,col:MD,k:0.04},
     {t:'c',a:[0,-0.018,-0.28],b:[0,-0.026,-0.43],ra:0.052,rb:0.03,col:DK,k:0.04},{t:'c',a:[0,-0.026,-0.43],b:[0,-0.03,-0.56],ra:0.03,rb:0.007,col:DK,k:0.03}],
-    {h:0.006,blend:0.04,paint:(c,x,y,z,nx,ny,nz)=>mixC(c,DK,sstep(0.1,0.8,ny)*0.5)});tail.scale(1,0.8,1);
-  const paintUp=(c,x,y,z,nx,ny,nz)=>{mixC(c,LT,sstep(0.1,0.5,nz)*sstep(0.2,0.3,y)*sstep(0.72,0.6,y)*0.85);mixC(c,DK,sstep(0.5,0.9,-nz)*0.35)};
+    {h:0.0048,blend:0.04,paint:(c,x,y,z,nx,ny,nz)=>{mixC(c,DK,sstep(0.1,0.8,ny)*0.5);otFur(c,x,y,z)}});tail.scale(1,0.8,1);
+  const paintUp=(c,x,y,z,nx,ny,nz)=>{mixC(c,LT,sstep(0.1,0.5,nz)*sstep(0.2,0.3,y)*sstep(0.72,0.6,y)*0.85);mixC(c,DK,sstep(0.5,0.9,-nz)*0.35);otFur(c,y,z,x)};
   // sitting in a chair: bottom on the seat, round tummy, leaning back a little, legs out along the seat with the big
   // feet sticking up over the edge, paws holding a shell on its tummy, and the tail hanging down behind the seat
   const chair=sculpt([{t:'e',c:[0,0.1,-0.03],r:[0.135,0.1,0.14],col:MD,k:0.06},{t:'e',c:[0,0.21,0.0],r:[0.13,0.13,0.125],col:MD,k:0.08},{t:'e',c:[0,0.35,-0.045],r:[0.115,0.12,0.1],col:MD,k:0.08},
@@ -2652,7 +2654,7 @@ const OTTER=(()=>{const DK=0x24170e,MD=0x3d2819,LT=0xb08d68;
       {t:'c',a:[s*0.095,0.39,-0.03],b:[s*0.118,0.29,0.06],ra:0.042,rb:0.035,col:MD,k:0.04},{t:'c',a:[s*0.118,0.29,0.06],b:[s*0.045,0.27,0.13],ra:0.035,rb:0.028,col:MD,k:0.03},
       {t:'e',c:[s*0.035,0.272,0.14],r:[0.034,0.028,0.026],col:DK,k:0.02}]),
     {t:'c',a:[0,0.05,-0.12],b:[0,0.035,-0.2],ra:0.08,rb:0.07,col:MD,k:0.05},{t:'c',a:[0,0.035,-0.2],b:[0,-0.14,-0.25],ra:0.07,rb:0.05,col:MD,k:0.04},
-    {t:'c',a:[0,-0.14,-0.25],b:[0,-0.32,-0.24],ra:0.05,rb:0.028,col:DK,k:0.04},{t:'c',a:[0,-0.32,-0.24],b:[0,-0.42,-0.19],ra:0.028,rb:0.008,col:DK,k:0.03}],{h:0.006,blend:0.015,paint:paintUp});
+    {t:'c',a:[0,-0.14,-0.25],b:[0,-0.32,-0.24],ra:0.05,rb:0.028,col:DK,k:0.04},{t:'c',a:[0,-0.32,-0.24],b:[0,-0.42,-0.19],ra:0.028,rb:0.008,col:DK,k:0.03}],{h:0.0048,blend:0.015,paint:paintUp});
   // standing up on its hind legs on the bank: feet flat with spread toes, paws held up at its chest, tail along the ground behind as a prop
   const stand=sculpt([{t:'e',c:[0,0.16,-0.03],r:[0.13,0.12,0.12],col:MD,k:0.06},{t:'e',c:[0,0.3,0],r:[0.125,0.14,0.115],col:MD,k:0.08},{t:'e',c:[0,0.46,0],r:[0.11,0.12,0.1],col:MD,k:0.08},
     {t:'e',c:[0,0.6,0.01],r:[0.088,0.08,0.088],col:MD,k:0.07},
@@ -2661,17 +2663,17 @@ const OTTER=(()=>{const DK=0x24170e,MD=0x3d2819,LT=0xb08d68;
       {t:'c',a:[s*0.095,0.52,0.0],b:[s*0.105,0.42,0.07],ra:0.04,rb:0.034,col:MD,k:0.04},{t:'c',a:[s*0.105,0.42,0.07],b:[s*0.045,0.44,0.125],ra:0.034,rb:0.027,col:MD,k:0.03},
       {t:'e',c:[s*0.04,0.445,0.13],r:[0.032,0.03,0.024],col:DK,k:0.02}]),
     {t:'c',a:[0,0.12,-0.1],b:[0,0.045,-0.22],ra:0.08,rb:0.062,col:MD,k:0.05},{t:'c',a:[0,0.045,-0.22],b:[0,0.03,-0.38],ra:0.062,rb:0.042,col:MD,k:0.04},
-    {t:'c',a:[0,0.03,-0.38],b:[0.04,0.022,-0.52],ra:0.042,rb:0.022,col:DK,k:0.04},{t:'c',a:[0.04,0.022,-0.52],b:[0.09,0.018,-0.6],ra:0.022,rb:0.006,col:DK,k:0.03}],{h:0.006,blend:0.015,paint:paintUp});
+    {t:'c',a:[0,0.03,-0.38],b:[0.04,0.022,-0.52],ra:0.042,rb:0.022,col:DK,k:0.04},{t:'c',a:[0.04,0.022,-0.52],b:[0.09,0.018,-0.6],ra:0.022,rb:0.006,col:DK,k:0.03}],{h:0.0048,blend:0.015,paint:paintUp});
   const head=sculpt([{t:'e',c:[0,0.02,-0.01],r:[0.1,0.078,0.105],col:MD,k:0.03},{t:'e',c:[0,-0.005,0.085],r:[0.072,0.052,0.07],col:MD,k:0.04},
     ...[-1,1].map(s=>({t:'e',c:[s*0.033,-0.012,0.12],r:[0.038,0.032,0.032],col:LT,k:0.02})),{t:'e',c:[0,-0.04,0.06],r:[0.05,0.026,0.05],col:LT,k:0.03},
     {t:'e',c:[0,-0.045,-0.06],r:[0.09,0.09,0.09],col:MD,k:0.04},...[-1,1].map(s=>({t:'e',c:[s*0.08,0.07,-0.03],r:[0.022,0.02,0.012],col:DK,k:0.015}))],
-    {h:0.005,blend:0.012,paint:(c,x,y,z,nx,ny,nz)=>{mixC(c,DK,sstep(0.3,0.9,ny)*0.6);mixC(c,LT,sstep(-0.005,-0.03,y)*sstep(0.0,0.06,z));[-1,1].forEach(s=>mixC(c,DK,sstep(0.03,0.015,Math.hypot(x-s*0.055,y-0.04,z-0.07))*0.6))}});
+    {h:0.004,blend:0.012,paint:(c,x,y,z,nx,ny,nz)=>{otFur(c,x,y,z);mixC(c,DK,sstep(0.3,0.9,ny)*0.6);mixC(c,LT,sstep(-0.005,-0.03,y)*sstep(0.0,0.06,z));[-1,1].forEach(s=>mixC(c,DK,sstep(0.03,0.015,Math.hypot(x-s*0.055,y-0.04,z-0.07))*0.6))}});
   const G=[],W=[],E=[],H=[],S=r=>new _G.Sph(r,24,16);
   partAdder(G)(S(1),0x0c0a08,0,0.012,0.15,0.027,0.017,0.015);[-1,1].forEach(s=>{partAdder(E)(S(0.016),0,s*0.055,0.04,0.07);partAdder(H)(S(0.0045),0,s*0.059,0.047,0.083);
     for(let k=0;k<6;k++){const a=-0.5+k*0.2,L=0.11+k%2*0.03;partAdder(W)(tube([[s*0.05,-0.01+k*0.004,0.125],[s*(0.05+L*0.55),-0.012+a*0.05,0.13+L*0.15],[s*(0.05+L),-0.025+a*0.09,0.11+L*0.12]],0.0014,10),0xf2ece0)}});
   const shell=(()=>{const g=new _G.Sph(0.045,20,10,0,Math.PI*2,0,Math.PI/2),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),a=Math.atan2(z,x);p.setY(i,p.getY(i)*0.45*(1+0.08*Math.cos(a*14)))}g.computeVertexNormals();const A=[];partAdder(A)(g,0xf2d6c4);return partsGeo(A)})();
   return{body,tail,chair,stand,head,shell,nose:partsGeo(G),wh:partsGeo(W),eyes:partsGeo(E),hi:partsGeo(H),
-    mat:triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.42,clearcoat:0.35,clearcoatRoughness:0.45,sheen:new THREE.Color(0.35,0.28,0.2)}),softTex,5,0,true)}})();
+    mat:triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.58,clearcoat:0.12,clearcoatRoughness:0.6,sheen:new THREE.Color(0.45,0.36,0.26)}),TX2.fur,36,0.008,true)}})();
 // pose: 'flat' (on all fours, swimming or floating), 'chair' (sitting on a seat) or 'stand' (up on its hind legs)
 function otterModel(pose){const g=new THREE.Group(),add=(geo,mat,p)=>{const m=new THREE.Mesh(geo,mat);m.castShadow=mat!==hiMat;p.add(m);return m};pose=pose||'flat';
   add(pose==='chair'?OTTER.chair:pose==='stand'?OTTER.stand:OTTER.body,OTTER.mat,g);
@@ -3640,20 +3642,26 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   else if(K.ear==='long')[-1,1].forEach(s=>e([s*0.11,1.05,-0.03],[0.05,0.19,0.03],E,0.04,[0.15,0,-s*0.15]));
   else if(K.ear==='fin'){e([0,0.95,-0.04],[0.032,0.12,0.15],E,0.03);[-1,1].forEach(s=>e([s*0.27,0.72,-0.01],[0.03,0.1,0.13],E,0.03,[0,0,s*0.6]))}
   else if(K.ear==='horn')[-1,1].forEach(s=>cap([s*0.11,0.9,-0.02],[s*0.17,1.1,-0.09],0.05,0.012,E,0.03));
+  if(K.ear!=='leaf'&&K.ear!=='antenna'){cap([0,0.925,0.12],[0.025,0.975,0.2],0.042,0.018,B,0.03);cap([-0.03,0.915,0.13],[-0.05,0.95,0.19],0.03,0.014,B,0.025)}   // a little forelock
+  [-1,1].forEach(s=>[[0.62,0],[0.58,0.03]].forEach(([y,dz])=>cap([s*0.235,y+0.02,0.08+dz],[s*0.31,y-0.02,0.06+dz],0.034,0.006,B,0.02)));   // cheek tufts
   if(K.tail==='puff')e([0,0.24,-0.25],[0.09,0.09,0.085],T,0.03);
   else if(K.tail==='flame'){cap([0,0.24,-0.2],[0,0.44,-0.41],0.045,0.07,B,0.04);cap([0,0.44,-0.41],[0,0.72,-0.46],0.09,0.012,T,0.06)}
   else if(K.tail==='fin')e([0,0.3,-0.3],[0.025,0.11,0.12],T,0.03,[0.4,0,0]);
   else if(K.tail==='spike'){cap([0,0.2,-0.17],[0,0.12,-0.56],0.08,0.02,B,0.05);[[0.45,-0.21],[0.63,-0.2],[0.84,-0.2]].forEach(([y,z])=>cap([0,y,z],[0,y+0.08,z-0.09],0.04,0.01,T,0.015))}
   const inner=K.ear==='round'?[[0.185,0.91,0.055,0.055]]:K.ear==='point'?[[0.16,0.95,0.04,0.075]]:K.ear==='long'?[[0.11,1.05,0.026,0.15]]:[];
-  const paint=(c,x,y,z,nx,ny,nz)=>{const eb=(x/0.17)**2+((y-0.27)/0.2)**2;if(z>0)mixC(c,K.belly,sstep(1.05,0.7,eb)*sstep(0.05,0.35,nz));
+  const toe=new THREE.Color(B).multiplyScalar(0.55).getHex();
+  const paint=(c,x,y,z,nx,ny,nz)=>{const fh=hash3(Math.floor(x/0.011),Math.floor(y/0.011),Math.floor(z/0.011));c.multiplyScalar(0.95+0.1*fh);c.multiplyScalar(1-0.07*sstep(0.85,1.0,y)*sstep(-0.2,0.4,-nz));
+    const eb=(x/0.17)**2+((y-0.27)/0.2)**2+(fh-0.5)*0.12;if(z>0)mixC(c,K.belly,sstep(1.05,0.7,eb)*sstep(0.05,0.35,nz));
+    if(y<0.075&&z>0.17)[-1,1].forEach(s=>[-0.019,0.019].forEach(o=>mixC(c,toe,sstep(0.0045,0.0015,Math.abs(x-s*0.125-o))*sstep(0.075,0.05,y)*0.7)));
     mixC(c,K.belly,sstep(1.1,0.75,Math.hypot(x/0.11,(y-0.625)/0.08,(z-0.22)/0.1))*0.75);if(y<0.025)mixC(c,K.belly,0.6);
     if(nz>0.15)inner.forEach(([ex,ey,rx,ry])=>mixC(c,0xffb3c4,sstep(1,0.6,Math.hypot((Math.abs(x)-ex)/rx,(y-ey)/ry))*0.75));
     [-1,1].forEach(s=>mixC(c,clown?0xff6f8f:0xff8fb3,sstep(clown?0.085:0.075,clown?0.045:0.035,Math.hypot(x-s*0.17,y-0.64,(z-0.2)*0.7))*0.85));
     if(K.tail==='flame'&&z<-0.38&&y>0.45)mixC(c,0xff6b2c,sstep(0.75,0.5,y));
     if(clown&&z>0.12){const hx=(x+0.11)/0.022,hy=(y-0.665)/0.022,hv=Math.pow(hx*hx+hy*hy-1,3)-hx*hx*hy*hy*hy;mixC(c,0x3d9be0,sstep(0.15,-0.25,hv))}
     if(mime&&y>0.12&&y<0.5&&z>-0.3)mixC(c,Math.floor((y-0.12)/0.055)%2?0xf8f6f0:0x232a33,0.92)};
-  const body=sculpt(sh,{h:clown?0.011:0.0135,blend:0.012,paint});
+  const body=sculpt(sh,{h:clown?0.0095:0.0108,blend:0.012,paint});
   const x=partAdder(X),gl=partAdder(G),S=(r,w,h)=>new _G.Sph(r,w||24,h||16);
+  if(!mime&&!knight)[-1,1].forEach(s=>x(tube([[s*0.072,0.835,0.232],[s*0.105,0.852,0.238],[s*0.138,0.84,0.226]],0.0065,10),new THREE.Color(E).multiplyScalar(0.6).getHex()));   // eyebrows
   [-1,1].forEach(s=>{partAdder(Y)(S(1,28,20),0,s*0.105,0.75,0.25,0.055,0.065,0.032);partAdder(H)(S(0.016,12,8),0,s*0.09,0.78,0.279);partAdder(H)(S(0.0075,10,6),0,s*0.118,0.725,0.276)});
   if(clown)gl(S(0.04),0xf0303a,0,0.668,0.272);else gl(S(1),0x5a2c30,0,0.668,0.262,0.032,0.021,0.018);[-1,1].forEach(s=>x(new _G.Tor(0.018,0.0045,6,16,Math.PI),0x4a2424,s*0.018,clown?0.625:0.632,0.266,1,1,1,0,0,Math.PI));
   if(mime){[-1,1].forEach(s=>x(S(1,16,12),0xfafafa,s*0.155,0.42,0.285,0.06,0.065,0.035));x(S(1,24,12),0x1d2430,0.02,0.97,-0.01,0.2,0.06,0.2,0,0,0.25);x(S(0.025,10,8),0x1d2430,0.03,1.03,0)}
