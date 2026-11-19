@@ -101,7 +101,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
 <div id="hud" hidden>
   <div><span id="roomName">Place Value Castle</span><span id="roomTopic">Ordering numbers</span></div>
   <div id="pips"></div>
-  <div id="total">0 of 72 panels solved</div>
+  <div id="total">0 panels solved</div>
 </div>
 <div id="tools" hidden><span id="fps" aria-label="Frames per second">-- fps</span><button id="menuBtn" type="button">Menu</button><button id="solveNextBtn" type="button" title="Solve the puzzle you are on now">Solve current</button><button id="soundBtn" type="button">Sound on</button><button id="musicBtn" type="button">Music on</button><button id="qualBtn" type="button">Quality: High</button><button id="helpBtn" type="button">Help</button></div>
 <div id="toast" hidden></div>
@@ -114,7 +114,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
 <div id="menu">
   <div class="mpanel">
     <div class="mhead"><p class="eyebrow">A walking maths puzzle garden</p><h1 class="logo">Number <em>Grove</em></h1></div>
-    <div id="mProg" class="mprog" hidden><div class="mprogtext"><b id="mProgN">0</b> of 72 panels solved <span id="mProgP"></span></div><div class="mbar"><i id="mProgBar"></i></div></div>
+    <div id="mProg" class="mprog" hidden><div class="mprogtext"><b id="mProgN">0</b> of <span class="ptotal">76</span> panels solved <span id="mProgP"></span></div><div class="mbar"><i id="mProgBar"></i></div></div>
     <nav class="mbtns" aria-label="Main menu">
       <button id="mPlay" type="button" class="primary"><span id="mPlayText">Play</span><span aria-hidden="true">›</span></button>
       <button id="mNew" type="button" hidden><span>New game</span><span aria-hidden="true">›</span></button>
@@ -122,7 +122,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       <button id="mHow" type="button"><span>How to play</span><span aria-hidden="true">›</span></button>
       <button id="mSettings" type="button"><span>Settings</span><span aria-hidden="true">›</span></button>
     </nav>
-    <p class="mfoot">9 places · 72 puzzles · Sound on is best</p>
+    <p class="mfoot"><span class="pplaces">10</span> places · <span class="ptotal">76</span> puzzles · Sound on is best</p>
   </div>
   <section id="mSub" class="msub" hidden aria-live="polite">
     <button id="mBack" type="button" class="mback">‹ Back</button>
@@ -154,7 +154,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       <div class="setrow"><span>Music</span><button id="sMusic" type="button" class="tog"></button></div>
       <div class="setrow"><span>Graphics</span><div id="sQual" class="seg" role="group" aria-label="Graphics quality"></div></div>
       <div class="setrow"><span>Full screen</span><button id="sFull" type="button" class="tog"></button></div></div>
-    <div id="pgNew" class="mpage" hidden><h2>Start a new game?</h2><p>This clears every panel you have solved, closes all the gates, and puts you back at the start of the road.</p>
+    <div id="pgNew" class="mpage" hidden><h2>Start a new game?</h2><p>This clears every panel you have solved, closes all the gates, and puts you back on the jetty where your boat came in.</p>
       <div class="row"><button id="newYes" type="button" class="sun">Yes, start over</button><button id="newNo" type="button" class="ghost">Keep my progress</button></div></div>
   </section>
 </div>
@@ -167,7 +167,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       <dt>Look</dt><dd>Mouse, or the arrow keys to turn. Tablet: drag.</dd>
       <dt>Solve</dt><dd>Look at a panel and click. Click once to start your line at the big circle, move the mouse to trace it, then click again when you reach the rounded end. Tablet: press the big circle and drag.</dd>
       <dt>Power</dt><dd>A dark panel has no power. Follow the yellow cable from the last panel you solved.</dd>
-      <dt>Gates</dt><dd>Solve every panel in a place and its gate opens.</dd>
+      <dt>Gates</dt><dd>Solve every panel in a place and its exit gate opens. Halfway along the walk to the next place, that place's gate opens too.</dd>
       <dt>Owl</dt><dd>The owl flies to the next panel to solve, and a yellow glow runs along the cable to it.</dd>
     </dl>
     <div class="row"><button id="helpClose" type="button" class="sun">Back to the garden</button><button id="solveAllBtn" type="button" class="ghost">Solve all puzzles</button><button id="helpReset" type="button" class="ghost">Start over</button></div>
@@ -178,7 +178,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
   <div class="card">
     <p class="eyebrow">Every gate is open</p>
     <h2>You finished Number Grove!</h2>
-    <p>You solved all 72 panels: ordering numbers, counting in steps, adding, times tables, odd and even, taking away, doubles and halves, matching sums and number bonds. That is a lot of maths thinking.</p>
+    <p>You solved every panel: drawing lines and collecting stars, ordering numbers, counting in steps, adding, times tables, odd and even, taking away, doubles and halves, matching sums and number bonds. That is a lot of maths thinking.</p>
     <div class="row"><button id="doneClose" type="button" class="sun">Keep exploring</button></div>
   </div>
 </div>
@@ -249,6 +249,12 @@ function exprFor(v,ops,rng){
 const bag=(lo,hi,step,rng)=>{const a=[];for(let v=lo;v<=hi;v+=step)a.push(v);return shuffle(a,rng)};
 const isEnd=(p,x,y)=>(x===p.start[0]&&y===p.start[1])||(x===p.end[0]&&y===p.end[1]);
 const GEN={
+  // Welcome Garden: any line from the dot to the end works
+  free(){return true},
+  // stars to touch (and, on the last one, clouds to stay off), all picked along a real path
+  stars(p,path,rng){const on=shuffle(path.filter(n=>!isEnd(p,n[0],n[1])),rng),onS=new Set(path.map(n=>K(n[0],n[1]))),off=[];
+    for(let y=0;y<p.H;y++)for(let x=0;x<p.W;x++)if(!onS.has(K(x,y))&&!isEnd(p,x,y))off.push([x,y]);shuffle(off,rng);
+    if(on.length<p.count||off.length<(p.clouds||0))return false;const nodes={};on.slice(0,p.count).forEach(n=>nodes[K(n[0],n[1])]='★');off.slice(0,p.clouds||0).forEach(n=>nodes[K(n[0],n[1])]='☁');p.nodes=nodes;return true},
   // numbers come out of shuffled pools, so no two tiles in one grid ever show the same number
   sum(p,path,rng){
     const on=new Set(path.map(n=>K(n[0],n[1])));let s=0,cnt=0,off=0;const nodes={},vals=bag(1,p.maxVal,1,rng);
@@ -337,7 +343,10 @@ function validate(p,path){
   const vis=path.map(n=>K(n[0],n[1])),visSet=new Set(vis);
   const res={ok:true,errNodes:new Set(),errCells:new Set(),msg:''};
   const fail=m=>{res.ok=false;if(!res.msg)res.msg=m};
-  if(p.type==='sum'){
+  if(p.type==='free'){}
+  else if(p.type==='stars'){const miss=[],bad=[];for(const k in p.nodes){if(p.nodes[k]==='★'&&!visSet.has(k))miss.push(k);if(p.nodes[k]==='☁'&&visSet.has(k))bad.push(k)}
+    miss.concat(bad).forEach(k=>res.errNodes.add(k));if(bad.length)fail('Your line went over a cloud. Keep off the clouds.');else if(miss.length)fail(miss.length>1?`You missed ${miss.length} stars.`:'You missed a star.')}
+  else if(p.type==='sum'){
     let s=0;vis.forEach(k=>{if(p.nodes[k]!=null)s+=p.nodes[k]});
     if(s!==p.target){vis.forEach(k=>{if(p.nodes[k]!=null)res.errNodes.add(k)});
       fail(s<p.target?`Your path makes ${s}. You need ${p.target-s} more.`:`Your path makes ${s}. That is ${s-p.target} too many.`)}
@@ -377,6 +386,8 @@ function validate(p,path){
 
 function ruleText(p){
   switch(p.type){
+    case 'free':return p.text;
+    case 'stars':return p.clouds?['Stars, not clouds','Touch every star. Keep off the clouds.']:['Collect the stars','Draw a line that touches every star.'];
     case 'sum':return['Make '+p.target,'Add up the numbers your line touches.'];
     case 'take':return['Start at '+p.from+', land on '+p.goal,'Take away every number your line touches.'];
     case 'mult':return['Hop on the '+p.k+'s','Touch every number in the '+p.k+' times table. Stay off the others.'];
@@ -454,7 +465,7 @@ const ROOMS=[
     {type:'bond',W:6,H:6,target:100,unit:5,minRegions:4,maxPer:3,minTiles:9,wind:0.65,start:[2,5],end:[3,0]},
     {type:'bond',W:7,H:7,target:100,minRegions:5,maxPer:3,minTiles:12,wind:0.6}]},
   {name:'Place Value Castle',topic:'Ordering numbers',scatter:{trees:10,bushes:30},
-   spots:[[-4,-8,'e'],[7,-16,'w'],[-12,-24,'e'],[3.6,-33,'w'],[-5,-50,'e'],[10,-52,'w'],[-10.93,-56,'e','wall'],[8,-64,'s']],panels:[
+   spots:[[-4,-8,'e'],[7,-16,'w'],[-12,-24,'e'],[3.6,-31.8,'w'],[-5,-50,'e'],[10,-52,'w'],[-10.93,-56,'e','wall'],[8,-64,'s']],panels:[
     {type:'rank',W:3,H:3,count:3,lo:1,hi:20,minLen:7},
     {type:'rank',W:3,H:3,count:4,lo:10,hi:60,minLen:7,end:[2,2]},
     {type:'rank',W:4,H:4,count:4,lo:10,hi:99},
@@ -482,18 +493,24 @@ const ROOMS=[
     {type:'take',W:4,H:4,maxVal:15,density:0.6,minTarget:20,maxTarget:35,minOn:3,minOff:4,round:50,extra:[5,30],end:[3,3]},
     {type:'take',W:6,H:6,maxVal:15,density:0.35,minTarget:35,maxTarget:90,minOn:5,minOff:8,wind:0.6,round:100,extra:[5,40]},
     {type:'take',W:6,H:6,maxVal:20,density:0.38,minTarget:45,maxTarget:110,minOn:6,minOff:9,wind:0.65,start:[2,5],end:[3,0],round:100,extra:[10,60]},
-    {type:'take',W:7,H:7,maxVal:25,density:0.32,minTarget:55,maxTarget:150,minOn:7,minOff:10,wind:0.6,round:100,extra:[10,80]}]}
+    {type:'take',W:7,H:7,maxVal:25,density:0.32,minTarget:55,maxTarget:150,minOn:7,minOff:10,wind:0.6,round:100,extra:[10,80]}]},
+  {name:'Welcome Garden',topic:'Getting started',scatter:{trees:14,bushes:30},
+   spots:[[-3.6,-12,'e'],[3.6,-26,'w'],[-3.6,-40,'e'],[3.6,-54,'w']],panels:[
+    {type:'free',W:3,H:3,wind:0.3,text:['Draw a line','Start at the big dot and trace a line to the round end.']},
+    {type:'free',W:4,H:4,wind:0.45,text:['Power flows on','Solving a panel lights its cable and wakes the next panel.']},
+    {type:'stars',W:4,H:4,count:3,wind:0.5},
+    {type:'stars',W:5,H:5,count:4,clouds:4,wind:0.5}]}
 ];
 // little links between the places: rivers with bridges and garden walks
-const CONN0=[{name:'Willow River',kind:'river'},{name:'Rose Walk',kind:'roses'},{name:'Stepping Stone Brook',kind:'river',stone:true},
+const CONN0=[{name:'Tulip Walk',kind:'tulips',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},{name:'Willow River',kind:'river'},{name:'Rose Walk',kind:'roses'},{name:'Stepping Stone Brook',kind:'river',stone:true},
   {name:'Sunflower Lane',kind:'sun',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},{name:'Kingfisher Creek',kind:'river'},{name:'Lavender Path',kind:'lavender',scatter:{trees:0,bushes:0,flowers:0,grass:2500}},
   {name:'Otter Stream',kind:'river'},{name:'Frosty Pine Path',kind:'frost',scatter:{trees:8,bushes:0,rocks:6,flowers:0,grass:0,snow:true}}];
 // every place keeps a key and its original number: its puzzles and saved progress follow it wherever it sits
-const ROOM_KEYS=['adding','times','oddeven','match','windmill','beach','castle','glass','snow'];ROOMS.forEach((r,i)=>{r.key=ROOM_KEYS[i];r.orig=i});
+const ROOM_KEYS=['adding','times','oddeven','match','windmill','beach','castle','glass','snow','intro'];ROOMS.forEach((r,i)=>{r.key=ROOM_KEYS[i];r.orig=i});
 // the order you meet the places in, easiest first. line rules that tell you what to touch come first (ordering, counting
 // in steps), then searching for sums, sorting by times tables, then the fence puzzles that split the grid into areas
 // (odd/even, then taking away's heavier sums, doubles and halves, mixed sums), and number bonds, the hardest, come last
-const ROOM_ORDER=['castle','windmill','adding','times','oddeven','snow','glass','match','beach'];
+const ROOM_ORDER=['intro','castle','windmill','adding','times','oddeven','snow','glass','match','beach'];
 ROOMS.sort((a,b)=>ROOM_ORDER.indexOf(a.key)-ROOM_ORDER.indexOf(b.key));const RI=k=>ROOMS.findIndex(r=>r.key===k);
 // the links between places keep their order, except the frosty path, which always leads into Snowflake Hollow
 const CONN=(()=>{const fr=CONN0.find(c=>c.kind==='frost'),rest=CONN0.filter(c=>c!==fr),out=[];for(let k=0;k<ROOMS.length-1;k++)out.push(k===RI('snow')-1?fr:rest.shift());return out})();
@@ -815,14 +832,38 @@ function heightAt(x,z){let h=0;for(const p of platforms){if(!inP(p,x,z))continue
 function onDeck(x,z){return platforms.some(p=>p.deck&&inP(p,x,z))}
 function inWater(x,z,m){return waters.some(w=>w.box?(x>w.minX-m&&x<w.maxX+m&&z>w.minZ-m&&z<w.maxZ+m):((x-w.x)/(w.rx+m))**2+((z-w.z)/(w.rz+m))**2<1)}
 function flatAt(x,z,m){const h=heightAt(x,z);return heightAt(x+m,z)===h&&heightAt(x-m,z)===h&&heightAt(x,z+m)===h&&heightAt(x,z-m)===h}
-function hillH(x,z){const dx=Math.max(0,Math.abs(x)-(AW+5)),dz=Math.max(0,z-(APP+8),-LEN-8-z),d=Math.max(dx,dz);if(d<=0)return 0;
-  const s=Math.min(1,d/50),n=Math.sin(x*0.045)*Math.cos(z*0.037)*0.5+0.5+Math.sin(x*0.11+z*0.07)*0.25;return s*s*(5+20*n)}
+/* ---------- the island ----------
+   Number Grove sits on a long, remote island far out at sea. coastX(side,z) is how far out from the middle line the shore
+   lies on the west (side -1) or east (side 1); the gardens fill the middle and wild woods, grass and sand run down to the
+   water on both sides. at the north and south tips the island rounds off into the sea */
+const ISL_N=z0s[0]+26,ISL_S=zF0-FIN-48,ISL_NT=ISL_N-24,ISL_ST=ISL_S+32,ZBEACH=z0s[RI('beach')];
+function coastX(side,z){let w=AW+8.5+3*Math.sin(z*0.031+side*1.7)+2*Math.sin(z*0.083+side*2.9)+1.2*Math.sin(z*0.21+side*0.6);
+  if(side>0){const a=ZBEACH+1,b=ZBEACH-AREA-1,d=z>a?z-a:z<b?b-z:0;if(d<9){const k=d/9,s=k*k*(3-2*k);w=11+(w-11)*s}}   // the beach room's sea is part of the ocean
+  if(z>ISL_NT){const u=Math.min(1,(z-ISL_NT)/(ISL_N-ISL_NT));w*=Math.sqrt(Math.max(0,1-u*u))}
+  if(z<ISL_ST){const u=Math.min(1,(ISL_ST-z)/(ISL_ST-ISL_S));w*=Math.sqrt(Math.max(0,1-u*u))}
+  return w}
+// rivers run right across the island and out into the sea
+const RIVERS=CONN.map((o,i)=>o.kind==='river'?{c:z0s[i]-AREA-GAP/2,hw:3.4}:null).filter(Boolean);
+function onIsland(x,z,m){m=m||0;if(z>ISL_N-m||z<ISL_S+m)return false;const w=coastX(x<0?-1:1,z)-m;if(Math.abs(x)>=w)return false;
+  if(Math.abs(x)>AW+1)for(const r of RIVERS)if(Math.abs(z-r.c)<r.hw-0.2)return false;return true}
+// a signed distance to the shore on a 1 m grid (negative on land), for the shape of the sea bed and the sand and surf
+const IG={x0:-100,z0:ISL_S-70,nx:201,nz:Math.ceil(ISL_N-ISL_S+140)+1};
+IG.d=(()=>{const {nx,nz,x0,z0}=IG,N=nx*nz,land=new Uint8Array(N),dI=new Float32Array(N),dO=new Float32Array(N),BIG=1e6;
+  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++)land[j*nx+i]=onIsland(x0+i,z0+j)?1:0;
+  const pass=(d,isSrc)=>{for(let k=0;k<N;k++)d[k]=isSrc(k)?0:BIG;const S=Math.SQRT2;
+    for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const k=j*nx+i;let v=d[k];if(i>0)v=Math.min(v,d[k-1]+1);if(j>0){v=Math.min(v,d[k-nx]+1);if(i>0)v=Math.min(v,d[k-nx-1]+S);if(i<nx-1)v=Math.min(v,d[k-nx+1]+S)}d[k]=v}
+    for(let j=nz-1;j>=0;j--)for(let i=nx-1;i>=0;i--){const k=j*nx+i;let v=d[k];if(i<nx-1)v=Math.min(v,d[k+1]+1);if(j<nz-1){v=Math.min(v,d[k+nx]+1);if(i<nx-1)v=Math.min(v,d[k+nx+1]+S);if(i>0)v=Math.min(v,d[k+nx-1]+S)}d[k]=v}};
+  pass(dO,k=>land[k]===1);pass(dI,k=>land[k]===0);const d=new Float32Array(N);for(let k=0;k<N;k++)d[k]=land[k]?0.5-dI[k]:dO[k]-0.5;IG.land=land;return d})();
+function shoreD(x,z){const fx=Math.max(0,Math.min(IG.nx-1.001,x-IG.x0)),fz=Math.max(0,Math.min(IG.nz-1.001,z-IG.z0)),i=fx|0,j=fz|0,u=fx-i,v=fz-j,k=j*IG.nx+i,d=IG.d;
+  if(x<IG.x0||x>IG.x0+IG.nx-1||z<IG.z0||z>IG.z0+IG.nz-1)return 99;return (d[k]*(1-u)+d[k+1]*u)*(1-v)+(d[k+IG.nx]*(1-u)+d[k+IG.nx+1]*u)*v}
+// the sea bed shelves away from the beach: shallow and sandy near the shore, deep blue further out
+function hillH(x,z){const d=shoreD(x,z);if(d<=0)return 0;return -Math.min(7,0.12*d+0.025*d*d)}
 const groundAt=(x,z)=>Math.max(heightAt(x,z),hillH(x,z));
 // the snowy part of the world: the frosty path and Snowflake Hollow, fading out over 14 m on either side
 const SNOWR=RI('snow'),SNOW_TOP=z0s[SNOWR-1]-AREA,SNOW_BOT=z0s[SNOWR]-AREA;
 function snowAmt(z){const d=Math.max(z-SNOW_TOP,SNOW_BOT-z,0);return Math.max(0,1-d/14)}
 function blocked(x,z,curH){
-  const r=0.32;
+  const r=0.32;if(!onIsland(x,z,0.6)&&!onDeck(x,z))return true;   // an invisible wall keeps you out of the sea
   for(const c of colliders){if(!c.on)continue;
     if(c.t==='box'){if(x>c.minX-r&&x<c.maxX+r&&z>c.minZ-r&&z<c.maxZ+r)return true}
     else if(c.t==='circ'){if(c.dyn&&(px-c.x)**2+(pz-c.z)**2<(c.r+r)**2)continue;if((x-c.x)**2+(z-c.z)**2<(c.r+r)**2)return true}
@@ -832,17 +873,19 @@ function blocked(x,z,curH){
 }
 
 /* ---------- instanced scenery lists ---------- */
+const TREES=[];
 const INST={trunk:[],crown:[],farCrown:[],pine:[],bush:[],rock:[],flower:[],stem:[],grass:[],picket:[],reed:[],cattail:[],lily:[],apple:[],cabbage:[],blob:[]};
 const LEAFC=[0x3f8f45,0x55a84b,0x4a9a3e,0x6dbb5a,0x3a7f3f],PINEC=[0x2f6a44,0x2b6440,0x3a7049],BLOSC=[0xf6b3c9,0xf2a0bb,0xfcd0de];
 const FLOWC=[0xff6b57,0xffd23f,0xffffff,0xb48cff,0xff9ecf,0x7ab8ff],GRASSC=[0x4f9a3a,0x5ca643,0x468c35,0x67ad48,0x5a9e3e];
 function addTree(x,z,o){o=o||{};if(o.collide!==false)[x,z]=offPath(x,z,0.9,1.2);const base=o.y!=null?o.y:groundAt(x,z),s=o.s||(0.9+RS()*0.7),type=o.type||(RS()<0.55?'round':'pine'),far=o.collide===false&&!o.near;
-  INST.trunk.push({x,y:base+(type==='pine'?0.75:1.0)*s,z,s,sy:s*(type==='pine'?1:1.4),ry:RS()*6});
-  if(type==='pine'){INST.pine.push({x,y:base+2.55*s,z,s:s,c:pick(PINEC),ry:RS()*6})}
-  else{const c=o.c||pick(type==='blossom'?BLOSC:LEAFC),cs=s*(o.big||1),L=far?INST.farCrown:INST.crown;
-    L.push({x,y:base+3.1*s,z,s:cs*1.3,c,ry:RS()*6});L.push({x:x+0.6*s,y:base+2.8*s,z:z+0.35*s,s:cs*0.9,c,ry:RS()*6});L.push({x:x-0.5*s,y:base+3.6*s,z:z-0.3*s,s:cs*0.85,c,ry:RS()*6});
+  const T={x,z,s,parts:[]},put=(list,o)=>{list.push(o);T.parts.push([list,o])};TREES.push(T);
+  put(INST.trunk,{x,y:base+(type==='pine'?0.75:1.0)*s,z,s,sy:s*(type==='pine'?1:1.4),ry:RS()*6});
+  if(type==='pine'){put(INST.pine,{x,y:base+2.55*s,z,s:s,c:pick(PINEC),ry:RS()*6});T.top=base+5*s;T.r=1.5*s;T.low=base+1.2*s}
+  else{const c=o.c||pick(type==='blossom'?BLOSC:LEAFC),cs=s*(o.big||1),L=far?INST.farCrown:INST.crown;T.top=base+3.6*s+cs;T.r=1.55*cs;T.low=base+2.8*s-cs*1.1;
+    put(L,{x,y:base+3.1*s,z,s:cs*1.3,c,ry:RS()*6});put(L,{x:x+0.6*s,y:base+2.8*s,z:z+0.35*s,s:cs*0.9,c,ry:RS()*6});put(L,{x:x-0.5*s,y:base+3.6*s,z:z-0.3*s,s:cs*0.85,c,ry:RS()*6});
     if(o.apples)for(let k=0;k<9;k++){const a=RS()*6.28,b=RS()*1.2-0.3;INST.apple.push({x:x+Math.cos(a)*Math.cos(b)*1.25*cs,y:base+3.1*s+Math.sin(b)*1.25*cs,z:z+Math.sin(a)*Math.cos(b)*1.25*cs,s:1})}}
-  if(!far)INST.blob.push({x,y:base+0.036,z,s:1.35*s,ry:RS()*6});
-  if(o.collide!==false)colCirc(x,z,0.32*s);
+  if(!far)put(INST.blob,{x,y:base+0.036,z,s:1.35*s,ry:RS()*6});
+  if(o.collide!==false){colCirc(x,z,0.32*s);T.col=colliders[colliders.length-1]}
   if(o.collide!==false)reserve(x,z,1.3*s);
 }
 function addBush(x,z,s,c){const g=groundAt(x,z);INST.bush.push({x,y:g+0.42*s,z,s,sy:s*0.78,c:c||pick(LEAFC),ry:RS()*6});INST.blob.push({x,y:g+0.037,z,s:1.0*s,ry:RS()*6})}
@@ -863,13 +906,35 @@ function stripeTex(col){if(stripeCache[col])return stripeCache[col];return strip
 const cobbleTex=canvasTex(256,256,c=>{c.fillStyle='#bfb29a';c.fillRect(0,0,256,256);const r=mulberry32(5);
   for(let y=0;y<8;y++)for(let x=0;x<8;x++){const g=200+Math.floor(r()*30);c.fillStyle=`rgb(${g},${g-10},${g-28})`;rr(c,x*32+2+(y%2)*16-((y%2)&&x===7?256:0),y*32+2,28,28,8);c.fill();if(y%2&&x===7){rr(c,-14,y*32+2,28,28,8);c.fill()}}},[7,7]);
 
-/* ---------- ground with distant hills ---------- */
+/* ---------- island ground, sea bed and ocean ---------- */
 const SNOWC=new THREE.Color(0xeef3f7);
-{const W=900,D=LEN+700,g=new THREE.PlaneGeometry(W,D,240,300);g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cz=-LEN/2,c=new THREE.Color();
- for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i)+cz,h=hillH(x,z);pos.setY(i,h);
-   const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03-Math.min(h,25)*0.002);{const sn=snowAmt(z);if(sn>0)c.lerp(SNOWC,sn*0.92)}c.convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
+{const x0=-100,x1=100,zA=ISL_N+60,zB=ISL_S-60,W=x1-x0,D=zA-zB,g=new THREE.PlaneGeometry(W,D,100,Math.round(D/2.5));g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cz=(zA+zB)/2,c=new THREE.Color(),SAND=new THREE.Color(0xe8d4a0),WET=new THREE.Color(0xc9b383),DEEP=new THREE.Color(0x2f6f86);
+ for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i)+cz,d=shoreD(x,z),h=hillH(x,z);pos.setY(i,h);
+   const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03);
+   {const sn=snowAmt(z);if(sn>0)c.lerp(SNOWC,sn*0.92)}
+   if(d>-4.5){const k=Math.min(1,(d+4.5)/3.5);c.lerp(SAND,k*k*(1-0.6*snowAmt(z)))}   // a sandy shore
+   if(d>0){c.copy(WET).lerp(DEEP,Math.min(1,d/18))}
+   c.convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
  g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));g.computeVertexNormals();
- const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.z=cz;gm.receiveShadow=true;scene.add(gm)}
+ const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.z=cz;gm.receiveShadow=true;scene.add(gm);
+ const bed=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000),new THREE.MeshStandardMaterial({color:DEEP.clone().convertSRGBToLinear(),roughness:0.96}));bed.rotation.x=-Math.PI/2;bed.position.set(0,-7.02,cz);scene.add(bed)}
+// the ocean: one big sheet of water out to the horizon. it is cut away over the island using a mask of the land, and
+// breaks into white surf along the shore
+const OCEAN=(()=>{const {nx,nz}=IG,data=new Uint8Array(nx*nz*4);for(let k=0;k<nx*nz;k++){const v=IG.land[k]?255:0;data[k*4]=v;data[k*4+1]=Math.max(0,Math.min(255,Math.round(128-IG.d[k]*20)));data[k*4+3]=255}
+  const tex=new THREE.DataTexture(data,nx,nz,THREE.RGBAFormat);tex.magFilter=tex.minFilter=THREE.LinearFilter;tex.needsUpdate=true;
+  const mat=matWater.clone();mat.opacity=0.86;mat.userData.mask=tex;
+  mat.onBeforeCompile=sh=>{sh.uniforms.uMask={value:tex};sh.uniforms.uMB={value:new THREE.Vector4(IG.x0,IG.z0,1/(nx-1),1/(nz-1))};sh.uniforms.uT=U_TIME;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;').replace('#include <project_vertex>','#include <project_vertex>\nvWP=(modelMatrix*vec4(transformed,1.0)).xyz;');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vWP;uniform sampler2D uMask;uniform vec4 uMB;uniform float uT;')
+      .replace('#include <map_fragment>',`#include <map_fragment>
+        vec2 muv=(vWP.xz-uMB.xy)*uMB.zw;vec4 mk=texture2D(uMask,clamp(muv,0.0,1.0));if(mk.r>0.5)discard;
+        float sd=(128.0/255.0-mk.g)*12.75;                      // metres out from the shore
+        float wave=0.5+0.5*sin(sd*2.1-uT*1.6+vWP.x*0.05+vWP.z*0.03);
+        float foam=smoothstep(2.2,0.0,sd)*(0.55+0.45*wave)+smoothstep(0.6,0.0,sd)*0.5;
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.11,0.47,0.56),smoothstep(5.0,0.5,sd)*0.45);
+        diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.93,0.97,1.0),clamp(foam,0.0,1.0)*0.85);diffuseColor.a=mix(diffuseColor.a,0.97,clamp(foam,0.0,1.0));`)};
+  const m=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000,1,1),mat);m.rotation.x=-Math.PI/2;m.position.set(0,0.07,(ISL_N+ISL_S)/2);
+  const uv=m.geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*6000/24,uv.getY(i)*6000/24);m.renderOrder=-1;scene.add(m);return m})();
 
 /* ---------- building blocks ---------- */
 const PATHC=0xcdb991;let pathN=0;const PATHR=[];
@@ -888,7 +953,7 @@ function onWalk(x,z,m){for(const r of PATHR)if(x>r.minX-m&&x<r.maxX+m&&z>r.minZ-
   for(const w of WALK)if(walkHit(w,x,z,m))return true;return false}
 // a side path laid along a route: corners are rounded into smooth curves, it starts with a round end in front of its
 // panel and flares out where it meets the walkway, like a path that has been laid by hand
-const RIBR=[];
+const RIBR=[],OWLB=[];   // OWLB: buildings the owl can fly into, with their doors and windows
 function padPath(x0,x1,z0,z1,col){const w=x1-x0,d=z1-z0,r=Math.min(0.6,w/2,d/2),s=new THREE.Shape();s.moveTo(-w/2+r,-d/2);s.lineTo(w/2-r,-d/2);s.quadraticCurveTo(w/2,-d/2,w/2,-d/2+r);s.lineTo(w/2,d/2-r);s.quadraticCurveTo(w/2,d/2,w/2-r,d/2);
   s.lineTo(-w/2+r,d/2);s.quadraticCurveTo(-w/2,d/2,-w/2,d/2-r);s.lineTo(-w/2,-d/2+r);s.quadraticCurveTo(-w/2,-d/2,-w/2+r,-d/2);flat(new THREE.ShapeGeometry(s,6),col,(x0+x1)/2,0.02+(pathN++%7)*0.0015,(z0+z1)/2);
   walkRect(x0,x1,z0,z1);RIBR.push({minX:x0,maxX:x1,minZ:z0,maxZ:z1});for(let x=x0+0.5;x<x1;x+=1)for(let z=z0+0.5;z<z1;z+=1)reserve(x,z,0.9)}
@@ -1618,6 +1683,7 @@ function buildArea3(z0){
   const cols=[];[-8,-4,4,8].forEach(x=>cols.push([x,-21]));[-25,-29].forEach(z=>{cols.push([-8,z]);cols.push([8,z])});
   cols.forEach(([x,z])=>{mesh(new THREE.CylinderGeometry(0.32,0.38,4,20),0xf5efe2,x,2.3,z0+z);colCirc(x,z0+z,0.4)});
   blk(16,4,0.5,0,2.3,z0-32.8,0xf0e6d2);colBox(-8,8,z0-33.1,z0-32.5);
+  OWLB.push({inside:(x,z)=>Math.abs(x)<7.8&&z<z0-21.2&&z>z0-32.5,portals:[{a:[0,2.8,z0-23.5],b:[0,2.8,z0-20],c:[0,3.4,z0-16.5]},...[-1,1].map(s=>({a:[s*5.5,2.8,z0-27],b:[s*9,2.8,z0-27],c:[s*12.5,3.4,z0-27]}))]});
   blk(16.8,0.5,12.8,0,4.55,z0-27,0xf5efe2);
   {const sh=new THREE.Shape();sh.moveTo(-8.9,0);sh.lineTo(8.9,0);sh.lineTo(0,2.6);sh.closePath();const geo=new THREE.ExtrudeGeometry(sh,{depth:13.2,bevelEnabled:false});geo.translate(0,0,-6.6);mesh(geo,0xb5523b,0,4.8,z0-27)}
   {const t=signTex(['Match Maker Hall'],640,116);const m=new THREE.Mesh(new THREE.PlaneGeometry(4.6,0.84),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));m.position.set(0,4.55,z0-20.58);scene.add(m)}
@@ -1878,7 +1944,6 @@ function lighthouse(x,z){const H=11,R=y=>1.5-(y-1)/(H-1)*0.5;
   anims.push((t,dt)=>{beam.rotation.y+=dt*0.8})}
 function buildBeach(z0){const S=11,zc=z0-AREA/2;
   flat(new THREE.PlaneGeometry(AW+S,AREA),0xf0dca0,(S-AW)/2,0.016,zc);flat(new THREE.PlaneGeometry(2.2,AREA),0xd4bf8e,S-0.6,0.018,zc);
-  flat(new THREE.PlaneGeometry(AW-S+2,AREA),matWater,(S+AW)/2,0.07,zc);flat(new THREE.PlaneGeometry(AW-S-3,AREA),0x2d7fae,(S+3+AW)/2,0.05,zc);
   const fm=matFoam.clone(),foam=[0,1].map(i=>{const m=flat(new THREE.PlaneGeometry(0.5,AREA),fm,S-0.4,0.075+i*0.002,zc);m.userData.st=0;return m});
   anims.push(t=>{foam.forEach((m,i)=>m.position.x=S-0.5+Math.sin(t*0.9+i*Math.PI)*0.45);fm.opacity=0.35+0.15*Math.sin(t*0.9)});
   colliders.push({t:'wbox',minX:S-0.3,maxX:AW+2,minZ:z0-AREA-1,maxZ:z0+1,on:true});waters.push({box:1,minX:S-1,maxX:AW+2,minZ:z0-AREA,maxZ:z0});
@@ -2135,9 +2200,21 @@ function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=
   flat(new THREE.PlaneGeometry(W,L),0xd9cfb8,cx,0.018,cz);
   const glass=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,matGlass);m.position.set(x,y,z);m.rotation.y=ry||0;m.renderOrder=3;scene.add(m);return m};
   // low brick wall, then glass sides and ends with a door gap in the middle of each end
-  [x0,x1].forEach(xx=>{blk(0.3,0.6,L,xx,0.3,cz,0x9c5b44);glass(new THREE.PlaneGeometry(L,GH),xx,0.6+GH/2,cz,Math.PI/2);colBox(xx-0.15,xx+0.15,z0,z1);
+  // the east wall has a casement window propped wide open near its south end (the owl's way in and out)
+  const wz=z0+4,WW=2.0,wy0=2.0,wy1=3.6;
+  [x0,x1].forEach(xx=>{blk(0.3,0.6,L,xx,0.3,cz,0x9c5b44);colBox(xx-0.15,xx+0.15,z0,z1);
+    if(xx===x0)glass(new THREE.PlaneGeometry(L,GH),xx,0.6+GH/2,cz,Math.PI/2);
+    else{const za=wz-WW/2,zb=wz+WW/2;glass(new THREE.PlaneGeometry(za-z0,GH),xx,0.6+GH/2,(z0+za)/2,Math.PI/2);glass(new THREE.PlaneGeometry(z1-zb,GH),xx,0.6+GH/2,(zb+z1)/2,Math.PI/2);
+      glass(new THREE.PlaneGeometry(WW,wy0-0.6),xx,(0.6+wy0)/2,wz,Math.PI/2);glass(new THREE.PlaneGeometry(WW,WH-wy1),xx,(wy1+WH)/2,wz,Math.PI/2);
+      [wy0,wy1].forEach(y=>blk(0.12,0.1,WW+0.1,xx,y,wz,FRAME));[za,zb].forEach(z=>blk(0.12,wy1-wy0,0.1,xx,(wy0+wy1)/2,z,FRAME));
+      const sash=new THREE.Group();sash.position.set(xx+0.06,wy1,wz);sash.rotation.z=1.25;scene.add(sash);const sg=new THREE.Mesh(new THREE.PlaneGeometry(WW-0.1,wy1-wy0-0.08),matGlass);sg.rotation.y=Math.PI/2;sg.position.y=-(wy1-wy0)/2;sg.renderOrder=3;sash.add(sg);
+      [[0,-0.04,WW,0.07],[0,-(wy1-wy0)+0.04,WW,0.07]].forEach(([_,y,w,h])=>blk(0.06,h,w,0,y,0,FRAME,sash));[-1,1].forEach(sd=>blk(0.06,wy1-wy0,0.07,0,-(wy1-wy0)/2,sd*(WW/2-0.03),FRAME,sash));
+      rod([xx,wy0+0.3,wz-WW/2+0.2],[xx+0.95,wy1-0.45,wz-WW/2+0.2],0.015,0x8a8f94)}
     blk(0.14,0.14,L+0.2,xx,WH,cz,FRAME);[0.6,1.9].forEach(y=>blk(0.1,0.08,L,xx,y,cz,FRAME));
-    for(let k=0;k<=14;k++)blk(0.08,GH,0.08,xx,0.6+GH/2,z0+k*L/14,FRAME)});
+    for(let k=0;k<=14;k++){const zk=z0+k*L/14;if(xx===x1&&Math.abs(zk-wz)<WW/2+0.05)continue;blk(0.08,GH,0.08,xx,0.6+GH/2,zk,FRAME)}});
+  OWLB.push({inside:(x,z)=>x>x0+0.2&&x<x1-0.2&&z>z0+0.2&&z<z1-0.2,portals:[
+    {a:[cx,2.4,z1-1.6],b:[cx,2.4,z1+0.9],c:[cx,3.0,z1+4]},{a:[cx,2.4,z0+1.6],b:[cx,2.4,z0-0.9],c:[cx,3.0,z0-4]},
+    {a:[x1-1.7,2.3,wz],b:[x1+0.7,2.3,wz],c:[x1+4,3.0,wz]}]});
   const rise=RH-WH,sl=Math.hypot(W/2,rise),ang=Math.atan2(rise,W/2);
   [z0,z1].forEach(zz=>{[-1,1].forEach(s=>{const sw=W/2-DW;blk(sw,0.6,0.3,cx+s*(DW+sw/2),0.3,zz,0x9c5b44);glass(new THREE.PlaneGeometry(sw,GH),cx+s*(DW+sw/2),0.6+GH/2,zz);colBox(s<0?x0:cx+DW,s<0?cx-DW:x1,zz-0.15,zz+0.15);
       for(let k=0;k<=4;k++)blk(0.08,GH,0.08,cx+s*(DW+k*sw/4),0.6+GH/2,zz,FRAME);blk(0.12,DH,0.12,cx+s*DW,DH/2,zz,FRAME)});
@@ -2255,6 +2332,7 @@ function bigIgloo(cx,cz,R,H){const DW=2.3,DH=3.4,sy=H/R,rt=DW+0.25;
     for(let k=1;k<12;k++){const a=k/12*Math.PI,ic=new THREE.Mesh(new _G.Cone(0.07,0.35+((k*7)%3)*0.15,8),rim);ic.rotation.x=Math.PI;ic.position.set(cx+Math.cos(a)*rt*0.97,Math.sin(a)*rt*ky-0.25,zB+s*0.1);scene.add(ic)}
     [-1,1].forEach(sd=>colBox(cx+sd*rt-0.25,cx+sd*rt+0.25,Math.min(zA,zB),Math.max(zA,zB)))});
   for(let a=0;a<Math.PI*2;a+=0.07){const sx=Math.sin(a)*(R-0.2);if(Math.abs(sx)<rt+0.1)continue;colCirc(cx+sx,cz+Math.cos(a)*(R-0.2),0.45)}
+  OWLB.push({inside:(x,z)=>Math.hypot(x-cx,z-cz)<R-0.4||(Math.abs(x-cx)<rt&&Math.abs(z-cz)<R+3.2),portals:[1,-1].map(s=>({a:[cx,2.3,cz+s*(R-2.5)],b:[cx,2.3,cz+s*(R+4.2)],c:[cx,2.8,cz+s*(R+7.5)]}))});
   for(let x=-R+1;x<R;x+=2)for(let z=-R+1;z<R;z+=2)if(x*x+z*z<R*R)reserve(cx+x,cz+z,2.3);
   // sunbeam through the vent, ice snowflake on a plinth, lanterns and ice benches round the walls
   const bm=new THREE.Mesh(new _G.Cone(1.6,H,32,1,true),new THREE.MeshBasicMaterial({color:0xfff6d8,transparent:true,opacity:0.07,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false}));bm.rotation.x=Math.PI;bm.position.set(cx,H/2,cz);scene.add(bm);
@@ -2486,8 +2564,8 @@ function otter(cx,cz,mode,ph,ry,bench){const pose=mode==='bench'?'chair':mode===
     if(mode==='back'){g.position.set(cx+Math.cos(a)*0.7,0.07+Math.sin(t*1.6+ph)*0.015,cz+Math.sin(a)*0.35);g.rotation.y=a*1.5;tail.rotation.y=Math.sin(t*1.2+ph)*0.3;head.rotation.y=Math.sin(t*0.5+ph)*0.3}
     else{const x=cx+Math.cos(a)*5,z=cz+Math.sin(a)*1.6;g.position.set(x,Math.sin(t*3)*0.01,z);g.rotation.y=Math.atan2(-Math.sin(a)*5,Math.cos(a)*1.6);tail.rotation.y=Math.sin(t*5)*0.35;head.rotation.x=-0.15}})}
 function buildRiver(gz,o){const c=gz-GAP/2,hw=3.4,L=hw+1.8,H=0.85,deck=o.stone?0xd8cbb0:0xb98a5a;
-  flat(new THREE.PlaneGeometry(AW*2,hw*2+2.6),0xe6d2a0,0,0.024,c);
-  flat(new THREE.PlaneGeometry(AW*2,hw*2),matWater,0,0.07,c);flat(new THREE.PlaneGeometry(AW*2,hw*2-1.6),0x2d7fae,0,0.05,c);
+  flat(new THREE.PlaneGeometry(AW*2+2,hw*2+2.6),0xe6d2a0,0,0.024,c);
+  flat(new THREE.PlaneGeometry(AW*2+3,hw*2),matWater,0,0.072,c);flat(new THREE.PlaneGeometry(AW*2+3,hw*2-1.6),0x2d7fae,0,0.05,c);
   colliders.push({t:'wbox',minX:-AW-1,maxX:AW+1,minZ:c-hw+0.3,maxZ:c+hw-0.3,on:true});waters.push({box:1,minX:-AW-1,maxX:AW+1,minZ:c-hw,maxZ:c+hw});
   SNDS.push({k:'river',box:1,minX:-AW,maxX:AW,minZ:c-hw,maxZ:c+hw},{k:'splash',x:o.stone?12:-12,z:c,t:RS()*3});
   platforms.push({t:'ramp',minX:-1.7,maxX:1.7,minZ:c+1.3,maxZ:c+L,axis:'z',hA:H,hB:0,deck:true},{t:'box',minX:-1.7,maxX:1.7,minZ:c-1.3,maxZ:c+1.3,h:H,deck:true},{t:'ramp',minX:-1.7,maxX:1.7,minZ:c-L,maxZ:c-1.3,axis:'z',hA:0,hB:H,deck:true});
@@ -2533,8 +2611,33 @@ function buildGardenLink(gz,o){const c=gz-GAP/2;
       if(RS()<0.6)INST.flower.push({x:fx+(RS()-0.5)*0.3,y:0.55,z,s:1.6,c:0xb48cff,ry:RS()*6,rx:(RS()-0.5)*0.3,k:'lav'})}
     bench(2.9,c,'w');bench(-2.9,c-4,'e');butterflies(0,c,12,30);
     giantButterfly(-9,2,c+3,Math.PI/2,lavBflyTex,{x0:-26,x1:-5,z0:c-9,z1:c+9,landY:0.98});giantButterfly(9,2,c-5,-Math.PI/2,lavBflyTex,{x0:5,x1:26,z0:c-9,z1:c+9,landY:0.98});
+  }else if(o.kind==='tulips'){   // a tulip field in bright stripes on both sides, like the bulb fields
+    const TC=[0xff4f6a,0xffd23f,0xff8a3d,0xf5f0ff,0xc04ad8,0xff7fb0];
+    for(const s of [-1,1])for(let x=4.2,b=0;x<AW-1.4;x+=0.7,b++){const col=TC[(Math.floor(b/3)+(s>0?3:0))%TC.length];for(let z=gz-2.6;z>gz-GAP+2.6;z-=0.6){const fx=s*x+(RS()-0.5)*0.12,fz=z+(RS()-0.5)*0.12,h=0.34+RS()*0.12;
+      INST.stem.push({x:fx,y:0,z:fz,s:1.2,sy:h});INST.flower.push({x:fx,y:h,z:fz,s:1.5+RS()*0.3,c:col,ry:RS()*6,rx:(RS()-0.5)*0.2,k:'tulip'})}}
+    bench(2.9,c,'w');bench(-2.9,c-5,'e');butterflies(0,c,12,30);cuteBees(-9,c,4,4,7);cuteBees(9,c,4,4,7);wheelbarrow(-3.2,gz-5,0.4);
   }else if(o.kind==='frost')buildFrostLink(gz,c);
   lamp(2.4,gz-2.5);lamp(-2.4,gz-GAP+5);
+}
+
+/* ---------- Welcome Garden: the first place, where you learn how the panels work. no maths here, just lines, power and stars ---------- */
+function buildIntro(z0){const zc=z0-34;
+  paths([[[0,z0-0.6],[0,z0-67.4]]],3);
+  // instruction boards beside each panel, facing you as you walk up the path
+  signPost(-7.4,z0-9.5,['Click a panel','Trace from the big dot to the round end'],0.35);
+  signPost(7.4,z0-23.5,['Follow the cable','Each solved panel powers the next one'],-0.35);
+  signPost(-7.4,z0-37.5,['Read the rules','Here, touch every star with your line'],0.35);
+  signPost(7.4,z0-51.5,['Open the gate','The last panel opens the way on'],-0.35);
+  // a pond with ducks and lilies, a gazebo, a sundial lawn, flower beds, a little vegetable patch and blossom trees
+  pond(15,z0-15,5.5,4.2,[['mallard',0,1.1],['duckling',0.3,0.55]]);
+  gazebo(-15,z0-44);sundial(13,z0-38);flat(new THREE.CircleGeometry(2.4,40),PATHC,13,0.019,z0-38);walkRing(13,z0-38,0,2.4);reserve(13,z0-38,3);
+  paths([[[1.5,z0-38],[10.6,z0-38]]],1.6);
+  [[-14,z0-18,2.2],[-21,z0-26,1.6],[-9,z0-27,1.5],[20,z0-30,1.5],[22,z0-46,1.6],[-21,z0-58,1.7],[9,z0-60,1.5]].forEach(([x,z,r])=>flowerBed(x,z,r));
+  raisedBed(14,z0-55,3.2,1.4,'cabbage');raisedBed(19,z0-55,3.2,1.4,'carrot');wheelbarrow(16.5,z0-58.6,0.7);wateringCan(12.2,z0-57.2,0.4,0x3d9ad8);
+  [[-11,z0-7],[11,z0-6],[-23,z0-38],[23,z0-20],[-12,z0-63],[23,z0-62]].forEach(([x,z],i)=>addTree(x,z,{type:i%2?'blossom':'round',s:1.15}));
+  bench(-2.6,z0-18,'e');bench(2.6,z0-33,'w');bench(-2.6,z0-47,'e');bench(2.6,z0-62,'w');
+  lamp(2.4,z0-4);lamp(-2.4,z0-16);lamp(2.4,z0-30);lamp(-2.4,z0-44);lamp(2.4,z0-58);
+  butterflies(0,zc,12,30);cuteBees(-14,z0-18,3,2,2);cuteBees(22,z0-46,3,2,2);birds(0,zc,6);
 }
 
 /* ---------- finish meadow ---------- */
@@ -2610,7 +2713,7 @@ function buildFinish(z0){
 const confetti=[];
 
 /* ---------- build everything ---------- */
-{const BUILD={adding:buildArea0,times:buildArea1,oddeven:buildArea2,match:buildArea3,windmill:buildArea4,beach:buildBeach,castle:buildCastle,glass:buildGreenhouse,snow:buildSnow};ROOMS.forEach((room,r)=>BUILD[room.key](z0s[r]))}buildFinish(zF0);
+{const BUILD={intro:buildIntro,adding:buildArea0,times:buildArea1,oddeven:buildArea2,match:buildArea3,windmill:buildArea4,beach:buildBeach,castle:buildCastle,glass:buildGreenhouse,snow:buildSnow};ROOMS.forEach((room,r)=>BUILD[room.key](z0s[r]))}buildFinish(zF0);
 CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);else buildGardenLink(gz,o)});
 
 // stone archway with a big name board facing people walking up to it, plus a roadside sign by the gate
@@ -2629,7 +2732,13 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     flower=(p,x,y,zz,col,r)=>{r=r||0.05;mesh(S(r*0.55),0xffd23f,x,y,zz+0.01,p);for(let k=0;k<6;k++){const a=k*Math.PI/3;mesh(S(r*0.6,10,8),col,x+Math.cos(a)*r,y+Math.sin(a)*r,zz,p).scale.set(1,1,0.4)}},
     rose=(p,x,y,zz,col,r)=>{r=r||0.07;const m=mesh(S(r,14,10),col,x,y,zz,p);m.scale.set(1,0.8,1);for(let k=0;k<5;k++){const a=k*1.256;mesh(S(r*0.55,10,8),col,x+Math.cos(a)*r*0.8,y-0.01+Math.sin(a)*r*0.5,zz+Math.sin(a)*r*0.6,p)}};
   let kind='swing',snd='swing',leaves;
-  if(th==='castle'){kind='lift';snd='lift';   // portcullis: an iron grid with spiked feet, lifted on chains into a stone gatehouse
+  if(th==='tulips'){   // tulip gate: green boards topped with a row of tulips, and pots of tulips on the posts
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x2f7a4a);boards(h,dx,8,0x3f9a5a,0x48a462,t=>H-0.55+0.12*Math.sin(t*Math.PI*4));hinges(h,dx);ring(h,dx);
+      for(let k=0;k<5;k++){const x=dx(0.2+k*0.28),c=[0xff4f6a,0xffd23f,0xff8a3d,0xc04ad8,0xff7fb0][k];mesh(new _G.Cyl(0.012,0.012,0.4,6),0x3f7f36,x,1.95,0.06,h);mesh(S(0.075,12,10),c,x,2.2,0.06,h).scale.set(1,1.35,1);
+        for(let q=0;q<3;q++)mesh(new _G.Cone(0.035,0.09,6),c,x+Math.cos(q*2.1)*0.04,2.31,0.06+Math.sin(q*2.1)*0.04,h)}}));
+    [-1,1].forEach(s=>{st(lathe([[0.18,0],[0.26,0.36],[0.28,0.4],[0,0.38]],24),0xb5653a,s*1.9,3.55,face*0.35);for(let k=0;k<9;k++){const a=k*2.4,r=0.05+0.1*((k%3)/2),c=[0xff4f6a,0xffd23f,0xff8a3d][k%3];
+      st(new _G.Cyl(0.008,0.008,0.4,5),0x3f7f36,s*1.9+Math.cos(a)*r,4.12,face*0.35+Math.sin(a)*r);st(S(0.06,10,8),c,s*1.9+Math.cos(a)*r,4.34,face*0.35+Math.sin(a)*r).scale.set(1,1.4,1)}})}
+  else if(th==='castle'){kind='lift';snd='lift';   // portcullis: an iron grid with spiked feet, lifted on chains into a stone gatehouse
     const g=new THREE.Group();g.position.set(0,0,z);scene.add(g);for(let i=0;i<8;i++){const x=-1.4+i*0.4;blk(0.07,2.9,0.07,x,1.55,0,0x3a3f44,g);mesh(new _G.Cone(0.05,0.18,8),0x3a3f44,x,0.02,0,g).rotation.x=Math.PI}
     for(let j=0;j<6;j++)blk(3.0,0.07,0.09,0,0.45+j*0.5,0,0x3a3f44,g);leaves=[g];
     [-1,1].forEach(s=>{sb(1.3,5.2,1.9,s*2.15,2.6,0,0x9aa0a6);for(let k=0;k<3;k++)sb(0.34,0.45,0.34,s*2.15+(k-1)*0.48,5.42,face*0.78,0x9aa0a6),sb(0.34,0.45,0.34,s*2.15+(k-1)*0.48,5.42,-face*0.78,0x9aa0a6);
@@ -2739,26 +2848,29 @@ function archway(zA,name,topic,th){const own=th==='castle'||th==='snow'||th==='g
   signPost(-3.7,zA+2.6,[name,topic],0.5);
 }
 // outer hedges (the front one has an open archway onto the road)
-{const fw=AW+0.9-1.6;hedge(-AW-0.45,-LEN/2+0.5,0.9,LEN+1);hedge(AW+0.45,-LEN/2+0.5,0.9,LEN+1);hedge(-1.6-fw/2,1,fw,0.9);hedge(1.6+fw/2,1,fw,0.9);hedge(0,-LEN,AW*2+1.8,0.9);
- archway(1,ROOMS[0].name,ROOMS[0].topic)}
+archway(1,ROOMS[0].name,ROOMS[0].topic);
+// a hedge across the island from the gate posts right down to the sea on both sides, so the only way on is through the gate
+function divider(z){[-1,1].forEach(sd=>{const len=coastX(sd,z)+0.8-1.6;hedge(sd*(1.6+len/2),z,len,0.9)})}
 
-/* ---------- the road in: you start here, outside the first garden ---------- */
+/* ---------- the landing: you start here, on the jetty at the island's north tip ---------- */
 function railFence(x1,z1,x2,z2){const len=Math.hypot(x2-x1,z2-z1),ux=(x2-x1)/len,uz=(z2-z1)/len,n=Math.ceil(len/2.5);
   for(let i=0;i<=n;i++){const s=len*i/n;blk(0.16,1.15,0.16,x1+ux*s,0.575,z1+uz*s,0x8a5a3b)}
   [0.45,0.92].forEach(y=>blk(Math.abs(ux)>0.5?len:0.07,0.11,Math.abs(uz)>0.5?len:0.07,(x1+x2)/2,y,(z1+z2)/2,0xa8784e));
   colBox(Math.min(x1,x2)-0.12,Math.max(x1,x2)+0.12,Math.min(z1,z2)-0.12,Math.max(z1,z2)+0.12)}
-function buildApproach(){
-  paths([[[0,APP-1],[0,1.2]]],3.4);
-  flat(new THREE.CircleGeometry(4.2,40),PATHC,0,0.019,4.8);walkRing(0,4.8,0,4.2);reserve(0,4.8,4.4);
-  railFence(-12,1.6,-12,APP);railFence(12,1.6,12,APP);railFence(-12,APP,12,APP);
-  for(const z of [7.5,14,21,28])addTree(-5.6,z,{type:'round',s:1.2,c:0x4f9a3f});
-  for(const z of [10.5,17.5,24.5])addTree(5.6,z,{type:'round',s:1.2,c:0x55a84b});
-  flowerBed(-7.6,4.6,1.4);flowerBed(7.6,4.6,1.4);
-  lamp(2.4,11);lamp(-2.4,24);lamp(2.4,35.5);lamp(3.3,2.6);
-  bench(-3.3,17.5,'e');bench(3.3,28.5,'w');
-  signPost(3.7,APP-9,['Welcome to Number Grove','Nine maths places. Follow the road!'],-0.5);
-  // cottages over the fence, for something to look at
-  house(-19,24,7,6,'e',0xf6e3c6,0xb5523b,0);house(19.5,13,6,6,'w',0xdfe6f7,0x3f6fa8,0);
+function buildApproach(){   // the landing: a wooden jetty at the island's north tip, where your boat came in, and a path up to the Welcome Garden
+  const jz0=ISL_N-8,jz1=ISL_N+15,jc=(jz0+jz1)/2;
+  platforms.push({t:'box',minX:-1.4,maxX:1.4,minZ:jz0,maxZ:jz1,h:0.4,deck:true});
+  blk(2.8,0.14,jz1-jz0,0,0.33,jc,0xb98a5a);for(let z=jz0+0.3;z<jz1;z+=0.42)blk(2.82,0.02,0.03,0,0.405,z,0x8a5a3b,scene,true);
+  for(let z=jz0+1;z<=jz1;z+=2.4)[-1.4,1.4].forEach(x=>mesh(new THREE.CylinderGeometry(0.12,0.12,1.8,12),0x7a4a2c,x,0.0,z));
+  [-1.45,1.45].forEach(x=>{rod([x,1.25,jz0+1],[x,1.25,jz1],0.04,0x8a5a3b);for(let z=jz0+1;z<=jz1+0.01;z+=1.5)blk(0.08,0.85,0.08,x,0.82,z,0x8a5a3b);colBox(x-0.06,x+0.06,jz0+0.8,jz1+0.1)});
+  rod([-1.45,1.25,jz1],[1.45,1.25,jz1],0.04,0x8a5a3b);colBox(-1.5,1.5,jz1-0.06,jz1+0.06);
+  mesh(new THREE.TorusGeometry(0.32,0.08,12,32),0xff6b57,1.5,0.95,jc);
+  const boat=boatModel();boat.position.set(3.4,0.02,jz1-5);boat.rotation.y=0.15;scene.add(boat);
+  [[-1.2,jz1-3],[1.2,jz0+4]].forEach(([x,z])=>{mesh(new THREE.CylinderGeometry(0.1,0.12,0.5,12),0x5a3a26,x,0.62,z);mesh(new THREE.TorusGeometry(0.1,0.03,8,16),0xd9c9a0,x,0.7,z).rotation.x=Math.PI/2});
+  paths([[[0,jz0+0.4],[0,1.2]]],3);reserve(0,jc,4);
+  signPost(3.9,10.5,['Welcome to Number Grove',NR+' places and '+PANELS.length+' puzzles. In you go!'],-0.45);
+  flowerBed(-6.5,4.6,1.4);flowerBed(6.5,4.6,1.4);lamp(2.4,6.5);lamp(-2.4,13);bench(-3.4,9,'e');
+  for(const [x,z] of [[-8,9],[8.5,15],[-10,15]])addTree(x,z,{type:'round',s:1.1});
 }
 buildApproach();
 
@@ -2797,11 +2909,14 @@ ROOMS.forEach((room,r)=>{
   room.list.forEach((p,i)=>buildPanel(p,room.spots[i],z0));
   // (cables are laid later by layCables, once everything they must go around exists)
   // divider with gate arch; past it, a short river or garden walk leads to the next place's open entrance
-  const segW=AW-1.6;hedge(-1.6-segW/2,zBot,segW,0.9);hedge(1.6+segW/2,zBot,segW,0.9);
+  divider(zBot);
   gates[r]=makeGate(zBot,r<NR-1?linkTheme(CONN[r]):'fin',r<NR-1?CONN[r].name:'Finish Meadow',r<NR-1?'On the way to '+ROOMS[r+1].name:'Solve every panel to get here');
-  if(r<NR-1){const zE=z0s[r+1];hedge(-1.6-segW/2,zE,segW,0.9);hedge(1.6+segW/2,zE,segW,0.9);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
+  if(r<NR-1){const zE=z0s[r+1];divider(zE);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
   reserve(0,zBot+2.5,3);reserve(0,zBot-2.5,3);
 });
+{const gone=new Set();PANELS.forEach(p=>{const fx=p.pos.x+p.normal.x*1.6,fz=p.pos.z+p.normal.z*1.6,py=p.pos.y+(PH+0.14)/2;
+  TREES.forEach(T=>{if(gone.has(T))return;const d=Math.min(Math.hypot(T.x-p.pos.x,T.z-p.pos.z),Math.hypot(T.x-fx,T.z-fz));if(d<T.r+0.9&&T.low<py+1.6)gone.add(T)})});
+ gone.forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}})}
 /* ---------- every puzzle sits by a path: where a panel's standing spot isn't on a path, plaza, floor or deck, a short
    side path is routed on a 0.5 m grid (around walls, water, benches, beds and other panels) to the nearest walkway ---------- */
 const SIDEP=[],PPLOG=[];
@@ -2969,14 +3084,19 @@ ROOMS.forEach((room,r)=>scatterArea(z0s[r],z0s[r]-AREA,Object.assign({trees:24,b
 CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;scatterArea(gz,gz-GAP,Object.assign({trees:5,bushes:14,rocks:8,flowers:70,grass:3500},o.scatter||{}))});
 // finish meadow: no trees, bushes or rocks scattered in, so the way from the gate to the trophy stays clear
 scatterArea(zF0,zF0-FIN,{trees:0,bushes:0,rocks:0,flowers:160,grass:3500});
-scatterArea(APP-0.5,1.6,{xw:11.4,trees:0,bushes:10,rocks:6,flowers:100,grass:4000});
-// meadow over the road fences, forest and hills outside the walls
-for(let i=0;i<60;i++){const side=RS()<0.5?-1:1,x=side*(13.5+RS()*(AW+4-13.5)),z=2+RS()*(APP+4);if(!isFree(x,z,1.5))continue;addTree(x,z,{collide:false,near:true,s:1+RS()*0.6})}
-for(let i=0;i<2800;i++){const side=RS()<0.5?-1:1,x=side*(12.5+RS()*(AW+4-12.5)),z=1.6+RS()*(APP+6);if(!isFree(x,z,-0.6))continue;INST.grass.push({x,y:0,z,s:0.8+RS()*0.5,ry:RS()*6,c:pick(GRASSC)})}
-for(let i=0;i<120;i++){const side=RS()<0.5?-1:1,x=side*(13+RS()*14),z=2+RS()*APP;if(!isFree(x,z,-0.4))continue;flowersAt(x,z,4,0.6)}
-for(let i=0;i<1300;i++){const side=RS()<0.5?-1:1,x=side*(AW+3+Math.pow(RS(),0.7)*110),z=APP+30-RS()*(LEN+APP+90);if(Math.abs(x)<AW+6&&z>0)continue;addTree(x,z,{collide:false,s:1+RS()*1.2,type:snowAmt(z)>0.3?'pine':RS()<0.1?'blossom':undefined})}
-for(let i=0;i<80;i++){const x=(RS()-0.5)*(AW*2+60),z=RS()<0.5?APP+4+RS()*60:-LEN-8-RS()*60;addTree(x,z,{collide:false,s:1+RS()*1.2})}
-for(let i=0;i<6000;i++){const side=RS()<0.5?-1:1,x=side*(AW+1.5+RS()*30),z=APP+8-RS()*(LEN+APP+20);if(RS()<snowAmt(z))continue;INST.grass.push({x,y:hillH(x,z),z,s:0.9+RS()*0.6,ry:RS()*6,c:pick(GRASSC)})}
+reserve(0,zF0-44,16);   // keep the ground behind the finish clear (the launch pad)
+// the island's wild edges, between the gardens and the sea: woods, bushes, flowers and long grass, and rocks along the shore
+{const spot=m=>{for(let t=0;t<30;t++){const z=ISL_S+3+RS()*(ISL_N-ISL_S-6),side=RS()<0.5?-1:1,w=coastX(side,z),inGarden=z<z0s[0]-1&&z>zF0-FIN+1;
+    if(inGarden&&w<AW+m+1.5)continue;const x=inGarden?side*(AW+0.6+RS()*(w-AW-0.6-m)):side*RS()*(w-m);if(onIsland(x,z,m)&&!onWalk(x,z,1.2)&&!inWater(x,z,1))return[x,z]}return null};
+ for(let n=0;n<420;n++){const q=spot(3.2);if(!q||!isFree(q[0],q[1],1.6))continue;const [x,z]=q;if(snowAmt(z)>0.4)snowPine(x,z,0.9+RS()*0.7);else addTree(x,z,{type:RS()<0.12?'blossom':RS()<0.35?'pine':'round',s:0.9+RS()*0.8})}
+ for(let n=0;n<520;n++){const q=spot(2.2);if(!q||!isFree(q[0],q[1],0.8))continue;const s=0.7+RS()*0.7;addBush(q[0],q[1],s,snowAmt(q[1])>0.4?0x6f8f7f:undefined);reserve(q[0],q[1],0.9*s)}
+ for(let n=0;n<300;n++){const q=spot(2.5);if(!q||snowAmt(q[1])>0.3||!isFree(q[0],q[1],-0.4))continue;flowersAt(q[0],q[1],4,0.6)}
+ for(let n=0;n<11000;n++){const q=spot(1.6);if(!q||RS()<snowAmt(q[1])||!isFree(q[0],q[1],-0.6))continue;INST.grass.push({x:q[0],y:0,z:q[1],s:0.8+RS()*0.6,ry:RS()*6,c:pick(GRASSC)})}
+ // rocks along the waterline, half in the sea
+ for(let z=ISL_N;z>ISL_S;z-=1.9)for(const side of [-1,1]){const w=coastX(side,z);if(w<1)continue;const x=side*(w+(RS()-0.65)*2.6);if(RS()<0.35||Math.abs(x)<AW+1&&z<z0s[0]&&z>zF0-FIN)continue;if(RIVERS.some(r=>Math.abs(z-r.c)<r.hw+0.5))continue;
+   const s=0.5+RS()*1.1;INST.rock.push({x,y:-0.05,z,s,sy:s*0.6,ry:RS()*6,c:pick(snowAmt(z)>0.4?[0xdfe6ec,0xc9d2d9]:[0xa9a59c,0xb9b4a8,0x9a968c,0x8a8478])})}
+ // surf you can hear all round the island
+ SNDS.push({k:'sea',fn:(x,z)=>{const zz=Math.max(ISL_S,Math.min(ISL_N,z)),sd=x<0?-1:1;return[sd*coastX(sd,zz),zz]}})}
 
 hiDetail(false);
 /* ---------- detailed instanced vegetation with levels of detail (LOD) ---------- */
@@ -3157,6 +3277,47 @@ anims.push((t,dt)=>{
   for(const r of RIPPLERS){const o=r.o;if((o.x-px)**2+(o.z-pz)**2>2500)continue;r.t=(r.t||0)-dt;if(r.lx===undefined){r.lx=o.x;r.lz=o.z}
     const mv=(o.x-r.lx)**2+(o.z-r.lz)**2;if(r.t<0&&(mv>0.06||r.t<-1.6)){const y=waterY(o.x,o.z);if(y!=null)ripple(o.x,y,o.z,0.55,2);r.t=0.45;r.lx=o.x;r.lz=o.z}}
   for(const r of RIP.pool){if(!r.m.visible)continue;r.t+=dt;const k=r.t/r.life;if(k>=1){r.m.visible=false;continue}r.m.scale.setScalar(r.size*(0.12+k));r.m.material.opacity=0.5*Math.pow(1-k,1.6)}});
+/* ---------- owl flight planning ----------
+   before the static scenery is merged, every object's footprint and height goes into a 1 m height map, with the tree
+   crowns on top. buildings the owl can be inside (the glasshouse, the big igloo) list their doors and windows. a flight
+   leaves a building through its nearest opening, crosses the island high enough to clear every roof, tree, wall and
+   arch on the way (climbing and sinking smoothly), and comes in through an opening if the next panel is indoors */
+const OH={x0:-100,z0:ISL_S-10,nx:201,nz:Math.ceil(ISL_N+30-(ISL_S-10))+1,h:null};
+function buildOwlHeights(){const {nx,nz}=OH,h=OH.h=new Float32Array(nx*nz),bb=new THREE.Box3();
+  const mark=(x0,x1,z0,z1,top)=>{const i0=Math.max(0,Math.floor(x0-OH.x0)),i1=Math.min(nx-1,Math.ceil(x1-OH.x0)),j0=Math.max(0,Math.floor(z0-OH.z0)),j1=Math.min(nz-1,Math.ceil(z1-OH.z0));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const k=j*nx+i;if(top>h[k])h[k]=top}};
+  scene.updateMatrixWorld(true);
+  scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh)return;for(let a=o;a;a=a.parent)if(a.userData.noOwl)return;const g=o.geometry;if(!g||!g.attributes.position)return;
+    if(!g.boundingBox)g.computeBoundingBox();bb.copy(g.boundingBox).applyMatrix4(o.matrixWorld);if(bb.isEmpty())return;
+    if(bb.max.x-bb.min.x>130||bb.max.z-bb.min.z>130||bb.max.y<0.45||bb.min.y>40)return;   // the ground, the sea, paths and the sky are not obstacles
+    if((bb.max.x-bb.min.x)*(bb.max.z-bb.min.z)<30){mark(bb.min.x,bb.max.x,bb.min.z,bb.max.z,bb.max.y);return}
+    // a big shape (a dome, a hill, things already merged together) is marked triangle by triangle
+    const P=g.attributes.position,I=g.index,M=o.matrixWorld,n=I?I.count:P.count,va=new THREE.Vector3(),vb=new THREE.Vector3(),vc=new THREE.Vector3();
+    for(let t=0;t<n;t+=3){const ia=I?I.getX(t):t,ib=I?I.getX(t+1):t+1,ic=I?I.getX(t+2):t+2;va.fromBufferAttribute(P,ia).applyMatrix4(M);vb.fromBufferAttribute(P,ib).applyMatrix4(M);vc.fromBufferAttribute(P,ic).applyMatrix4(M);
+      const top=Math.max(va.y,vb.y,vc.y);if(top<0.45)continue;mark(Math.min(va.x,vb.x,vc.x),Math.max(va.x,vb.x,vc.x),Math.min(va.z,vb.z,vc.z),Math.max(va.z,vb.z,vc.z),top)}});
+  INST.crown.forEach(c=>{const r=1.15*c.s;mark(c.x-r,c.x+r,c.z-r,c.z+r,c.y+r)});INST.pine.forEach(c=>{const r=1.6*c.s;mark(c.x-r,c.x+r,c.z-r,c.z+r,c.y+2.6*c.s)})}
+function ohAt(x,z,r){const i0=Math.max(0,Math.floor(x-r-OH.x0)),i1=Math.min(OH.nx-1,Math.ceil(x+r-OH.x0)),j0=Math.max(0,Math.floor(z-r-OH.z0)),j1=Math.min(OH.nz-1,Math.ceil(z+r-OH.z0));let m=0;
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){const v=OH.h[j*OH.nx+i];if(v>m)m=v}return m}
+const V3=a=>new THREE.Vector3(a[0],a[1],a[2]);
+function owlRoute(A,B,nA,nB){const bin=p=>OWLB.find(b=>b.inside(p.x,p.z)),ba=bin(A),bb=bin(B),pts=[A.clone()];
+  // the owl drops off the front of a panel and comes in to land from the front, never over the top of whatever is behind it
+  const front=(p,n)=>{if(!n)return null;const cov=(a,b)=>ohAt(p.x+n.x*a-n.z*b,p.z+n.z*a+n.x*b,0)>p.y+0.6,roof=[cov(0.7,0),cov(1.5,0),cov(0.7,-1),cov(0.7,1)].filter(Boolean).length>=3;let t=2.4;if(roof)while(t<8&&ohAt(p.x+n.x*t,p.z+n.z*t,0.5)>p.y+0.6)t+=0.5;return new THREE.Vector3(p.x+n.x*(t+(roof?0.8:0)),p.y+(roof?0.25:1.2),p.z+n.z*(t+(roof?0.8:0)))},   // under a roof it slips out low first
+    Af=front(A,nA),Bf=front(B,nB);
+  if(Af){pts.push(Af);A=Af}const end=B.clone();if(Bf)B=Bf;
+  if(ba&&ba===bb){pts.push(B.clone());if(Bf)pts.push(end);return pts}
+  let P=A.clone(),Q=B.clone(),tail=[];const D=(p,q)=>Math.hypot(p.x-q.x,p.z-q.z);
+  if(ba){const pt=ba.portals.reduce((m,o)=>{const c=D(A,V3(o.a))+D(V3(o.c),B);return!m||c<m.c?{o,c}:m},null).o;pts.push(V3(pt.a),V3(pt.b),V3(pt.c));P=V3(pt.c)}
+  if(bb){const pt=bb.portals.reduce((m,o)=>{const c=D(P,V3(o.c))+D(V3(o.a),B);return!m||c<m.c?{o,c}:m},null).o;tail=[V3(pt.c),V3(pt.b),V3(pt.a)];Q=V3(pt.c)}
+  // the outdoor leg: at least 1.6 m over everything within 1.5 m of the line, never steeper than the owl can climb
+  const d=D(P,Q),n=Math.max(2,Math.ceil(d/1.5)),alt=[];
+  for(let i=0;i<=n;i++){const t=i/n,x=P.x+(Q.x-P.x)*t,z=P.z+(Q.z-P.z)*t,near=Math.min(t*d,(1-t)*d);
+    const clear=near<0.4?0:ohAt(x,z,1.5)+1.6,arc=P.y+(Q.y-P.y)*t+(0.8+d*0.07)*Math.sin(Math.PI*t);alt.push(Math.max(clear,arc))}
+  const ms=1.2*d/n;for(let i=1;i<=n;i++)alt[i]=Math.max(alt[i],alt[i-1]-ms);for(let i=n-1;i>=0;i--)alt[i]=Math.max(alt[i],alt[i+1]-ms);alt[0]=P.y;alt[n]=Q.y;
+  for(let i=1;i<n;i++){const t=i/n;pts.push(new THREE.Vector3(P.x+(Q.x-P.x)*t,alt[i],P.z+(Q.z-P.z)*t))}
+  pts.push(Q.clone(),...tail.slice(1));if(!tail.length)pts[pts.length-1]=B.clone();else pts.push(B.clone());if(Bf)pts.push(end);
+  // drop points that sit on top of each other (they upset the curve)
+  return pts.filter((p,i)=>i===0||p.distanceTo(pts[i-1])>0.05)}
+buildOwlHeights();
 (function mergeStatic(){
   scene.updateMatrixWorld(true);const buckets=new Map(),wp=new THREE.Vector3();
   scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||!o.userData.st)return;for(let a=o.parent;a&&a!==scene;a=a.parent)if(!a.userData.st)return;
@@ -3185,7 +3346,7 @@ const clouds=[];{const cm=new THREE.MeshLambertMaterial({color:0xffffff,emissive
 
 /* ---------- state ---------- */
 let mode='walk',started=false,active=null,aimed=null,aimedBench=null,sitB=null,sitYaw=0,locked=false,lockWorked=false,lockFailed=false,isTouch=isTouchStart;
-let px=0,pz=APP-3,ph=0,yaw=0,pitch=0,bob=0,celebrated=false,firstSolveTip=true;
+let px=0,pz=ISL_N-10,ph=0,yaw=0,pitch=0,bob=0,celebrated=false,firstSolveTip=true;
 const keys={},joy={x:0,y:0};
 const camFrom=new THREE.Vector3(),camTo=new THREE.Vector3();let camT=1,yawFrom=0,yawTo=0,pitchFrom=0;
 
@@ -3279,7 +3440,7 @@ function addScarf(m){const mat=new THREE.MeshStandardMaterial({map:stripeFlat(pi
   const e=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.28,0.04),mat);e.position.set(0.09,0.38,0.2);e.rotation.set(0.2,0,0.25);e.castShadow=true;m.add(e)}
 function critters(kind,n,zTop,zBot,sc,scarf,variant){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
   for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3),scarf,variant);made++}}
-[[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown'],['drakelet',1,-45]],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]]]
+[[['sprout',4],['puffle',3]],[['embertail',4],['hopbun',2]],[['splashy',5],['sprout',2]],[['starbit',4],['puffle',3]],[['hopbun',4],['embertail',2]],[['pincher',4],['splashy',3]],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown'],['drakelet',1,-45]],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]],[['sprout',3],['hopbun',2],['petalpip',2]]]
   .forEach((list,o)=>{const r=ROOMS.findIndex(q=>q.orig===o);list.forEach(([k,n,zt,zb,v])=>critters(k,n,z0s[r]+(zt||0),z0s[r]+(zb!=null?zb:-AREA),1,r===SNOWR,v))});   // the castle's field pets wear clown make-up
 // pets having a swim at Number Bond Beach, each in a stripy rubber ring, paddling slow loops in the sea
 function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=critterMesh(kind);m.position.y=-0.36;g.add(m);
@@ -3385,9 +3546,10 @@ function hoot(){if(!AMB.ready||muted)return;const d=Math.hypot(OWL.g.position.x-
 const _ov=new THREE.Vector3(),_ov2=new THREE.Vector3();
 anims.push((t,dt)=>{const O=OWL,np=nextPanel();
   if(np!==O.target){const first=O.target===undefined;O.target=np;perchFor(np,O.B);O.yawTo=np?Math.atan2(np.normal.x,np.normal.z):0;
-    if(first){O.g.position.copy(O.B);O.yaw=O.yawTo}else{O.A.copy(O.g.position);const d=O.A.distanceTo(O.B);O.C.copy(O.A).add(O.B).multiplyScalar(0.5);O.C.y=Math.max(O.A.y,O.B.y)+2.5+d*0.18;O.t=0;O.dur=Math.min(12,Math.max(1.8,d/6.5));O.fly=true}}
+    if(first){O.g.position.copy(O.B);O.yaw=O.yawTo}else{O.A.copy(O.g.position);const prev=PANELS[PANELS.indexOf(np)-1]||PANELS.filter(p=>p.solved).pop(),pts=owlRoute(O.A,O.B,prev&&prev.normal,np&&np.normal);O.curve=pts.length>2?new THREE.CatmullRomCurve3(pts,false,'centripetal'):new THREE.LineCurve3(pts[0],pts[pts.length-1]);
+      O.t=0;O.dur=Math.min(18,Math.max(1.8,O.curve.getLength()/6.5));O.fly=true}}
   if(O.fly){O.t=Math.min(1,O.t+dt/O.dur);const k=O.t*O.t*(3-2*O.t),u=1-k;
-    _ov.set(u*u*O.A.x+2*u*k*O.C.x+k*k*O.B.x,u*u*O.A.y+2*u*k*O.C.y+k*k*O.B.y,u*u*O.A.z+2*u*k*O.C.z+k*k*O.B.z);
+    O.curve.getPointAt(k,_ov);
     _ov2.subVectors(_ov,O.g.position);if(_ov2.x*_ov2.x+_ov2.z*_ov2.z>1e-6)O.yaw=Math.atan2(_ov2.x,_ov2.z);O.g.position.copy(_ov);
     const f=Math.sin(t*15);O.wings[0].rotation.z=-1.25-f*0.7;O.wings[1].rotation.z=1.25+f*0.7;O.g.rotation.x=0.35;
     if(O.t>=1){O.fly=false;hoot()}}
@@ -3417,7 +3579,7 @@ const AMB={ready:false};
 const LOOPDEF={fire:{r:13,v:0.04},fountain:{r:20,v:0.05},river:{r:24,v:0.05},water:{r:16,v:0.022},sea:{r:45,v:0.06},bees:{r:9,v:0.02}};
 const SHOTDEF={cluck:{r:22,v:0.05,e:[3,8]},quack:{r:26,v:0.05,e:[5,14]},baa:{r:30,v:0.055,e:[7,18]},tweet:{r:32,v:0.03,e:[2.5,7]},gull:{r:48,v:0.035,e:[5,12]},
   creak:{r:28,v:0.03,e:[2.6,3.4]},swing:{r:18,v:0.016,e:[1.7,1.8]},bell:{r:70,v:0.05,e:[45,70]},crackle:{r:13,v:0.05,e:[0.07,0.5]},splash:{r:15,v:0.02,e:[1.5,4]},squeak:{r:14,v:0.035,e:[6,16]}};
-function srcPos(s,x,z){if(s.o)return[s.o.x,s.o.z];if(s.box)return[Math.max(s.minX,Math.min(s.maxX,x)),Math.max(s.minZ,Math.min(s.maxZ,z))];
+function srcPos(s,x,z){if(s.fn)return s.fn(x,z);if(s.o)return[s.o.x,s.o.z];if(s.box)return[Math.max(s.minX,Math.min(s.maxX,x)),Math.max(s.minZ,Math.min(s.maxZ,z))];
   if(s.rx){const dx=(x-s.x)/s.rx,dz=(z-s.z)/s.rz,q=Math.hypot(dx,dz);if(q<=1)return[x,z];return[s.x+dx/q*s.rx,s.z+dz/q*s.rz]}return[s.x,s.z]}
 function ambInit(){if(AMB.ready||!AC||!AC.createBiquadFilter)return;AMB.ready=true;
   AMB.out=AC.createGain();AMB.out.gain.value=muted?0:1;AMB.out.connect(AC.destination);
@@ -3556,7 +3718,7 @@ function placeAt(z){if(z>0.6)return{k:'road'};if(z<zF0)return{k:'fin'};
   for(let r=0;r<NR;r++){if(z>z0s[r]-AREA)return{k:'room',r};if(r<NR-1&&z>z0s[r+1])return{k:'gap',r}}return{k:'fin'}}
 function updateHud(){
   const P=placeAt(pz);let name,topic,list,key;
-  if(P.k==='road'){name='Number Grove';topic='Walk up the road to the first garden';list=ROOMS[0].list;key='0'}
+  if(P.k==='road'){name='Number Grove';topic='Walk up the path to the Welcome Garden';list=ROOMS[0].list;key='0'}
   else if(P.k==='fin'){name='Finish Meadow';topic='Every gate is open';list=ROOMS.map((_,r)=>({solved:roomDone(r)}));key='f'}
   else if(P.k==='gap'){name=CONN[P.r].name;topic='On the way to '+ROOMS[P.r+1].name;list=ROOMS[P.r+1].list;key=String(P.r+1)}
   else{name=ROOMS[P.r].name;topic=ROOMS[P.r].topic;list=ROOMS[P.r].list;key=String(P.r)}
@@ -3883,7 +4045,7 @@ $('#doneClose').addEventListener('click',()=>{$('#done').hidden=true;requestLock
 function resetProgress(){
   try{localStorage.removeItem(SAVE)}catch(e){}
   PANELS.forEach(p=>{p.solved=false;p.complete=false;p.path=[];p.pend=null;p.flash=null;p.atEnd=false});
-  ROOMS.forEach((_,r)=>closeGate(r));px=0;pz=APP-3;ph=0;yaw=0;pitch=0;celebrated=false;refreshWorld();updateHud();
+  ROOMS.forEach((_,r)=>closeGate(r));px=0;pz=ISL_N-10;ph=0;yaw=0;pitch=0;celebrated=false;refreshWorld();updateHud();
 }
 $('#helpReset').addEventListener('click',()=>{if(mode==='solve')exitSolve();resetProgress();$('#help').hidden=true;toast('Fresh start. Good luck!')});
 /* ---------- main menu ----------
@@ -3893,6 +4055,7 @@ const MENU={open:true,t:0};
 const DIFF={castle:1,windmill:1,adding:2,times:2,oddeven:3,snow:3,glass:4,match:4,beach:5};
 function firstOpen(){let r=0;while(r<NR&&roomDone(r))r++;return r}
 function menuPage(id){['pgPlaces','pgHow','pgSettings','pgNew'].forEach(k=>$('#'+k).hidden=k!==id);$('#mSub').hidden=!id;if(id==='pgPlaces')buildPlaces();if(id==='pgSettings')syncSettings();if(id==='pgHow')drawDemo()}
+document.querySelectorAll('.ptotal').forEach(e=>e.textContent=PANELS.length);document.querySelectorAll('.pplaces').forEach(e=>e.textContent=NR);
 function menuProgress(){const n=PANELS.filter(p=>p.solved).length,d=ROOMS.filter((_,r)=>roomDone(r)).length;
   $('#mPlayText').textContent=started?'Resume':n?'Continue':'Play';$('#mNew').hidden=!n;$('#mProg').hidden=!n;
   $('#mProgN').textContent=n;$('#mProgP').textContent='· '+d+' of '+NR+' places';$('#mProgBar').style.width=(n/PANELS.length*100)+'%'}
