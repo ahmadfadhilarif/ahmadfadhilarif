@@ -2614,12 +2614,128 @@ const confetti=[];
 CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);else buildGardenLink(gz,o)});
 
 // stone archway with a big name board facing people walking up to it, plus a roadside sign by the gate
-function archway(zA,name,topic){
-  [-1.9,1.9].forEach(x=>{blk(0.7,3.5,1.2,x,1.75,zA,0xd9cfb8);blk(0.9,0.3,1.4,x,0.15,zA,0xcfc3a8);blk(0.86,0.2,1.36,x,3.45,zA,0xcfc3a8)});
-  blk(4.7,0.5,1.2,0,3.75,zA,0xd9cfb8);blk(4.9,0.14,1.4,0,4.05,zA,0xcfc3a8);
-  blk(4.9,1.5,0.18,0,4.85,zA,0x7a4a2c);blk(5.2,0.14,0.5,0,5.66,zA,0x7a4a2c);
-  const sm=new THREE.Mesh(new THREE.PlaneGeometry(4.7,1.3),new THREE.MeshBasicMaterial({map:signTex([name,topic],820,226),toneMapped:false}));sm.position.set(0,4.85,zA+0.1);scene.add(sm);
-  [-2.5,2.5].forEach(x=>mesh(new THREE.SphereGeometry(0.16,12,10),matGlow,x,5.85,zA,scene,true));
+/* ---------- themed gates ----------
+   every place has two gates: an exit gate, dressed for the walk it opens onto (sunflowers and bees for Sunflower Lane,
+   icicles for the frosty path...), and an entrance gate dressed for the place behind it (a portcullis for the castle, an
+   igloo door for the snow, glass doors for the glasshouse...). gates swing, lift or slide open */
+const GDECO=[];   // little animations on gates: windmill sails
+function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; returns {leaves,kind,snd}
+  const L=1.5,H=2.3,leaf=(sd,fn)=>{const h=new THREE.Group();h.position.set(sd*1.53,0,z);scene.add(h);fn(h,v=>-sd*v,sd);return h},S=(r,w,hh)=>new _G.Sph(r,w||16,hh||12),
+    st=(geo,col,x,y,zz)=>mesh(geo,col,x,y,z+zz,scene,true),sb=(w,h,d,x,y,zz,col)=>blk(w,h,d,x,y,z+zz,col),
+    frame=(h,dx,col,top)=>{blk(0.1,top||H,0.1,dx(0.06),(top||H)/2+0.05,0,col,h);blk(0.1,(top||H)-0.1,0.1,dx(L-0.06),(top||H)/2,0,col,h);[0.25,(top||H)-0.05].forEach(y=>blk(L,0.11,0.09,dx(L/2),y,0,col,h))},
+    boards=(h,dx,n,c1,c2,top)=>{for(let i=0;i<n;i++){const x=(i+0.5)*L/n,hh=(top?top(x/L):H-0.2);blk(L/n-0.02,hh,0.05,dx(x),0.2+hh/2,0,i%2?c2:c1,h)}},
+    hinges=(h,dx,col)=>[0.45,H-0.3].forEach(y=>{blk(0.42,0.06,0.11,dx(0.22),y,0,col||0x2b3a42,h);mesh(new _G.Cyl(0.03,0.03,0.15,12),col||0x2b3a42,dx(0),y,0,h)}),
+    ring=(h,dx,col)=>mesh(new _G.Tor(0.07,0.014,10,28),col||0x2b3a42,dx(L-0.2),1.15,0.06,h),
+    flower=(p,x,y,zz,col,r)=>{r=r||0.05;mesh(S(r*0.55),0xffd23f,x,y,zz+0.01,p);for(let k=0;k<6;k++){const a=k*Math.PI/3;mesh(S(r*0.6,10,8),col,x+Math.cos(a)*r,y+Math.sin(a)*r,zz,p).scale.set(1,1,0.4)}},
+    rose=(p,x,y,zz,col,r)=>{r=r||0.07;const m=mesh(S(r,14,10),col,x,y,zz,p);m.scale.set(1,0.8,1);for(let k=0;k<5;k++){const a=k*1.256;mesh(S(r*0.55,10,8),col,x+Math.cos(a)*r*0.8,y-0.01+Math.sin(a)*r*0.5,zz+Math.sin(a)*r*0.6,p)}};
+  let kind='swing',snd='swing',leaves;
+  if(th==='castle'){kind='lift';snd='lift';   // portcullis: an iron grid with spiked feet, lifted on chains into a stone gatehouse
+    const g=new THREE.Group();g.position.set(0,0,z);scene.add(g);for(let i=0;i<8;i++){const x=-1.4+i*0.4;blk(0.07,2.9,0.07,x,1.55,0,0x3a3f44,g);mesh(new _G.Cone(0.05,0.18,8),0x3a3f44,x,0.02,0,g).rotation.x=Math.PI}
+    for(let j=0;j<6;j++)blk(3.0,0.07,0.09,0,0.45+j*0.5,0,0x3a3f44,g);leaves=[g];
+    [-1,1].forEach(s=>{sb(1.3,5.2,1.9,s*2.15,2.6,0,0x9aa0a6);for(let k=0;k<3;k++)sb(0.34,0.45,0.34,s*2.15+(k-1)*0.48,5.42,face*0.78,0x9aa0a6),sb(0.34,0.45,0.34,s*2.15+(k-1)*0.48,5.42,-face*0.78,0x9aa0a6);
+      sb(0.12,0.5,0.06,s*2.15,3.6,face*0.96,0x2b3a42);const bn=sb(0.6,1.3,0.04,s*2.15,2.3,face*0.98,0xd8352a);sb(0.6,0.18,0.05,s*2.15,1.55,face*0.99,0xffd23f)});
+    sb(3.2,2.4,1.5,0,4.25,0,0x8f959b);for(let k=0;k<5;k++)sb(0.34,0.42,0.34,-1.2+k*0.6,5.66,face*0.6,0x9aa0a6)}
+  else if(th==='glass'){kind='slide';snd='slide';   // glasshouse doors: white frames full of glass that slide apart
+    const gm=new THREE.MeshStandardMaterial({color:0xdff3ff,transparent:true,opacity:0.32,roughness:0.05,metalness:0.1,depthWrite:false});
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0xf6f8fa,H+0.2);blk(0.08,H+0.1,0.08,dx(L/2),H/2+0.1,0,0xf6f8fa,h);blk(L,0.08,0.08,dx(L/2),1.0,0,0xf6f8fa,h);
+      const p=new THREE.Mesh(new THREE.PlaneGeometry(L-0.12,H-0.05),gm);p.position.set(dx(L/2),H/2+0.15,0);h.add(p);blk(0.04,0.5,0.06,dx(L-0.22),1.15,0.06,0xb8c2cc,h)}));leaves.forEach(h=>h.position.z+=0.55*face);
+    [-1,1].forEach(s=>{for(let k=0;k<4;k++)sb(0.07,3.3,0.07,s*(1.75+k*0.35),1.65,face*0.7,0xf6f8fa);sb(1.5,0.08,0.08,s*2.3,3.3,face*0.7,0xf6f8fa)})}
+  else if(th==='snow'){snd='swing';   // an igloo door: a heavy round-topped wooden door set in a tunnel of snow blocks
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{for(let i=0;i<6;i++){const x=(i+0.5)*L/6,c=Math.sqrt(Math.max(0,1-((L-x)/L)**2)),hh=1.9+0.6*c;blk(L/6-0.02,hh,0.08,dx(x),0.15+hh/2,0,i%2?0x8a5a3b:0x9a6a48,h)}
+      [0.6,1.6].forEach(y=>blk(L-0.1,0.1,0.11,dx(L/2),y,0,0x5a3a26,h));hinges(h,dx,0x3a3f44);mesh(new _G.Tor(0.09,0.02,10,28),0x3a3f44,dx(L-0.2),1.2,0.07,h);
+      for(let k=0;k<6;k++)mesh(new _G.Cone(0.03,0.16+0.05*(k%3),8),0xe8f6ff,dx(0.15+k*0.24),0.15+1.9+0.6*Math.sqrt(Math.max(0,1-((L-0.15-k*0.24)/L)**2))-0.1,0.05,h).rotation.x=Math.PI}));
+    // a solid arch of packed snow blocks, with the joints between the blocks pressed in
+    const sh=new THREE.Shape();sh.absellipse(0,0,2.85,3.55,0,Math.PI,false);sh.lineTo(-2.05,0);sh.absellipse(0,0,2.05,2.75,Math.PI,0,true);sh.lineTo(2.85,0);
+    const ag=new THREE.ExtrudeGeometry(sh,{depth:1.7,bevelEnabled:true,bevelThickness:0.12,bevelSize:0.1,bevelSegments:3,curveSegments:28});ag.translate(0,0.12,-0.85);
+    mesh(ag,new THREE.MeshStandardMaterial({color:0xf4f9fc,roughness:0.55}),0,0,z,scene,true);
+    for(let k=1;k<8;k++){const a=Math.PI*k/8;[-0.98,0.98].forEach(zz=>{const j=sb(0.06,0.84,0.04,Math.cos(a)*2.45,0.12+Math.sin(a)*3.15,zz,0xc9dbe6);j.rotation.z=a-Math.PI/2})}
+    [-0.98,0.98].forEach(zz=>{for(let k=0;k<=16;k++){const a=Math.PI*k/16;sb(0.24,0.04,0.04,Math.cos(a)*2.45,0.12+Math.sin(a)*3.15,zz,0xc9dbe6).rotation.z=a}})
+    sb(5.6,0.15,1.8,0,0.07,0,0xe8f2f8)}
+  else if(th==='sun'){   // sunflower gate: yellow pickets, a sunflower face on each leaf, honeycomb, sunflowers by the posts and bees
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x8a5a3b);boards(h,dx,8,0xffd23f,0xf5c518,t=>H-0.35+0.25*Math.sin(t*Math.PI));hinges(h,dx);ring(h,dx);
+      const fx=dx(L/2);mesh(new _G.Cyl(0.25,0.25,0.05,24),0x6b3a1e,fx,1.35,0.06,h).rotation.x=Math.PI/2;for(let k=0;k<16;k++){const a=k*Math.PI/8;const p=mesh(S(0.13,10,8),0xffb000,fx+Math.cos(a)*0.36,1.35+Math.sin(a)*0.36,0.07,h);p.scale.set(0.45,1,0.25);p.rotation.z=a-Math.PI/2}
+      for(let k=0;k<5;k++){const c=mesh(new _G.Cyl(0.09,0.09,0.05,6),0xe0a020,dx(0.35+(k%3)*0.17+(k>2?0.085:0)),0.55+(k>2?0.15:0),0.06,h);c.rotation.x=Math.PI/2}}));
+    [-1,1].forEach(s=>{for(let k=0;k<2;k++){const x=s*(2.65+k*0.55),hh=2.2+k*0.5;st(new _G.Cyl(0.03,0.04,hh,8),0x4f8a3a,x,hh/2,face*0.9);st(new _G.Cyl(0.24,0.24,0.06,20),0x6b3a1e,x,hh,face*0.95).rotation.x=Math.PI/2;
+      for(let q=0;q<14;q++){const a=q*Math.PI/7,p=st(S(0.12,10,8),0xffc21a,x+Math.cos(a)*0.32,hh+Math.sin(a)*0.32,face*0.95);p.scale.set(0.45,1,0.25);p.rotation.z=a-Math.PI/2}}});
+    cuteBees(0,z+face*0.6,4,2.4,0.9)}
+  else if(th==='roses'){   // rose arch: wrought-iron leaves with scrolls, climbing roses all over the arch
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x2b3a42);for(let i=1;i<9;i++)blk(0.035,H-0.3,0.035,dx(i*L/9),H/2,0,0x2b3a42,h);for(let i=0;i<3;i++){const t=mesh(new _G.Tor(0.18,0.02,8,24),0x2b3a42,dx(0.3+i*0.45),1.75,0,h)}
+      hinges(h,dx);ring(h,dx,0xc8a24a);[[0.3,1.75],[0.75,1.75],[1.2,1.75]].forEach(([x,y],i)=>rose(h,dx(x),y,0.05,[0xd8352a,0xff7fa8,0xd8352a][i]))}));
+    for(let k=0;k<26;k++){const t=k/25,a=Math.PI*t,x=Math.cos(a)*2.05,y=3.0+Math.sin(a)*1.05,side=k%2?1:-1;st(S(0.22,10,8),0x3f7f36,x,y,face*0.62*side).scale.set(1,0.7,0.6);if(k%2===0)rose(scene,x,y+0.1,z+face*0.75*side,[0xd8352a,0xff7fa8,0xfff0f0,0xc2185b][k%4],0.09)}
+    [-1,1].forEach(s=>{for(let y=0.4;y<3.2;y+=0.45){st(S(0.2,10,8),0x3f7f36,s*1.9,y,face*0.66).scale.set(1.6,1,0.5);rose(scene,s*(1.9+((y*7)%0.4)-0.2),y+0.1,z+face*0.78,[0xd8352a,0xff7fa8,0xc2185b][Math.round(y*3)%3],0.08)}})}
+  else if(th==='lavender'){   // lavender gate: lilac lattice leaves, pots of lavender on the posts and sprigs along the arch
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x7a5aa6);for(let i=-3;i<=3;i++)[1,-1].forEach(dir=>{const sl=blk(0.035,2.4,0.03,dx(L/2+i*0.25),1.2,0,0xb79ad9,h);sl.rotation.z=dir*0.62;sl.scale.y=Math.max(0.3,2.4-Math.abs(i)*0.5)});
+      hinges(h,dx);ring(h,dx);for(let k=0;k<5;k++){mesh(new _G.Cyl(0.006,0.006,0.4,5),0x6a8a4a,dx(0.4+k*0.17),1.85,0.06,h);mesh(new _G.Cone(0.025,0.16,8),0x8a5ad0,dx(0.4+k*0.17),2.1,0.06,h)}}));
+    [-1,1].forEach(s=>{st(lathe([[0.18,0],[0.26,0.36],[0.28,0.4],[0,0.38]],24),0xb5653a,s*1.9,3.55,face*0.2);for(let k=0;k<16;k++){const a=k*2.4,r=0.1+0.1*(k%3)/2;st(new _G.Cyl(0.006,0.006,0.5,5),0x6a8a4a,s*1.9+Math.cos(a)*r,3.95+0.05*(k%2),face*0.2+Math.sin(a)*r);st(new _G.Cone(0.03,0.2,8),[0x8a5ad0,0x9b7fe0,0x7a4ac0][k%3],s*1.9+Math.cos(a)*r*1.3,4.25+0.05*(k%2),face*0.2+Math.sin(a)*r*1.3)}});
+    for(let k=0;k<20;k++)st(new _G.Cone(0.03,0.18,8),[0x8a5ad0,0x9b7fe0][k%2],-2.2+k*0.23,4.12,face*0.62)}
+  else if(th==='frost'){   // frosty gate: pale frosted boards, icicles, snow on the arch and little snowy pines on the posts
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x8fa8b8);boards(h,dx,7,0xdfeef6,0xcfe2ee);hinges(h,dx,0x5a6a78);ring(h,dx,0x5a6a78);
+      for(let k=0;k<9;k++)mesh(new _G.Cone(0.022,0.12+0.08*((k*5)%3),8),0xe8f6ff,dx(0.1+k*0.165),H-0.17,0.06,h).rotation.x=Math.PI;blk(L,0.08,0.14,dx(L/2),H+0.02,0,0xfafdff,h)}));
+    sb(4.9,0.25,1.5,0,4.0,0,0xfafdff);for(let k=0;k<22;k++)st(new _G.Cone(0.04,0.2+0.15*((k*7)%3),8),0xe8f6ff,-2.3+k*0.22,3.42,face*0.62).rotation.x=Math.PI;
+    [-1,1].forEach(s=>{sb(0.95,0.18,1.45,s*1.9,3.62,0,0xfafdff);[0,0.5,0.95].forEach((y,i)=>st(new _G.Cone(0.6-i*0.16,0.75,12),i===2?0xfafdff:0x2f6a4f,s*2.95,0.6+y,face*0.95));st(new _G.Cyl(0.06,0.08,0.4,8),0x6b4226,s*2.95,0.2,face*0.95)})}
+  else if(th==='windmill'){   // barn doors (red, white braces) under a little turning windmill, with wheat sheaves by the posts
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{boards(h,dx,7,0xb5382f,0xa8322a);frame(h,dx,0xf6f1e6);const a=Math.atan2(H-0.4,L-0.15),d=blk(Math.hypot(L-0.15,H-0.4),0.1,0.07,dx(L/2),H/2+0.05,0.05,0xf6f1e6,h);d.rotation.z=-(-1)*a*(dx(1)>0?1:-1);
+      const d2=blk(Math.hypot(L-0.15,H-0.4),0.1,0.07,dx(L/2),H/2+0.05,0.05,0xf6f1e6,h);d2.rotation.z=-d.rotation.z;hinges(h,dx);ring(h,dx)}));
+    st(new _G.Cyl(0.35,0.45,1.3,12),0xf6f1e6,0,6.3,0);st(new _G.Cone(0.5,0.55,12),0x7a4a2c,0,7.2,0);const hub=new THREE.Group();hub.position.set(0,6.6,z+face*0.5);scene.add(hub);
+    for(let k=0;k<4;k++){const arm=new THREE.Group();arm.rotation.z=k*Math.PI/2;hub.add(arm);blk(0.06,1.3,0.04,0,0.68,0,0x7a4a2c,arm);blk(0.3,1.0,0.02,0.16,0.8,0,0xf6f1e6,arm)}GDECO.push(t=>{hub.rotation.z=t*0.8});
+    [-1,1].forEach(s=>{for(let k=0;k<26;k++){const a=k*2.4,r=0.12*Math.sqrt(k/26);st(new _G.Cyl(0.008,0.01,0.9,4),0xd8b45a,s*2.75+Math.cos(a)*r,0.45,face*0.8+Math.sin(a)*r).rotation.z=Math.cos(a)*0.15;st(new _G.Sph(0.03,6,4),0xe8c46a,s*2.75+Math.cos(a)*r*1.6,0.95,face*0.8+Math.sin(a)*r*1.6).scale.set(0.6,1.8,0.6)}
+      st(new _G.Tor(0.13,0.025,6,16),0xb08a3a,s*2.75,0.55,face*0.8).rotation.x=Math.PI/2})}
+  else if(th==='adding'){   // playground gate: bright climbing-frame tubes with a big plus on each leaf, balloons on the posts
+    const tc=[0xe8463a,0xffc21a,0x3d7cc9,0x4fb04f];leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{[0.06,L-0.06].forEach((x,i)=>mesh(new _G.Cyl(0.05,0.05,H,14),tc[i*2],dx(x),H/2+0.05,0,h));[0.3,H-0.05].forEach((y,i)=>mesh(new _G.Cyl(0.045,0.045,L,14),tc[1+i*2],dx(L/2),y,0,h).rotation.z=Math.PI/2);
+      for(let i=1;i<6;i++)mesh(new _G.Cyl(0.025,0.025,H-0.5,10),tc[i%4],dx(i*L/6),H/2+0.15,0,h);blk(0.62,0.18,0.08,dx(L/2),1.35,0.06,0xffffff,h);blk(0.18,0.62,0.08,dx(L/2),1.35,0.06,0xffffff,h);
+      blk(0.56,0.12,0.09,dx(L/2),1.35,0.07,tc[sd>0?0:2],h);blk(0.12,0.56,0.09,dx(L/2),1.35,0.07,tc[sd>0?0:2],h);hinges(h,dx)}));
+    [-1,1].forEach(s=>{for(let k=0;k<3;k++){const bx=s*(2.65+(k-1)*0.24),by=4.4+k*0.3;st(new _G.Cyl(0.004,0.004,by-3.5,4),0xffffff,bx,3.5+(by-3.5)/2,face*0.5);st(S(0.2,16,12),tc[(k+(s>0?1:0))%4],bx,by+0.2,face*0.5).scale.set(1,1.2,1)}})}
+  else if(th==='times'){   // village lychgate: white pickets with a times sign, under a little tiled roof
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0xf6f1e6,H-0.3);for(let i=0;i<8;i++){const x=(i+0.5)*L/8;blk(0.12,H-0.25,0.04,dx(x),0.15+(H-0.25)/2,0,0xfffaf0,h);mesh(new _G.Cone(0.085,0.12,4),0xfffaf0,dx(x),H-0.04,0,h).rotation.y=Math.PI/4}
+      const c=blk(0.6,0.12,0.08,dx(L/2),1.3,0.06,0x3d7cc9,h);c.rotation.z=0.785;const c2=blk(0.6,0.12,0.08,dx(L/2),1.3,0.06,0x3d7cc9,h);c2.rotation.z=-0.785;hinges(h,dx);ring(h,dx)}));
+    [-1,1].forEach(s=>{const r=sb(3.1,0.1,2.1,s*1.3,6.4,0,0xb5523b);r.rotation.z=-s*0.5;for(let k=0;k<6;k++){const t=sb(3.12,0.05,0.06,s*1.3,6.46,-0.9+k*0.36,0x9a4232);t.rotation.z=-s*0.5}sb(0.18,1.0,0.18,s*2.45,5.95,0,0x7a4a2c)});sb(0.2,0.2,2.2,0,7.15,0,0x8a3a2a)}
+  else if(th==='oddeven'){   // pond gate: green boards cut with reeds, ducks on the posts and lily pads
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x2f6a4f);boards(h,dx,7,0x3f8f6a,0x4a9a74,t=>H-0.45+0.2*Math.cos(t*9));hinges(h,dx);ring(h,dx);
+      for(let k=0;k<5;k++){const x=dx(0.25+k*0.25),hh=0.7+0.25*(k%3);mesh(new _G.Cyl(0.012,0.012,hh,6),0x8a6a3a,x,0.25+hh/2,0.05,h);mesh(new _G.Cyl(0.03,0.03,0.16,8),0x6b4226,x,0.25+hh,0.05,h)}
+      const lp=mesh(new _G.Cyl(0.16,0.16,0.02,20,1,false,0,5.6),0x4f9a3f,dx(L/2),1.75,0.06,h);lp.rotation.x=Math.PI/2;flower(h,dx(L/2+0.08),1.8,0.08,0xff9ecf,0.04)}));
+    [-1,1].forEach(s=>{const d=new THREE.Group();d.position.set(s*1.9,3.55,z+face*0.1);d.rotation.y=s*0.6+(face<0?Math.PI:0);d.userData.st=1;scene.add(d);mesh(S(0.22,16,12),0xffd23f,0,0.2,0,d).scale.set(1,0.8,1.3);mesh(S(0.14,16,12),0xffd23f,0,0.42,0.18,d);
+      mesh(new _G.Cone(0.05,0.12,10),0xff8a1c,0,0.4,0.33,d).rotation.x=Math.PI/2;[-1,1].forEach(e=>mesh(S(0.022,8,6),0x1d1d1d,e*0.07,0.46,0.27,d))})}
+  else if(th==='match'){   // market gate: crate-slat leaves in stall colours under a striped awning, with bunting and fruit crates
+    const cs=[0xffd23f,0xff9ecf,0x7cc35a,0xff6b57];leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x8a5a3b);for(let j=0;j<8;j++)blk(L-0.12,0.18,0.05,dx(L/2),0.42+j*0.24,0,cs[(j+(sd>0?2:0))%4],h);hinges(h,dx);ring(h,dx)}));
+    for(let k=0;k<10;k++){const a=sb(0.52,0.06,1.2,-2.34+k*0.52,3.3,face*0.95,k%2?0xffffff:0xd8352a);a.rotation.x=face*0.35}
+    for(let k=0;k<12;k++){const f=st(new _G.Cone(0.1,0.2,3),cs[k%4],-2.2+k*0.4,2.98,face*1.5);f.rotation.x=Math.PI}
+    [-1,1].forEach(s=>{sb(0.7,0.45,0.5,s*2.75,0.23,face*0.8,0xb98a5a);for(let k=0;k<6;k++)st(S(0.09,12,10),cs[(k+(s>0?1:2))%4],s*2.75-0.22+(k%3)*0.22,0.52,face*0.8-0.1+Math.floor(k/3)*0.2)})}
+  else if(th==='beach'){   // beach hut gate: blue and white planks, a life ring, surfboards and shells
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{for(let j=0;j<9;j++)blk(L-0.04,0.22,0.05,dx(L/2),0.3+j*0.235,0,j%2?0xffffff:0x3d9ad8,h);frame(h,dx,0xf6f1e6);hinges(h,dx);
+      const lr=mesh(new _G.Tor(0.2,0.07,12,28),0xff5a4a,dx(L/2),1.4,0.09,h);for(let k=0;k<4;k++)mesh(new _G.Tor(0.2,0.075,12,6,0.4),0xffffff,dx(L/2),1.4,0.09,h).rotation.z=k*Math.PI/2+0.2}));
+    [-1,1].forEach(s=>{[0,1].forEach(k=>{const b=st(S(1,20,12),[0xffc21a,0x3dc0b8,0xff7fa8,0x7a5ad0][k+(s>0?2:0)],s*(2.55+k*0.42),1.1,face*0.85);b.scale.set(0.2,1.1,0.05);b.rotation.z=-s*0.12});
+      st(new _G.Cone(0.12,0.08,5),0xff8a5a,s*1.9,3.6,face*0.4).rotation.x=-Math.PI/2;st(S(0.1,12,8),0xf6e3c6,s*1.75,3.58,face*0.2).scale.set(1,0.5,1)})}
+  else if(th==='fin'){   // the last gate: gold, with stars, a trophy on top and bunting
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0xd4a017);for(let i=1;i<8;i++)blk(0.04,H-0.3,0.04,dx(i*L/8),H/2,0,0xe8b923,h);
+      const sh=new THREE.Shape();for(let k=0;k<10;k++){const a=k*Math.PI/5+Math.PI/2,r=k%2?0.11:0.26;k?sh.lineTo(Math.cos(a)*r,Math.sin(a)*r):sh.moveTo(Math.cos(a)*r,Math.sin(a)*r)}
+      mesh(new THREE.ExtrudeGeometry(sh,{depth:0.04,bevelEnabled:false}),0xffd23f,dx(L/2),1.35,0.03,h);hinges(h,dx,0xb8860b)}));
+    st(lathe([[0.16,0],[0.16,0.08],[0.05,0.12],[0.04,0.35],[0.22,0.5],[0.26,0.85],[0,0.85]],32),0xffc21a,0,5.75,0);
+    [-1,1].forEach(s=>st(new _G.Tor(0.12,0.025,8,20,Math.PI),0xffc21a,s*0.25,6.35,0).rotation.z=s*Math.PI/2);
+    for(let k=0;k<12;k++){const f=st(new _G.Cone(0.12,0.24,3),[0xd8352a,0xffd23f,0x3d7cc9,0x4fb04f][k%4],-2.2+k*0.4,3.35,face*0.62);f.rotation.x=Math.PI}}
+  else{   // river and brook gates: painted wave boards with a fish, a kingfisher or an otter, or pebbles for the stepping stones
+    const C={willow:[0x4f8fb0,0x5fa0c0],kingfisher:[0x1f8aa8,0x2a9bb8],otter:[0x8a6a48,0x9a7a56],stones:[0x9a8a74,0xa89a84]}[th]||[0x4f8fb0,0x5fa0c0];
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x5a3a26);boards(h,dx,8,C[0],C[1],t=>H-0.4+0.18*Math.sin(t*Math.PI*3+sd));hinges(h,dx);ring(h,dx);
+      const ex=dx(L/2);
+      if(th==='kingfisher'){mesh(S(0.16,14,10),0x1f7ad0,ex,1.35,0.08,h).scale.set(1.5,0.8,0.4);mesh(S(0.12,14,10),0xff8a2a,ex,1.27,0.11,h).scale.set(1.2,0.6,0.3);mesh(S(0.1,14,10),0x1f7ad0,ex-sd*0.2,1.45,0.09,h).scale.set(1,1,0.5);mesh(new _G.Cone(0.03,0.2,8),0x1d1d1d,ex-sd*0.36,1.45,0.09,h).rotation.z=sd*Math.PI/2}
+      else if(th==='otter'){mesh(S(0.2,14,10),0x6b4a30,ex,1.3,0.08,h).scale.set(1.5,0.7,0.35);mesh(S(0.13,14,10),0x6b4a30,ex-sd*0.32,1.42,0.08,h).scale.set(1,0.9,0.5);mesh(S(0.08,12,8),0xd8c0a0,ex-sd*0.38,1.39,0.13,h).scale.set(1,0.7,0.5);const tl=mesh(new _G.Cone(0.07,0.42,10),0x6b4a30,ex+sd*0.42,1.22,0.08,h);tl.rotation.z=-sd*1.9}
+      else if(th==='stones'){for(let k=0;k<7;k++)mesh(S(0.09+0.03*(k%3),12,8),[0x8a8a84,0xa8a49a,0x76736a][k%3],dx(0.25+(k%4)*0.33),0.75+Math.floor(k/4)*0.95,0.06,h).scale.set(1.2,0.8,0.4)}
+      else{mesh(S(0.15,14,10),0xff8a2a,ex,1.35,0.08,h).scale.set(1.6,0.8,0.35);const tl=mesh(new _G.Cone(0.13,0.22,3),0xff8a2a,ex+sd*0.3,1.35,0.08,h);tl.rotation.z=-sd*Math.PI/2;mesh(S(0.025,8,6),0x1d1d1d,ex-sd*0.14,1.39,0.13,h)}
+      for(let k=0;k<4;k++){const w=mesh(new _G.Tor(0.14,0.02,6,16,Math.PI),0xffffff,dx(0.25+k*0.33),0.6,0.06,h);w.rotation.z=Math.PI}}));
+    if(th==='willow')for(let k=0;k<18;k++){const x=-2.3+k*0.27,len=0.6+((k*7)%5)*0.18;st(new _G.Cyl(0.012,0.012,len,4),0x7aa84a,x,3.5-len/2,face*(0.62+0.02*(k%2)));for(let q=0;q<4;q++)st(S(0.05,6,4),0x8ab85a,x,3.45-q*len/4,face*0.66).scale.set(0.5,1.4,0.3)}
+    if(th==='kingfisher')[-1,1].forEach(s=>{const kf=new THREE.Group();kf.position.set(s*1.9,3.55,z);kf.rotation.y=face>0?0:Math.PI;kf.userData.st=1;scene.add(kf);mesh(S(0.15,14,10),0x1f7ad0,0,0.15,0,kf).scale.set(0.8,0.9,1.3);mesh(S(0.11,14,10),0xff8a2a,0,0.08,0.06,kf).scale.set(0.8,0.9,1);mesh(S(0.11,14,10),0x1f7ad0,0,0.32,0.12,kf);mesh(new _G.Cone(0.03,0.22,8),0x1d1d1d,0,0.31,0.32,kf).rotation.x=Math.PI/2})
+    if(th==='otter')[-1,1].forEach(s=>{const o=new THREE.Group();o.position.set(s*1.9,3.5,z);o.rotation.y=face>0?0:Math.PI;o.userData.st=1;scene.add(o);mesh(S(0.18,14,10),0x6b4a30,0,0.28,0,o).scale.set(0.9,1.5,0.8);mesh(S(0.13,14,10),0x6b4a30,0,0.62,0.02,o);mesh(S(0.08,12,8),0xd8c0a0,0,0.58,0.12,o).scale.set(1,0.7,0.6);mesh(S(0.1,10,8),0xf6e3c6,0,0.36,0.15,o).scale.set(1,0.4,0.4)})
+    if(th==='stones')[-1,1].forEach(s=>{[0.3,0.24,0.18,0.12].forEach((r,i)=>st(S(r,12,8),[0x8a8a84,0xa8a49a,0x76736a,0x9a968c][i],s*1.9,3.6+[0,0.22,0.4,0.54][i]+0.05,0).scale.set(1,0.55,1))})}
+  return {leaves,kind,snd}}
+// a gate at z: its arch and sign, its themed leaves and a collider while it is shut. face is the side people approach from
+function makeGate(z,th,name,topic,face){archway(z,name,topic,th);const t=gateTheme(z,th,face||1);return Object.assign(t,{z,col:colBox(-1.6,1.6,z-0.3,z+0.3),open:false,t:0})}
+function archway(zA,name,topic,th){const own=th==='castle'||th==='snow'||th==='glass',tex=new THREE.MeshBasicMaterial({map:signTex([name,topic],820,226),toneMapped:false});
+  if(!own){[-1.9,1.9].forEach(x=>{blk(0.7,3.5,1.2,x,1.75,zA,0xd9cfb8);blk(0.9,0.3,1.4,x,0.15,zA,0xcfc3a8);blk(0.86,0.2,1.36,x,3.45,zA,0xcfc3a8)});
+    blk(4.7,0.5,1.2,0,3.75,zA,0xd9cfb8);blk(4.9,0.14,1.4,0,4.05,zA,0xcfc3a8)}
+  if(th==='castle'){blk(2.95,0.86,0.05,0,4.25,zA+0.77,0x7a4a2c);const sm=new THREE.Mesh(new THREE.PlaneGeometry(2.8,0.78),tex);sm.position.set(0,4.25,zA+0.8);scene.add(sm)}
+  else{if(own)[-2.9,2.9].forEach(x=>blk(0.18,5.6,0.18,x,2.8,zA,0x7a4a2c));
+    blk(own?6:4.9,1.5,0.18,0,4.85,zA,0x7a4a2c);blk(own?6.3:5.2,0.14,0.5,0,5.66,zA,0x7a4a2c);
+    const sm=new THREE.Mesh(new THREE.PlaneGeometry(4.7,1.3),tex);sm.position.set(0,4.85,zA+0.1);scene.add(sm);
+    [-2.5,2.5].forEach(x=>mesh(new THREE.SphereGeometry(0.16,12,10),matGlow,x,5.85,zA,scene,true))}
   signPost(-3.7,zA+2.6,[name,topic],0.5);
 }
 // outer hedges (the front one has an open archway onto the road)
@@ -2647,7 +2763,8 @@ function buildApproach(){
 buildApproach();
 
 // panels
-const panelFaces=[],gates=[],entryCables=[];
+const panelFaces=[],gates=[],ENTR=[],entryCables=[];
+const linkTheme=c=>c.kind==='river'?(c.stone?'stones':/Kingfisher/.test(c.name)?'kingfisher':/Otter/.test(c.name)?'otter':'willow'):c.kind;
 // how far a 1.6 m strip of path would run straight from (ax,az) along (dx,dz) before it meets a walkway: -1 if a wall,
 // bench, bed, water or raised ground is in the way first (cols: the colliders to test against)
 function straightRun(ax,az,dx,dz,max,cols){const PW2=0.8,isT=(x,z)=>onWalk(x,z,-0.45)||heightAt(x,z)>0.05,
@@ -2681,19 +2798,8 @@ ROOMS.forEach((room,r)=>{
   // (cables are laid later by layCables, once everything they must go around exists)
   // divider with gate arch; past it, a short river or garden walk leads to the next place's open entrance
   const segW=AW-1.6;hedge(-1.6-segW/2,zBot,segW,0.9);hedge(1.6+segW/2,zBot,segW,0.9);
-  archway(zBot,r<NR-1?CONN[r].name:'Finish Meadow',r<NR-1?'On the way to '+ROOMS[r+1].name:'Solve every panel to get here');
-  if(r<NR-1){const zE=z0s[r+1];hedge(-1.6-segW/2,zE,segW,0.9);hedge(1.6+segW/2,zE,segW,0.9);archway(zE,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
-  const leaves=[-1,1].map(sd=>{const h=new THREE.Group();h.position.set(sd*1.53,0,zBot);scene.add(h);const L=1.5,dx=v=>-sd*v;
-    blk(0.11,2.35,0.11,dx(0.06),1.22,0,0x8a5a3b,h);blk(0.11,2.2,0.11,dx(L-0.06),1.15,0,0x8a5a3b,h);
-    [0.28,1.25].forEach(y=>blk(L,0.12,0.1,dx(L/2),y,0,0x8a5a3b,h));
-    const top=blk(L,0.12,0.1,dx(L/2),2.3,0,0x8a5a3b,h);top.rotation.z=sd*0.08;top.position.y=2.27;
-    for(let i=1;i<10;i++){const x=i*L/10,hh=1.95+0.12*(1-x/L)*(sd<0?1:1);blk(0.065,hh,0.045,dx(x),0.28+hh/2,0,0xc58a3a,h)}
-    const br=blk(Math.hypot(L-0.2,0.92),0.09,0.06,dx(L/2),0.77,0.06,0x8a5a3b,h);br.rotation.z=sd*Math.atan2(0.92,L-0.2);
-    [0.45,2.05].forEach(y=>{blk(0.5,0.07,0.12,dx(0.25),y,0,0x2b3a42,h);mesh(new THREE.CylinderGeometry(0.035,0.035,0.16,16),0x2b3a42,dx(0),y,0,h)});
-    const ring=mesh(new THREE.TorusGeometry(0.075,0.014,10,28),0x2b3a42,dx(L-0.18),1.2,0.08,h);
-    return h});
-  const col=colBox(-1.6,1.6,zBot-0.3,zBot+0.3);
-  gates[r]={leaves,col,open:false,t:0};
+  gates[r]=makeGate(zBot,r<NR-1?linkTheme(CONN[r]):'fin',r<NR-1?CONN[r].name:'Finish Meadow',r<NR-1?'On the way to '+ROOMS[r+1].name:'Solve every panel to get here');
+  if(r<NR-1){const zE=z0s[r+1];hedge(-1.6-segW/2,zE,segW,0.9);hedge(1.6+segW/2,zE,segW,0.9);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
   reserve(0,zBot+2.5,3);reserve(0,zBot-2.5,3);
 });
 /* ---------- every puzzle sits by a path: where a panel's standing spot isn't on a path, plaza, floor or deck, a short
@@ -3352,7 +3458,13 @@ const SHOT={
     if(Math.random()<0.12){hiss(o,t+0.04,0.06,'lowpass',1100,0.7,1);blip(o,'sine',150,55,t+0.04,0.09)}},
   splash:(o,t)=>hiss(o,t,0.35,'bandpass',1700,1.2,1),
   squeak:(o,t)=>{blip(o,'sine',900,1500,t,0.12,null,[30,60]);blip(o,'sine',1100,1300,t+0.16,0.1)}};
-function gateCreak(){if(!AMB.ready||muted)return;const t=AC.currentTime,o=shotOut(0.07,0,t);blip(o,'sawtooth',90,62,t+0.05,1.3,['bandpass',520,6],[9,6]);hiss(o,t,0.15,'lowpass',300,1,1)}
+// gate sounds, loud and clear: a swing gate clacks its latch, creaks open and bumps against its stop; a portcullis rattles
+// up on its chain with a deep grind and a heavy clunk; sliding doors roll on their track and click into place
+function gateSound(kind){if(!AMB.ready||muted)return;const t=AC.currentTime;
+  if(kind==='lift'){const o=shotOut(0.6,0,t);for(let i=0;i<28;i++)hiss(o,t+i*0.08+Math.random()*0.02,0.05,'bandpass',2200+Math.random()*1800,5,1);blip(o,'sawtooth',62,48,t,2.6,['lowpass',260,1.5]);hiss(o,t,2.6,'lowpass',220,1,0.6);blip(o,'sine',80,40,t+2.55,0.45);hiss(o,t+2.55,0.35,'lowpass',300,1,1)}
+  else if(kind==='slide'){const o=shotOut(0.5,0,t);hiss(o,t,1.7,'bandpass',420,0.8,0.9);blip(o,'triangle',140,120,t,1.6,['lowpass',400,1]);blip(o,'square',2400,1800,t+1.7,0.05,['bandpass',2600,4]);[1568,2093].forEach((f,i)=>blip(o,'sine',f,f,t+1.8+i*0.12,0.5))}
+  else{const o=shotOut(0.55,0,t);blip(o,'square',1900,950,t,0.05,['bandpass',2200,3]);hiss(o,t,0.06,'highpass',2500,1,1);blip(o,'sawtooth',98,60,t+0.12,1.4,['bandpass',560,7],[8,10]);blip(o,'sawtooth',150,95,t+0.45,1.0,['bandpass',820,9],[12,7]);
+    blip(o,'sine',95,45,t+1.75,0.35);hiss(o,t+1.75,0.25,'lowpass',260,1,1)}}
 function ambUpdate(dt,ts){if(!AMB.ready)return;
   const cx=camera.position.x,cz=camera.position.z,ry=camera.rotation.y,cr=Math.cos(ry),sr=Math.sin(ry),now=AC.currentTime;
   const panOf=(ax,az)=>{const dx=ax-cx,dz=az-cz,d=Math.hypot(dx,dz);return d<0.6?0:(dx*cr-dz*sr)/d};
@@ -3377,7 +3489,7 @@ const sfx={
   back:()=>tone(330,0.06,'triangle',0.035),
   win:()=>[523,659,784,1047].forEach((f,i)=>tone(f,0.28,'triangle',0.09,i*0.09)),
   fail:()=>{tone(196,0.32,'sawtooth',0.045);tone(147,0.4,'sawtooth',0.04,0.12)},
-  gate:()=>{tone(110,0.9,'sine',0.12);tone(165,0.9,'sine',0.08,0.15);[784,988,1175].forEach((f,i)=>tone(f,0.3,'triangle',0.06,0.4+i*0.1))},
+  gate:()=>{tone(110,0.9,'sine',0.2);tone(165,0.9,'sine',0.14,0.15);[784,988,1175].forEach((f,i)=>tone(f,0.35,'triangle',0.1,0.4+i*0.1))},
   cheer:()=>[523,659,784,659,784,1047].forEach((f,i)=>tone(f,0.3,'triangle',0.08,i*0.13))
 };
 
@@ -3431,9 +3543,13 @@ function refreshWorld(){
   ROOMS.forEach((room,r)=>{const on=r===0||ROOMS[r-1].list.every(p=>p.solved);entryCables[r].forEach(m=>m.material=on?matCableOn:matCableOff)});
   PANELS.forEach(drawPanel);
 }
-function poseGate(g){const e=g.t*g.t*(3-2*g.t);g.leaves[0].rotation.y=1.5*e;g.leaves[1].rotation.y=-1.5*e}
-function openGate(r,instant){const g=gates[r];if(g.open)return;g.open=true;g.col.on=false;if(instant){g.t=1;poseGate(g)}else gateCreak()}
-function closeGate(r){const g=gates[r];g.open=false;g.col.on=true;g.t=0;poseGate(g)}
+function poseGate(g){const e=g.t*g.t*(3-2*g.t);if(g.kind==='lift')g.leaves[0].position.y=2.4*e;else if(g.kind==='slide'){g.leaves[0].position.x=-1.53-1.45*e;g.leaves[1].position.x=1.53+1.45*e}else{g.leaves[0].rotation.y=1.5*e;g.leaves[1].rotation.y=-1.5*e}}
+function openG(g,instant){if(!g||g.open)return;g.open=true;g.col.on=false;if(instant){g.t=1;poseGate(g)}else gateSound(g.snd)}
+function closeG(g){if(!g)return;g.open=false;g.col.on=true;g.t=0;poseGate(g)}
+function openGate(r,instant){openG(gates[r],instant)}
+// the next place's entrance opens once you are halfway along the walk from the last place's open exit
+function openEntr(r,instant){const g=ENTR[r];if(!g||g.open)return;openG(g,instant);if(!instant)toast(`The gate into ${ROOMS[r].name} is opening.`)}
+function closeGate(r){closeG(gates[r]);closeG(ENTR[r])}
 function roomDone(r){return ROOMS[r].list.every(p=>p.solved)}
 
 function placeAt(z){if(z>0.6)return{k:'road'};if(z<zF0)return{k:'fin'};
@@ -3634,7 +3750,7 @@ $('#musicBtn').addEventListener('click',()=>{MUSIC.on=!MUSIC.on;$('#musicBtn').t
 // solve every puzzle at once and open every gate (handy for exploring or testing)
 function solveAll(){if(mode==='solve')exitSolve();
   PANELS.forEach(p=>{p.solved=true;p.complete=true;p.flash=null;p.err=null;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}});
-  ROOMS.forEach((_,r)=>openGate(r,true));save();refreshWorld();updateHud();sfx.gate();toast('Every puzzle is solved and every gate is open!','good')}
+  ROOMS.forEach((_,r)=>{openGate(r,true);openEntr(r,true)});save();refreshWorld();updateHud();sfx.gate();toast('Every puzzle is solved and every gate is open!','good')}
 $('#solveAllBtn').addEventListener('click',()=>{solveAll();$('#help').hidden=true;if(mode==='walk')requestLock()});
 /* ---------- post-processing: the "game engine" look ----------
    the world is drawn into an off-screen HDR buffer, then: ambient occlusion (soft contact shadows in corners and under
@@ -3818,7 +3934,7 @@ audioWake();['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventLi
 (function(){
   const ids=new Set(loadSave());if(!ids.size)return;
   PANELS.forEach(p=>{if(ids.has(p.id)){p.solved=true;p.complete=true;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}}});
-  ROOMS.forEach((_,q)=>{if(roomDone(q))openGate(q,true)});let r=0;while(r<NR&&roomDone(r))r++;if(r>=NR)celebrated=true;   // already finished before
+  ROOMS.forEach((_,q)=>{if(roomDone(q)){openGate(q,true);openEntr(q+1,true)}});let r=0;while(r<NR&&roomDone(r))r++;if(r>=NR)celebrated=true;   // already finished before
   pz=r<NR?z0s[r]-3:zF0-3;
 })();
 menuProgress();
@@ -3880,7 +3996,9 @@ function frame(t){
     $('#menuFade').style.opacity=Math.max(0,1-Math.min(u,1-u)*L/0.9).toFixed(3)}
   sky.position.copy(camera.position);
   sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
-  gates.forEach(g=>{if(g.open&&g.t<1){g.t=Math.min(1,g.t+dt*0.55);poseGate(g)}});
+  gates.concat(ENTR).forEach(g=>{if(g&&g.open&&g.t<1){g.t=Math.min(1,g.t+dt*(g.kind==='lift'?0.38:0.55));poseGate(g)}});
+  if(!MENU.open)for(let r=1;r<NR;r++){const g=ENTR[r];if(g&&!g.open&&gates[r-1].open&&pz<z0s[r-1]-AREA-GAP/2)openEntr(r)}
+  GDECO.forEach(f=>f(ts));
   trophy.rotation.y+=dt*0.6;
   for(const a of anims)a(ts,dt);
   if(started)ambUpdate(dt,ts);
