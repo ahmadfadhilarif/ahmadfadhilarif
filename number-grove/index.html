@@ -115,7 +115,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
 <div id="menuFade"></div>
 <div id="menu">
   <div class="mpanel">
-    <div class="mhead"><p class="eyebrow">A walking maths puzzle garden</p><h1 class="logo">Number <em>Grove</em></h1></div>
+    <div class="mhead"><p class="eyebrow">A walking maths puzzle island</p><h1 class="logo">Number <em>Grove</em></h1></div>
     <div id="mProg" class="mprog" hidden><div class="mprogtext"><b id="mProgN">0</b> of <span class="ptotal">76</span> panels solved <span id="mProgP"></span></div><div class="mbar"><i id="mProgBar"></i></div></div>
     <nav class="mbtns" aria-label="Main menu">
       <button id="mPlay" type="button" class="primary"><span id="mPlayText">Play</span><span aria-hidden="true">›</span></button>
@@ -131,7 +131,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
     <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">From the easiest place to the hardest. Finish every panel in a place to open its gate to the next.</p><ol id="placeList" class="places"></ol></div>
     <div id="pgHow" class="mpage" hidden><h2>How to play</h2>
       <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
-      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables to the next panel, and solve every panel in a place to open its gate.</p>
+      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables to the next panel, and solve every panel in a place to open its gate. Halfway along the walk to the next place, that place's gate opens too.</p>
       <dl class="how">
         <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
         <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
@@ -142,6 +142,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       </dl>
       <h3>The rules</h3>
       <dl class="how rules">
+        <dt>Stars</dt><dd>In the Welcome Garden: touch every star, and keep off any clouds.</dd>
         <dt>Ordering</dt><dd>Touch every number, from the smallest to the biggest.</dd>
         <dt>Counting</dt><dd>Touch the counting numbers in order. Stay off the others.</dd>
         <dt>Adding</dt><dd>The numbers your line touches must add up to the target.</dd>
@@ -402,7 +403,7 @@ function ruleText(p){
   }
 }
 
-/* ---------- the seven places. spots: [x, z (local, negative = deeper), facing, mount, cable route into this panel]
+/* ---------- the places. spots: [x, z (local, negative = deeper), facing, mount, cable route into this panel]
    each place has 8 panels that start easy and get harder: bigger grids, bigger numbers, more areas to fence off ---------- */
 const ROOMS=[
   {name:'Adding Garden',topic:'Adding up',
