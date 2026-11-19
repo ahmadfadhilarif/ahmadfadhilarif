@@ -2607,11 +2607,17 @@ function bigIgloo(cx,cz,R,H){const DW=2.3,DH=3.4,sy=H/R,rt=DW+0.25;
   const outer=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({map:bigIglooTex,roughness:0.8}));outer.position.set(cx,0,cz);outer.castShadow=outer.receiveShadow=true;scene.add(outer);
   const inner=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({map:bigIglooTex,roughness:0.6,side:THREE.BackSide,color:lin(0xdcecf8),emissive:lin(0x4f86b8),emissiveIntensity:0.5}));inner.position.copy(outer.position);inner.receiveShadow=true;scene.add(inner);
   const tm=new THREE.MeshStandardMaterial({map:bigIglooTex,roughness:0.75,side:THREE.DoubleSide}),rim=new THREE.MeshStandardMaterial({color:lin(0xcfe8f5),roughness:0.15});
-  [-1,1].forEach(s=>{const zA=cz+s*(R*Math.sqrt(1-(DH/H)**2)-0.6),zB=cz+s*(R+3.2),len=Math.abs(zB-zA),zc=(zA+zB)/2,ky=(DH+0.4)/rt;
-    const tg=new _G.Cyl(rt,rt,len,48,1,true,Math.PI/2,Math.PI);tg.rotateX(Math.PI/2);tg.scale(1,ky,1);const tu=new THREE.Mesh(tg,tm);tu.position.set(cx,0,zc);tu.castShadow=tu.receiveShadow=true;scene.add(tu);
-    const ar=new THREE.Mesh(new _G.Tor(rt,0.22,12,48,Math.PI),rim);ar.scale.set(1,ky,1);ar.position.set(cx,0,zB);ar.castShadow=true;scene.add(ar);
-    for(let k=1;k<12;k++){const a=k/12*Math.PI,ic=new THREE.Mesh(new _G.Cone(0.07,0.35+((k*7)%3)*0.15,8),rim);ic.rotation.x=Math.PI;ic.position.set(cx+Math.cos(a)*rt*0.97,Math.sin(a)*rt*ky-0.25,zB+s*0.1);scene.add(ic)}
-    [-1,1].forEach(sd=>colBox(cx+sd*rt-0.25,cx+sd*rt+0.25,Math.min(zA,zB),Math.max(zA,zB)))});
+  // each tunnel is a thick arched wall of snow blocks (an inner and an outer shell with flat arched ends). it reaches
+  // well into the dome, and its outer shell is wider than the opening cut in the dome, so the dome meets solid wall all
+  // round the doorway, inside and out, with no gaps
+  const TT=0.5,TY=DH+0.4;
+  [-1,1].forEach(s=>{const zA=cz+s*(R*Math.sqrt(1-((TY+TT)/H)**2)-0.35),zB=cz+s*(R+3.2),len=Math.abs(zB-zA),zc=(zA+zB)/2,ky=TY/rt,ko=(TY+TT)/(rt+TT);
+    [[rt,ky],[rt+TT,ko]].forEach(([r,k])=>{const tg=new _G.Cyl(r,r,len,48,1,true,Math.PI/2,Math.PI);tg.rotateX(Math.PI/2);tg.scale(1,k,1);const tu=new THREE.Mesh(tg,tm);tu.position.set(cx,0,zc);tu.castShadow=tu.receiveShadow=true;scene.add(tu)});
+    const sh=new THREE.Shape();sh.absellipse(0,0,rt+TT,TY+TT,0,Math.PI,false);sh.lineTo(-rt,0);sh.absellipse(0,0,rt,TY,Math.PI,0,true);sh.lineTo(rt+TT,0);
+    [zA,zB].forEach(zz=>{const cp=new THREE.Mesh(new THREE.ShapeGeometry(sh,48),tm);cp.position.set(cx,0,zz);cp.receiveShadow=true;scene.add(cp)});
+    const ar=new THREE.Mesh(new _G.Tor(rt+TT/2,TT/2+0.06,12,48,Math.PI),rim);ar.scale.set(1,(TY+TT/2)/(rt+TT/2),1);ar.position.set(cx,0,zB);ar.castShadow=true;scene.add(ar);
+    for(let k=1;k<12;k++){const a=k/12*Math.PI,ic=new THREE.Mesh(new _G.Cone(0.07,0.35+((k*7)%3)*0.15,8),rim);ic.rotation.x=Math.PI;ic.position.set(cx+Math.cos(a)*rt*0.97,Math.sin(a)*TY-0.25,zB+s*0.1);scene.add(ic)}
+    [-1,1].forEach(sd=>colBox(Math.min(cx+sd*(rt-0.25),cx+sd*(rt+TT+0.05)),Math.max(cx+sd*(rt-0.25),cx+sd*(rt+TT+0.05)),Math.min(zA,zB),Math.max(zA,zB)))});
   for(let a=0;a<Math.PI*2;a+=0.07){const sx=Math.sin(a)*(R-0.2);if(Math.abs(sx)<rt+0.1)continue;colCirc(cx+sx,cz+Math.cos(a)*(R-0.2),0.45)}
   OWLB.push({inside:(x,z)=>Math.hypot(x-cx,z-cz)<R-0.4||(Math.abs(x-cx)<rt&&Math.abs(z-cz)<R+3.2),portals:[1,-1].map(s=>({a:[cx,2.3,cz+s*(R-2.5)],b:[cx,2.3,cz+s*(R+4.2)],c:[cx,2.8,cz+s*(R+7.5)]}))});
   for(let x=-R+1;x<R;x+=2)for(let z=-R+1;z<R;z+=2)if(x*x+z*z<R*R)reserve(cx+x,cz+z,2.3);
@@ -4076,7 +4082,7 @@ if(FROST.fire){const [fx,fz]=FROST.fire;[[fx-1.7,fz],[fx,fz-1.8]].forEach(([x,z]
      if(y<0.012)mixC(c,0x3a3530,0.85);if(nz>0.2)[-1,1].forEach(s=>mixC(c,0xd8c8c0,sstep(0.035,0.015,Math.hypot(x-s*0.105,y-0.63))*0.8));if(Math.hypot(x,(y-0.432)*1.4,z-0.625)<0.012)mixC(c,0x3a3530,0.9)}});
  const P=[],a=partAdder(P);[-1,1].forEach(s=>a(new _G.Sph(0.021,14,10),0x120c08,s*0.062,0.54,0.535));const eyes=new THREE.Mesh(partsGeo(P),eyeMat);
  const cub=new THREE.Mesh(body,critMat);cub.castShadow=true;cub.add(eyes);scene.add(cub);
- const ic=z0s[RI('snow')]-36,ok=(x,z)=>x>-6.8&&x<-2.4&&z>ic-7&&z<ic-2.2&&Math.hypot(x,z-ic)>2.7&&Math.hypot(x,z-ic)<7.2&&Math.hypot(x+7.6,z-(ic-3.55))>1.2;
+ const ic=z0s[RI('snow')]-36,ok=(x,z)=>x>-6.8&&x<-2.4&&z>ic-6.5&&z<ic-2.2&&Math.hypot(x,z-ic)>2.7&&Math.hypot(x,z-ic)<7.2&&Math.hypot(x+7.6,z-(ic-3.55))>1.2;
  let x=-4.5,z=ic-4.5,h=0,tx=x,tz=z,st='idle',tm=2,w=0;cub.position.set(x,0,z);
  anims.push((t,dt)=>{if(!near2(cub,40))return;const dpx=camera.position.x-x,dpz=camera.position.z-z,close=dpx*dpx+dpz*dpz<2.6;
    const turn=(goal,sp)=>{let df=goal-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=Math.max(-dt*sp,Math.min(dt*sp,df));return df};
