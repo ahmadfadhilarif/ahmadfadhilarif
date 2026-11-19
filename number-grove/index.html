@@ -1005,11 +1005,11 @@ const OCEAN=(()=>{const {nx,nz}=IG,data=new Uint8Array(nx*nz*4);for(let k=0;k<nx
   const og=new THREE.PlaneGeometry(900,900,200,200);og.rotateX(-Math.PI/2);const m=new THREE.Mesh(og,mat);m.position.set(0,0.07,0);m.frustumCulled=false;m.renderOrder=-1;scene.add(m);return m})();
 
 /* ---------- building blocks ---------- */
-const PATHC=0xcdb991;let pathN=0;const PATHR=[];
+const PATHC=0xcdb991;let pathN=0;const PATHR=[],FILLR=[];
 function paths(lines,w,y,col){y=y||0;lines.forEach(([a,b])=>{
   const dx=Math.abs(b[0]-a[0]),dz=Math.abs(b[1]-a[1]),PWd=dx>0.01?dx+w:w,PDd=dz>0.01?dz+w:w,cx=(a[0]+b[0])/2,cz=(a[1]+b[1])/2;
-  PATHR.push({minX:cx-PWd/2,maxX:cx+PWd/2,minZ:cz-PDd/2,maxZ:cz+PDd/2});
-  flat(new THREE.PlaneGeometry(PWd,PDd),col||PATHC,cx,y+0.02+(pathN++%7)*0.0015,cz);
+  const rr={minX:cx-PWd/2,maxX:cx+PWd/2,minZ:cz-PDd/2,maxZ:cz+PDd/2,col:col||PATHC,y};PATHR.push(rr);
+  rr.m=flat(new THREE.PlaneGeometry(PWd,PDd),col||PATHC,cx,y+0.02+(pathN++%7)*0.0015,cz);
   const len=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let s=0;s<=len;s+=1)reserve(a[0]+(b[0]-a[0])*s/len,a[1]+(b[1]-a[1])*s/len,w/2+0.2)})}
 // walkable surfaces that are not straight paths (plazas, floors, rings round fountains): no grass or flowers grow on them
 const WALK=[];function walkRect(x0,x1,z0,z1){WALK.push({minX:x0,maxX:x1,minZ:z0,maxZ:z1})}function walkRing(x,z,r0,r1){WALK.push({x,z,r0,r1})}
@@ -2325,7 +2325,7 @@ function pottingBench(x,z,len){blk(1.6,0.08,len,x,0.85,z,0xb98a5a);[-1,1].forEac
   blk(1.5,0.05,len-0.2,x,0.25,z,0xb98a5a);colBox(x-0.8,x+0.8,z-len/2,z+len/2);
   for(let s=-len/2+0.4,k=0;s<len/2-0.2;s+=0.55,k++)pottedPlant(x+(k%2?0.35:-0.35),0.89,z+s,(k+Math.round(x+z))%4)}
 function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=4.6,RH=7.6,DW=1.6,DH=3.9,GH=WH-0.6;
-  flat(new THREE.PlaneGeometry(W,L),0xd9cfb8,cx,0.018,cz);
+  flat(new THREE.PlaneGeometry(W,L),0xd9cfb8,cx,0.026,cz);
   const glass=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,matGlass);m.position.set(x,y,z);m.rotation.y=ry||0;m.renderOrder=3;scene.add(m);return m};
   // low brick wall, then glass sides and ends with a door gap in the middle of each end
   // the east wall has a casement window propped wide open near its south end (the owl's way in and out)
@@ -3055,9 +3055,12 @@ ROOMS.forEach((room,r)=>{
   if(r<NR-1){const zE=z0s[r+1];divider(zE);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
   reserve(0,zBot+2.5,3);reserve(0,zBot-2.5,3);
 });
-{const gone=new Set();PANELS.forEach(p=>{const fx=p.pos.x+p.normal.x*1.6,fz=p.pos.z+p.normal.z*1.6,py=p.pos.y+(PH+0.14)/2;
-  TREES.forEach(T=>{if(gone.has(T))return;const d=Math.min(Math.hypot(T.x-p.pos.x,T.z-p.pos.z),Math.hypot(T.x-fx,T.z-fz));if(d<T.r+0.9&&T.low<py+1.6)gone.add(T)})});
- gone.forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}})}
+// no tree may reach over or behind a panel: its leaves would poke through the board or crowd the view (run once the
+// panels are up and again after all the scattered trees are planted)
+function clearTreesFromPanels(){const gone=new Set();PANELS.forEach(p=>{const fx=p.pos.x+p.normal.x*1.6,fz=p.pos.z+p.normal.z*1.6,bx=p.pos.x-p.normal.x*1.2,bz=p.pos.z-p.normal.z*1.2,py=p.pos.y+(PH+0.14)/2;
+  TREES.forEach(T=>{if(gone.has(T))return;const d=Math.min(Math.hypot(T.x-p.pos.x,T.z-p.pos.z),Math.hypot(T.x-fx,T.z-fz),Math.hypot(T.x-bx,T.z-bz));if(d<T.r+1.1&&T.low<py+1.8)gone.add(T)})});
+ gone.forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}const i=TREES.indexOf(T);if(i>=0)TREES.splice(i,1)})}
+clearTreesFromPanels();
 /* ---------- every puzzle sits by a path: where a panel's standing spot isn't on a path, plaza, floor or deck, a short
    side path is routed on a 0.5 m grid (around walls, water, benches, beds and other panels) to the nearest walkway ---------- */
 const SIDEP=[],PPLOG=[];
@@ -3096,6 +3099,18 @@ const SIDEP=[],PPLOG=[];
   // nothing grows or lies on a side path: flowers, grass, bushes and stones that were set down before it was laid are lifted
   const on=(x,z)=>SIDEP.some(r=>x>r.minX-0.15&&x<r.maxX+0.15&&z>r.minZ-0.15&&z<r.maxZ+0.15);
   for(const k of ['flower','stem','bush','rock','grass','cabbage','blob','reed','cattail']){const a=INST[k];let w=0;for(const o of a)if(!on(o.x,o.z))a[w++]=o;a.length=w}
+  // the paving: every ground-level path and filler of one colour along each stretch of the island becomes one seamless
+  // surface (laid on a shared grid of all their edges, so there are no cracks, overlaps or seams between pieces), sitting
+  // just under plazas and floors so they always show cleanly on top
+  const groups=new Map();PATHR.filter(r=>r.m&&!r.y).concat(FILLR).forEach(r=>{const k=r.col+'|'+Math.floor(-(r.minZ+r.maxZ)/2/46);let a=groups.get(k);if(!a)groups.set(k,a=[]);a.push(r)});
+  const UM={};groups.forEach((rects,k)=>{const col=+k.split('|')[0],q=v=>Math.round(v*1000)/1000,ux=a=>[...new Set(a.map(q))].sort((p,r)=>p-r),xs=ux(rects.flatMap(r=>[r.minX,r.maxX])),zs=ux(rects.flatMap(r=>[r.minZ,r.maxZ]));
+    const bs=(a,v)=>{let lo=0,hi=a.length-1;v=q(v);while(lo<hi){const m=(lo+hi)>>1;if(a[m]<v)lo=m+1;else hi=m}return lo},NX=xs.length-1,NZ=zs.length-1,cov=new Uint8Array(NX*NZ);
+    rects.forEach(r=>{const i0=bs(xs,r.minX),i1=bs(xs,r.maxX),j0=bs(zs,r.minZ),j1=bs(zs,r.maxZ);for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++)cov[j*NX+i]=1;if(r.m&&r.m.parent)r.m.parent.remove(r.m)});
+    const vid=new Int32Array((NX+1)*(NZ+1)).fill(-1),P=[],N=[],I=[],V=(i,j)=>{const kk=j*(NX+1)+i;if(vid[kk]<0){vid[kk]=P.length/3;P.push(xs[i],0.014,zs[j]);N.push(0,1,0)}return vid[kk]};
+    for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++)if(cov[j*NX+i]){const a=V(i,j),b=V(i+1,j),c=V(i,j+1),d=V(i+1,j+1);I.push(a,c,b,b,c,d)}
+    if(!I.length)return;const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setIndex(I);
+    const mt=M(col);
+    const mesh=new THREE.Mesh(g,mt);mesh.receiveShadow=true;scene.add(mesh)})
 })();
 // no grass in the middle of a path: on a 0.25 m grid, every patch of open ground that is completely surrounded by paths,
 // plazas or things standing on them (benches, panels, beds) is paved over in the same path material. the paving is cut
@@ -3118,7 +3133,7 @@ function fillPathSlots(z0,col){const zA=z0-AREA,pr=PATHR.filter(r=>r.maxZ>zA&&r.
     for(let i=0;i<NX;i++)runs(NZ,j=>j*NX+i,(a,b)=>zs[b+1]-zs[a]);
     let n1=0;for(let k=0;k<fill.length;k++){if(fill[k])st[k]=1;n1+=fill[k]}if(n1===n0)break}
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){if(!fill[j*NX+i])continue;let w=1;while(i+w<NX&&fill[j*NX+i+w])w++;for(let a=0;a<w;a++)fill[j*NX+i+a]=0;
-    const o=0.04,minX=xs[i]-o,maxX=xs[i+w]+o,minZ=zs[j]-o,maxZ=zs[j+1]+o;flat(new THREE.PlaneGeometry(maxX-minX,maxZ-minZ),col,(minX+maxX)/2,0.0195,(minZ+maxZ)/2);walkRect(minX,maxX,minZ,maxZ)}}
+    const o=0.06,minX=xs[i]-o,maxX=xs[i+w]+o,minZ=zs[j]-o,maxZ=zs[j+1]+o;FILLR.push({minX,maxX,minZ,maxZ,col});walkRect(minX,maxX,minZ,maxZ)}}
 function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z0-0.3,NX=Math.floor((2*AW-1)/G)+1,NZ=Math.floor((AREA-0.6)/G)+1,N=NX*NZ,X=i=>x0+i*G,Z=j=>zT-j*G;
   const pr=PATHR.filter(r=>r.maxZ>z0-AREA-1&&r.minZ<z0+1),wk=WALK.filter(w=>w.r1!=null?Math.abs(w.z-(z0-AREA/2))<AREA/2+w.r1:w.maxZ>z0-AREA-1&&w.minZ<z0+1);
   const near=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z0-AREA-1&&c.minZ<z0+1:c.t==='circ'?Math.abs(c.z-(z0-AREA/2))<AREA/2+2:false));
@@ -3136,7 +3151,7 @@ function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){if(!fill[j*NX+i])continue;let w=1;while(i+w<NX&&fill[j*NX+i+w])w++;let h=1;
     grow:while(j+h<NZ){for(let a=0;a<w;a++)if(!fill[(j+h)*NX+i+a])break grow;h++}
     for(let b=0;b<h;b++)for(let a=0;a<w;a++)fill[(j+b)*NX+i+a]=0;
-    const e=G*0.75,minX=X(i)-e,maxX=X(i+w-1)+e,maxZ=Z(j)+e,minZ=Z(j+h-1)-e;flat(new THREE.PlaneGeometry(maxX-minX,maxZ-minZ),col,(minX+maxX)/2,0.0195,(minZ+maxZ)/2);walkRect(minX,maxX,minZ,maxZ)}}
+    const e=G*0.75+0.06,minX=X(i)-e,maxX=X(i+w-1)+e,maxZ=Z(j)+e,minZ=Z(j+h-1)-e;FILLR.push({minX,maxX,minZ,maxZ,col});walkRect(minX,maxX,minZ,maxZ)}}
 LAMPS.forEach(([x,z])=>placeLamp(x,z));
 {const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(LAMPPTS,3));const pts=new THREE.Points(g,LAMPGLOW);pts.renderOrder=3;pts.frustumCulled=false;scene.add(pts);LAMPGLOW.pts=pts}
 
@@ -3240,6 +3255,7 @@ reserve(0,zF0-44,16);   // keep the ground behind the finish clear (the launch p
  // surf you can hear all round the island
  SNDS.push({k:'sea',fn:(x,z)=>{const zz=Math.max(ISL_S,Math.min(ISL_N,z)),sd=x<0?-1:1;return[sd*coastX(sd,zz),zz]}})}
 
+clearTreesFromPanels();
 // inside the castle walls there is no grass, no bushes, no trees and no flowers
 {const inZ=(x,z)=>NOGREEN.some(q=>x>q.x0&&x<q.x1&&z>q.z0&&z<q.z1);
  TREES.forEach(T=>{if(!inZ(T.x,T.z))return;T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}});
