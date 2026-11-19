@@ -30,6 +30,7 @@ button.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px 
 #pips span{width:16px;height:16px;border-radius:5px;background:#d9e3e6;box-shadow:inset 0 -2px 0 rgba(0,0,0,.12)}
 #pips span.on{background:var(--sun)}
 #total{font:700 13px var(--body);color:var(--mute);font-variant-numeric:tabular-nums}
+#clock{font:700 12px var(--body);color:var(--mute);margin-top:2px;font-variant-numeric:tabular-nums}
 #tools{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));top:calc(12px + env(safe-area-inset-top,0px));display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:250px}
 #fps{order:-1;width:100%;text-align:right;font:700 12px/1 var(--body);font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);padding:2px 4px 0}
 #tools button{background:var(--card);color:var(--ink);box-shadow:0 4px 0 rgba(29,51,64,.2);padding:10px 14px}
@@ -102,6 +103,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
   <div><span id="roomName">Place Value Castle</span><span id="roomTopic">Ordering numbers</span></div>
   <div id="pips"></div>
   <div id="total">0 panels solved</div>
+  <div id="clock"></div>
 </div>
 <div id="tools" hidden><span id="fps" aria-label="Frames per second">-- fps</span><button id="menuBtn" type="button">Menu</button><button id="solveNextBtn" type="button" title="Solve the puzzle you are on now">Solve current</button><button id="soundBtn" type="button">Sound on</button><button id="musicBtn" type="button">Music on</button><button id="qualBtn" type="button">Quality: High</button><button id="helpBtn" type="button">Help</button></div>
 <div id="toast" hidden></div>
@@ -634,30 +636,68 @@ Object.assign(sun.shadow.camera,{left:-42,right:42,top:42,bottom:-42,near:1,far:
 scene.add(sun);scene.add(sun.target);
 const maxAniso=Math.min(16,renderer.capabilities.getMaxAnisotropy());
 const U_TIME={value:0};
+/* ---------- day and night ----------
+   one day on the island lasts one real hour. the sun rises in the east, swings high over the north at noon and sets in
+   the west; then the moon comes up opposite it among the stars. the sky, fog, clouds and light all follow the sun's
+   height: a clear blue day, a golden hour, an orange and pink sunset, a violet dusk and a deep blue night. at night the
+   moon is bright and the sky fills the shadows with soft blue light, so every path, panel and garden stays easy to see */
+const DAYLEN=3600,SKYKEYS=[   // s = how high the sun is (sine of its height), then sky colours and light levels
+  {s:-0.5,zen:0x14284f,hor:0x3a5585,glow:0x101830,gk:0.0,sun:0xff8a4a,si:0,hemi:0.9,hs:0x9ab4f0,hg:0x46506a,pd:0.18,pn:1.0,ex:1.22,cl:0x6a7898,ce:0x26304a},
+  {s:-0.2,zen:0x1f3668,hor:0x51649a,glow:0x463a6a,gk:0.25,sun:0xff8a4a,si:0,hemi:0.8,hs:0x9ab0e8,hg:0x4a4c62,pd:0.28,pn:0.8,ex:1.12,cl:0x8a8eb0,ce:0x3e4262},
+  {s:-0.06,zen:0x3a4e8c,hor:0xd88c6c,glow:0xff6a34,gk:0.9,sun:0xff7a3a,si:0.25,hemi:0.55,hs:0xc8a8c8,hg:0x5a4a48,pd:0.5,pn:0.35,ex:1.02,cl:0xffd0b8,ce:0xf0a890},
+  {s:0.03,zen:0x4d78b8,hor:0xf0b48a,glow:0xff9a50,gk:0.8,sun:0xffa868,si:1.0,hemi:0.38,hs:0xe8d0c0,hg:0x6a5a48,pd:0.7,pn:0.1,ex:0.96,cl:0xffeedd,ce:0xf4c4a4},
+  {s:0.14,zen:0x3f88d8,hor:0xe2dcd0,glow:0xffd8a0,gk:0.45,sun:0xffd8a8,si:1.7,hemi:0.26,hs:0xdcefff,hg:0x8a8470,pd:0.82,pn:0,ex:0.95,cl:0xffffff,ce:0x9aa0a8},
+  {s:0.35,zen:0x3d8fe0,hor:0xcfe6f2,glow:0xfff0d8,gk:0.25,sun:0xfff0d8,si:2.2,hemi:0.2,hs:0xdcefff,hg:0x8a8470,pd:0.85,pn:0,ex:0.95,cl:0xffffff,ce:0x9aa8b4},
+  {s:1.0,zen:0x3a8ae2,hor:0xcfe6f2,glow:0xfff0d8,gk:0.2,sun:0xfff4e0,si:2.3,hemi:0.2,hs:0xdcefff,hg:0x8a8470,pd:0.85,pn:0,ex:0.95,cl:0xffffff,ce:0x9aa8b4}];
+const DAY={tod:0.354,sunDir:new THREE.Vector3(),moonDir:new THREE.Vector3(),s:1,night:0,P:{},bake:0,
+  col:k=>{const c=new THREE.Color();return c}};
+{const ck=['zen','hor','glow','sun','hs','hg','cl','ce'],nk=['gk','si','hemi','pd','pn','ex'];const A=new THREE.Color(),B=new THREE.Color();
+ DAY.palette=s=>{let i=0;while(i<SKYKEYS.length-2&&s>SKYKEYS[i+1].s)i++;const a=SKYKEYS[i],b=SKYKEYS[i+1],t=Math.max(0,Math.min(1,(s-a.s)/(b.s-a.s))),k=t*t*(3-2*t),P=DAY.P;
+   ck.forEach(n=>{P[n]=P[n]||new THREE.Color();A.set(a[n]);B.set(b[n]);P[n].copy(A).lerp(B,k)});nk.forEach(n=>P[n]=a[n]+(b[n]-a[n])*k);return P}}
+// the sun's path for a time of day (0 midnight, 0.25 sunrise, 0.5 noon, 0.75 sunset)
+function sunAt(tod,out){const th=(tod-0.25)*Math.PI*2,ph=0.42;return out.set(Math.cos(th),Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph)).normalize()}
 
-// sky dome (also baked into a soft environment light so surfaces pick up sky colour)
+// sky dome: a gradient from the horizon to the zenith, a glow round the sun that turns orange near the horizon, the sun
+// itself, and at night the moon and a field of twinkling stars. (also baked into soft sky lighting and reflections)
 function skyMat(env){return new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,fog:false,
-  uniforms:{top:{value:new THREE.Color(0x3d8fe0)},bot:{value:new THREE.Color(FOG)},gnd:{value:new THREE.Color(env?0x50663a:FOG)},sunDir:{value:SUN_OFF.clone().normalize()},env:{value:env?1:0},lin:{value:0}},
+  uniforms:{top:{value:new THREE.Color(0x3d8fe0)},bot:{value:new THREE.Color(FOG)},gnd:{value:new THREE.Color(env?0x50663a:FOG)},glowC:{value:new THREE.Color(0xfff0d8)},gk:{value:0.25},
+    sunDir:{value:SUN_OFF.clone().normalize()},moonDir:{value:new THREE.Vector3(0,-1,0)},night:{value:0},uT:U_TIME,env:{value:env?1:0},lin:{value:0}},
   vertexShader:'varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.0);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-  fragmentShader:'uniform vec3 top;uniform vec3 bot;uniform vec3 gnd;uniform vec3 sunDir;uniform float env;uniform float lin;varying vec3 vW;void main(){vec3 d=normalize(vW-cameraPosition);float h=clamp(d.y,0.0,1.0);vec3 c=mix(bot,top,pow(h,0.55));c=mix(gnd,c,smoothstep(-0.2,0.02,d.y));float s=max(dot(d,sunDir),0.0);c+=vec3(1.0,0.92,0.72)*(pow(s,700.0)*(1.6+lin*1.6)*(1.0-env)+pow(s,10.0)*0.18+pow(s,90.0)*0.25*lin);if(env>0.5||lin>0.5)c=pow(max(c,vec3(0.0)),vec3(2.2));gl_FragColor=vec4(c,1.0);}'})}
+  fragmentShader:`uniform vec3 top,bot,gnd,glowC,sunDir,moonDir;uniform float gk,night,uT,env,lin;varying vec3 vW;
+    float hsh(vec3 p){p=fract(p*0.3183099+0.1);p*=17.0;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+    void main(){vec3 d=normalize(vW-cameraPosition);float h=clamp(d.y,0.0,1.0);vec3 c=mix(bot,top,pow(h,0.5));
+      float s=max(dot(d,sunDir),0.0),sh=sunDir.y;
+      c+=glowC*gk*(pow(s,5.0)*exp(-h*3.5)*1.4+pow(s,40.0)*0.7);                         // the glow round the sun, strongest low in the sky
+      float disk=smoothstep(0.99955,0.99975,s)*smoothstep(-0.03,0.02,sh);c+=vec3(1.0,0.93,0.8)*disk*(3.0+lin*2.0)*(1.0-env);
+      c+=vec3(1.0,0.92,0.72)*pow(s,700.0)*0.6*(1.0-env)*smoothstep(-0.03,0.02,sh);
+      if(night>0.01){float m=dot(d,moonDir),mv=smoothstep(-0.02,0.04,moonDir.y);
+        vec3 q=d*170.0,id=floor(q);float r=hsh(id),tw=0.6+0.4*sin(uT*(1.5+r*3.0)+r*40.0);float st=step(0.994,r)*smoothstep(0.4,0.05,length(fract(q)-0.5))*(0.5+0.5*fract(r*97.0))*tw*smoothstep(0.0,0.25,d.y);
+        c+=vec3(0.85,0.9,1.0)*st*night*2.2*(1.0-env);                                       // stars
+        c+=vec3(0.92,0.94,1.0)*smoothstep(0.99935,0.9996,m)*mv*night*1.6*(1.0-env)+vec3(0.45,0.55,0.8)*pow(max(m,0.0),90.0)*0.35*mv*night;}   // the moon and its halo
+      c=mix(gnd,c,smoothstep(-0.2,0.02,d.y));if(env>0.5||lin>0.5)c=pow(max(c,vec3(0.0)),vec3(2.2));gl_FragColor=vec4(c,1.0);}`})}
 const sky=new THREE.Mesh(new THREE.SphereGeometry(420,48,24),skyMat(false));
 sky.frustumCulled=false;sky.renderOrder=-1;scene.add(sky);
 // image-based sky lighting, worked out on the CPU so it behaves the same on every graphics card:
 // the sky is projected into a spherical-harmonics light probe, so every surface picks up soft blue sky light from above
 // and green bounce light from the grass below; glossy things (water, glass, brass) also get a small sky cube to reflect
-function skySRGB(x,y,z,o){const top=[0x3d/255,0x8f/255,0xe0/255],bot=[0xcf/255,0xe6/255,0xf2/255],gnd=[0x50/255,0x66/255,0x3a/255],sd=SUN_OFF.clone().normalize();
-  const t=Math.pow(Math.max(0,y),0.55),g=Math.min(1,Math.max(0,(y+0.2)/0.22)),gs=g*g*(3-2*g),s=Math.max(0,x*sd.x+y*sd.y+z*sd.z),k=Math.pow(s,10)*0.18;
-  for(let i=0;i<3;i++){const sky=bot[i]+(top[i]-bot[i])*t;o[i]=gnd[i]+(sky-gnd[i])*gs+[1,0.92,0.72][i]*k}return o}
-{const sh=new THREE.SphericalHarmonics3(),bs=new Array(9).fill(0),d=new THREE.Vector3(),c=[0,0,0],N=1600;
- for(let i=0;i<N;i++){const y=1-2*(i+0.5)/N,r=Math.sqrt(1-y*y),a=i*2.399963;d.set(Math.cos(a)*r,y,Math.sin(a)*r);skySRGB(d.x,d.y,d.z,c);
-   THREE.SphericalHarmonics3.getBasisAt(d,bs);for(let k=0;k<9;k++)sh.coefficients[k].add(new THREE.Vector3(Math.pow(c[0],2.2),Math.pow(c[1],2.2),Math.pow(c[2],2.2)).multiplyScalar(bs[k]*4*Math.PI/N))}
- scene.add(new THREE.LightProbe(sh,0.85))}
-const skyCube=(()=>{const S=64,F=[(u,v)=>[1,-v,-u],(u,v)=>[-1,-v,u],(u,v)=>[u,1,v],(u,v)=>[u,-1,-v],(u,v)=>[u,-v,1],(u,v)=>[-u,-v,-1]],o=[0,0,0];
-  const imgs=F.map(f=>{const cv=document.createElement('canvas');cv.width=cv.height=S;const c=cv.getContext('2d'),im=c.createImageData(S,S);
+// the sky colours used for baking, in plain numbers: SKYB holds the current sky, made from the palette for the sun's height
+function skyB(P,sd){const a=c=>[c.r,c.g,c.b];return{top:a(P.zen),bot:a(P.hor),gnd:[0x50/255,0x66/255,0x3a/255],glow:a(P.glow),gk:P.gk,sd:sd.clone()}}
+function skySRGB(x,y,z,o,B){B=B||SKYB;const sd=B.sd,t=Math.pow(Math.max(0,y),0.5),g=Math.min(1,Math.max(0,(y+0.2)/0.22)),gs=g*g*(3-2*g),s=Math.max(0,x*sd.x+y*sd.y+z*sd.z),k=(Math.pow(s,5)*Math.exp(-Math.max(0,y)*3.5)*1.4+Math.pow(s,40)*0.7)*B.gk;
+  for(let i=0;i<3;i++){const sky=B.bot[i]+(B.top[i]-B.bot[i])*t;o[i]=B.gnd[i]+(sky-B.gnd[i])*gs+B.glow[i]*k}return o}
+function shOf(B){const sh=new THREE.SphericalHarmonics3(),bs=new Array(9).fill(0),d=new THREE.Vector3(),c=[0,0,0],N=1600;
+ for(let i=0;i<N;i++){const y=1-2*(i+0.5)/N,r=Math.sqrt(1-y*y),a=i*2.399963;d.set(Math.cos(a)*r,y,Math.sin(a)*r);skySRGB(d.x,d.y,d.z,c,B);
+   THREE.SphericalHarmonics3.getBasisAt(d,bs);for(let k=0;k<9;k++)sh.coefficients[k].add(new THREE.Vector3(Math.pow(c[0],2.2),Math.pow(c[1],2.2),Math.pow(c[2],2.2)).multiplyScalar(bs[k]*4*Math.PI/N))}return sh}
+// two light probes, a sunny one and a moonlit one, cross-faded through the day
+const PROBE_DAY=new THREE.LightProbe(shOf(skyB(DAY.palette(0.8),sunAt(0.5,new THREE.Vector3()))),0.85);scene.add(PROBE_DAY);
+const PROBE_NIGHT=new THREE.LightProbe(shOf(Object.assign(skyB(DAY.palette(-0.5),new THREE.Vector3(0,-1,0)),{gnd:[0.12,0.16,0.24]})),0);scene.add(PROBE_NIGHT);
+let SKYB=skyB(DAY.palette(sunAt(DAY.tod,DAY.sunDir).y),DAY.sunDir);
+const SKYCV=[],skyCube=(()=>{const S=64;for(let k=0;k<6;k++){const cv=document.createElement('canvas');cv.width=cv.height=S;SKYCV.push(cv)}const t=new THREE.CubeTexture(SKYCV);t.encoding=THREE.sRGBEncoding;return t})();
+function bakeSky(){const S=64,F=[(u,v)=>[1,-v,-u],(u,v)=>[-1,-v,u],(u,v)=>[u,1,v],(u,v)=>[u,-1,-v],(u,v)=>[u,-v,1],(u,v)=>[-u,-v,-1]],o=[0,0,0];
+  F.forEach((f,k)=>{const c=SKYCV[k].getContext('2d'),im=c.createImageData(S,S);
     for(let j=0;j<S;j++)for(let i=0;i<S;i++){const [x,y,z]=f((i+0.5)/S*2-1,(j+0.5)/S*2-1),l=Math.hypot(x,y,z);skySRGB(x/l,y/l,z/l,o);const p=(j*S+i)*4;
       im.data[p]=Math.min(255,o[0]*255);im.data[p+1]=Math.min(255,o[1]*255);im.data[p+2]=Math.min(255,o[2]*255);im.data[p+3]=255}
-    c.putImageData(im,0,0);return cv});
-  const t=new THREE.CubeTexture(imgs);t.encoding=THREE.sRGBEncoding;t.needsUpdate=true;return t})();
+    c.putImageData(im,0,0)});skyCube.needsUpdate=true}
+bakeSky();
 
 /* ---------- procedural textures (tileable, generated once at load) ---------- */
 function vnoise(size,cells,seed){const r=mulberry32(seed),g=new Float32Array(cells*cells);for(let i=0;i<g.length;i++)g[i]=r();const out=new Float32Array(size*size);
@@ -896,6 +936,9 @@ function flowersAt(x,z,n,spread,y,pal){for(let i=0;i<n;i++){const a=RS()*6.28,d=
 function canvasTex(w,h,draw,repeat){const cv=document.createElement('canvas');cv.width=w;cv.height=h;const tex=new THREE.CanvasTexture(cv);tex.anisotropy=maxAniso;tex.encoding=THREE.sRGBEncoding;
   if(repeat){tex.wrapS=tex.wrapT=THREE.RepeatWrapping;tex.repeat.set(repeat[0],repeat[1])}
   const run=()=>{draw(cv.getContext('2d'),w,h);tex.needsUpdate=true};run();redrawers.push(run);return tex}
+// lamps glow softly at night
+const LAMPGLOW=new THREE.SpriteMaterial({map:canvasTex(64,64,c=>{const gr=c.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,236,180,0.9)');gr.addColorStop(0.35,'rgba(255,210,120,0.35)');gr.addColorStop(1,'rgba(255,200,100,0)');c.fillStyle=gr;c.fillRect(0,0,64,64)}),
+  transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0});
 function signTex(lines,w,h){return canvasTex(w,h,(c)=>{c.clearRect(0,0,w,h);c.fillStyle='#fffaf0';rr(c,0,0,w,h,26);c.fill();c.strokeStyle='#1d3340';c.lineWidth=8;rr(c,8,8,w-16,h-16,20);c.stroke();
   c.fillStyle='#1d3340';c.textAlign='center';c.textBaseline='middle';
   if(lines[1]){fitFont(c,lines[0],800,Math.round(h*0.4),FD,w-60);c.fillText(lines[0],w/2,h*0.42);c.fillStyle='#2f7d4f';fitFont(c,lines[1],700,Math.round(h*0.17),FB,w-70);c.fillText(lines[1],w/2,h*0.77)}
@@ -998,7 +1041,7 @@ const LAMPS=[];function lamp(x,z){LAMPS.push([x,z])}
 // is slid sideways, along the panel's face, until it stands 2 m to the side
 function clearOfPanels(x,z){for(let it=0;it<4;it++){let moved=false;for(const p of PANELS){if(!p.normal)continue;const nx=p.normal.x,nz=p.normal.z,dx=x-p.pos.x,dz=z-p.pos.z,d=dx*nx+dz*nz,w=dx*-nz+dz*nx;
   if(d>-0.3&&d<3.6&&Math.abs(w)<1.8){const s=w>=0?1:-1,m=2.0*s-w;x+=-nz*m;z+=nx*m;moved=true}}if(!moved)break}return[x,z]}
-function placeLamp(x,z){[x,z]=offPath(x,z,0.3,0.6);[x,z]=clearOfPanels(x,z);const y=heightAt(x,z);mesh(lampPost,0x2b3a42,x,y+1.5,z);mesh(lampBase,0x2b3a42,x,y+0.15,z);mesh(lanternGeo,matGlow,x,y+2.95,z,scene,true);mesh(new THREE.CylinderGeometry(0.075,0.095,0.06,24),0x2b3a42,x,y+2.95,z);mesh(lampCap,0x2b3a42,x,y+3.47,z);colCirc(x,z,0.15);reserve(x,z,0.8)}
+function placeLamp(x,z){[x,z]=offPath(x,z,0.3,0.6);[x,z]=clearOfPanels(x,z);const y=heightAt(x,z);mesh(lampPost,0x2b3a42,x,y+1.5,z);mesh(lampBase,0x2b3a42,x,y+0.15,z);mesh(lanternGeo,matGlow,x,y+2.95,z,scene,true);{const gl=new THREE.Sprite(LAMPGLOW);gl.position.set(x,y+2.95,z);gl.scale.set(2.6,2.6,1);gl.renderOrder=3;scene.add(gl)}mesh(new THREE.CylinderGeometry(0.075,0.095,0.06,24),0x2b3a42,x,y+2.95,z);mesh(lampCap,0x2b3a42,x,y+3.47,z);colCirc(x,z,0.15);reserve(x,z,0.8)}
 const BENCHES=[];
 function bench(x,z,face){BENCHES.push({x,z,n:FACES[face],y:heightAt(x,z)});const n=FACES[face],g=sgroup(x,heightAt(x,z),z,Math.atan2(n[0],n[1]));
   [-0.17,0,0.17].forEach(o=>blk(1.8,0.05,0.14,0,0.46,o,0xb5773e,g));[0.68,0.88].forEach(y=>blk(1.8,0.12,0.04,0,y,-0.26,0xb5773e,g));
@@ -3435,10 +3478,23 @@ updateLOD(true);
 // confetti and clouds
 {const cg=new THREE.PlaneGeometry(0.12,0.2),cols=[0xffd23f,0xff6b57,0x5bb7e0,0x7cf29c,0xb48cff];const r=mulberry32(7);
  for(let i=0;i<180;i++){const m=new THREE.Mesh(cg,new THREE.MeshBasicMaterial({color:cols[i%5],side:THREE.DoubleSide}));m.position.set(-9+r()*18,r()*8,zF0-2-r()*(FIN-4));m.userData.v=0.6+r()*0.9;scene.add(m);confetti.push(m)}}
-const clouds=[];{const cm=new THREE.MeshLambertMaterial({color:0xffffff,emissive:lin(0x9aa8b4),fog:false}),cg=new THREE.SphereGeometry(1,24,16);
+const clouds=[];{const cm=new THREE.MeshLambertMaterial({color:0xffffff,emissive:lin(0x9aa8b4),fog:false}),cg=new THREE.SphereGeometry(1,24,16);clouds.mat=cm;
  for(let i=0;i<18;i++){const g=new THREE.Group();g.position.set(-250+RS()*500,55+RS()*25,40-RS()*(LEN+200));const n=9+Math.floor(RS()*6);
    for(let k=0;k<n;k++){const m=new THREE.Mesh(cg,cm);const e=1-Math.abs(k-n/2)/(n/2+1),s=2.2+RS()*1.5+4*e;m.position.set((k-n/2)*2.6+RS()*1.5,s*0.35+RS()*0.8,RS()*5-2.5);m.scale.set(s*1.15,s*0.62,s*0.95);g.add(m)}scene.add(g);clouds.push(g)}}
 
+const DAY_T0=performance.now()/1000,_ld=new THREE.Vector3(),_lc=new THREE.Color(),MOONC=lin(0xa8bcff);let dayClock='';
+function dayUpdate(){DAY.tod=DAY.fixed!=null?DAY.fixed:(0.354+(performance.now()/1000-DAY_T0)/DAYLEN)%1;const sd=sunAt(DAY.tod,DAY.sunDir),s=sd.y;DAY.s=s;
+  DAY.moonDir.set(-sd.x,-sd.y,-sd.z*0.6+0.25).normalize();const P=DAY.palette(s),night=THREE.MathUtils.smoothstep(-s,0.02,0.22);DAY.night=night;
+  const u=sky.material.uniforms;u.top.value.copy(P.zen);u.bot.value.copy(P.hor);u.gnd.value.copy(P.hor);u.glowC.value.copy(P.glow);u.gk.value=P.gk;u.sunDir.value.copy(sd);u.moonDir.value.copy(DAY.moonDir);u.night.value=night;
+  scene.fog.color.copy(P.hor);scene.background.copy(P.hor);
+  // the sun lights the world by day and the moon by night; they hand over at dusk and dawn, when both are faint
+  let I;if(s>=-0.03){_ld.copy(sd);if(_ld.y<0.12){_ld.y=0.12;_ld.normalize()}I=P.si*THREE.MathUtils.smoothstep(s,-0.03,0.03);sun.color.copy(P.sun).convertSRGBToLinear()}
+  else{_ld.copy(DAY.moonDir);if(_ld.y<0.3){_ld.y=0.3;_ld.normalize()}I=0.85*THREE.MathUtils.smoothstep(-s,0.03,0.15);sun.color.copy(MOONC)}
+  sun.intensity=I*P.ex;SUN_OFF.copy(_ld).multiplyScalar(67);
+  hemi.intensity=P.hemi*P.ex;hemi.color.copy(P.hs).convertSRGBToLinear();hemi.groundColor.copy(P.hg).convertSRGBToLinear();PROBE_DAY.intensity=P.pd*P.ex;PROBE_NIGHT.intensity=P.pn*P.ex;
+  clouds.mat.color.copy(P.cl).convertSRGBToLinear();clouds.mat.emissive.copy(P.ce).convertSRGBToLinear();LAMPGLOW.opacity=THREE.MathUtils.smoothstep(-s,-0.08,0.12)*0.85;
+  if(performance.now()-DAY.bake>15000){DAY.bake=performance.now();SKYB=skyB(P,sd);bakeSky()}
+  const hm=Math.floor(DAY.tod*24*60),hh=Math.floor(hm/60),mm=hm%60,txt=(s>-0.03?'☀ ':'☾ ')+((hh+11)%12+1)+':'+String(mm).padStart(2,'0')+(hh<12?' am':' pm');if(txt!==dayClock){dayClock=txt;$('#clock').textContent=txt}}
 /* ---------- state ---------- */
 let mode='walk',started=false,active=null,aimed=null,aimedBench=null,sitB=null,sitYaw=0,locked=false,lockWorked=false,lockFailed=false,isTouch=isTouchStart;
 let px=0,pz=ISL_N-10,ph=0,yaw=0,pitch=0,bob=0,celebrated=false,firstSolveTip=true;
@@ -4114,7 +4170,7 @@ const POST=(()=>{
     if(S.dof>0.001){mDown.uniforms.t.value=T.main.texture;mDown.uniforms.tx.value.set(1/w,1/h);pass(mDown,T.d0);
       mDown.uniforms.t.value=T.d0.texture;mDown.uniforms.tx.value.set(1/T.d0.width,1/T.d0.height);pass(mDown,T.d1);
       mBlur.uniforms.t.value=T.d1.texture;mBlur.uniforms.tx.value.set(1/T.d1.width,1/T.d1.height);pass(mBlur,T.d2)}
-    if(S.rays){sw.copy(SUN_OFF).normalize();camera.getWorldDirection(fw);const dd=fw.dot(sw);
+    if(S.rays&&DAY.s>0.02){sw.copy(SUN_OFF).normalize();camera.getWorldDirection(fw);const dd=fw.dot(sw);
       if(dd>0.05){sp.copy(sw).multiplyScalar(100).add(camera.position).project(camera);mRays.uniforms.sunUv.value.set(sp.x*0.5+0.5,sp.y*0.5+0.5);
         mRays.uniforms.aspect.value=w/h;mRays.uniforms.vis.value=THREE.MathUtils.smoothstep(dd,0.05,0.6);pass(mRays,T.rays);raysK=0.6}}
     const u=mComp.uniforms;u.tCol.value=T.main.texture;u.tAO.value=T.ao.texture;u.tBloom.value=B[0].texture;u.tRays.value=T.rays.texture;u.tDof.value=T.d2.texture;
@@ -4253,7 +4309,7 @@ function frame(t){
     camera.position.set(Math.cos(a)*R,hgt-u*1.5,cz+Math.sin(a)*R);camera.lookAt(0,1.5,cz);
     $('#menuFade').style.opacity=Math.max(0,1-Math.min(u,1-u)*L/0.9).toFixed(3)}
   sky.position.copy(camera.position);
-  sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
+  dayUpdate();sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
   gates.concat(ENTR).forEach(g=>{if(g&&g.open&&g.t<1){g.t=Math.min(1,g.t+dt*(g.kind==='lift'?0.38:0.55));poseGate(g)}});
   if(!MENU.open)for(let r=1;r<NR;r++){const g=ENTR[r];if(g&&!g.open&&gates[r-1].open&&pz<z0s[r-1]-AREA-GAP/2)openEntr(r)}
   GDECO.forEach(f=>f(ts));
