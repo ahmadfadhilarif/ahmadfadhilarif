@@ -3590,11 +3590,19 @@ const ROCKET=(()=>{const zp=zF0-44,H=46,R=1.2,RF=1.71,M0=1.25,S={zp,M0,state:'id
   {const bx=-4.6,bz=zF0-31;blk(0.12,2.6,0.12,bx-1.1,1.3,bz,0x7a4a2c);blk(0.12,2.6,0.12,bx+1.1,1.3,bz,0x7a4a2c);blk(2.5,1.3,0.1,bx,2.3,bz,0x2b3a42);
    const bd=new THREE.Mesh(new THREE.PlaneGeometry(2.36,1.18),new THREE.MeshBasicMaterial({map:S.board,toneMapped:false}));bd.position.set(bx,2.3,bz+0.06);scene.add(bd);colCirc(bx,bz,1.2)}
   return S})();
-function rocketSound(){if(!AMB.ready||muted)return;const t=AC.currentTime,o=shotOut(0.75,0,t);
-  blip(o,'sine',60,30,t,1.6);hiss(o,t,1.2,'lowpass',500,1,1);   // ignition: a deep boom
-  const s=AC.createBufferSource();s.buffer=AMB.noise;s.loop=true;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=160;const g2=AC.createGain();g2.gain.setValueAtTime(0.0001,t);g2.gain.exponentialRampToValueAtTime(1,t+1.5);
-  g2.gain.setValueAtTime(1,t+8);g2.gain.exponentialRampToValueAtTime(0.0001,t+30);s.connect(lp);lp.connect(g2);g2.connect(o);s.start(t);s.stop(t+31);
-  for(let i=0;i<120;i++)hiss(o,t+1+i*0.17+Math.random()*0.1,0.06,'bandpass',900+Math.random()*1600,3,Math.max(0.05,1-i/120)*0.8)}   // the crackle of the exhaust
+// the launch: a deep thump and a rushing whoosh as the engines light, then an enormous rough roar (long brown noise, so it
+// never loops or clicks) that darkens and fades as the rocket climbs away, with the crackle of the exhaust over it
+function rocketSound(){if(!AMB.ready||muted)return;const t=AC.currentTime,sr=AC.sampleRate,o=shotOut(0.8,0,t);
+  if(!AMB.roar){const len=sr*24,b=AC.createBuffer(1,len,sr),d=b.getChannelData(0);let last=0;for(let i=0;i<len;i++){last=(last+0.02*(Math.random()*2-1))/1.02;d[i]=last*3.2}AMB.roar=b;
+    const cl=AC.createBuffer(1,sr*14,sr),cd=cl.getChannelData(0);for(let i=0;i<cd.length;i++){if(Math.random()<0.0016){const a=(Math.random()*0.8+0.2)*(Math.random()<0.5?-1:1);for(let k=0;k<40&&i+k<cd.length;k++)cd[i+k]+=a*Math.exp(-k/6)*(k%2?-1:1)}}AMB.crk=cl}
+  ping(o,48,t,1.8,0.8);ping(o,72,t+0.02,1.2,0.4);
+  {const w=AC.createBufferSource();w.buffer=AMB.roar;const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=0.8;bp.frequency.setValueAtTime(200,t);bp.frequency.exponentialRampToValueAtTime(1800,t+1.2);const g=AC.createGain();
+   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.8,t+0.3);g.gain.exponentialRampToValueAtTime(0.0001,t+1.6);w.connect(bp);bp.connect(g);g.connect(o);w.start(t,3);w.stop(t+1.7)}
+  {const r=AC.createBufferSource();r.buffer=AMB.roar;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.setValueAtTime(700,t);lp.frequency.setValueAtTime(700,t+6);lp.frequency.exponentialRampToValueAtTime(140,t+22);
+   const pk=AC.createBiquadFilter();pk.type='peaking';pk.frequency.value=70;pk.gain.value=8;pk.Q.value=0.8;const g=AC.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(1.0,t+1.2);g.gain.setValueAtTime(1.0,t+5);g.gain.exponentialRampToValueAtTime(0.0001,t+23);
+   r.connect(lp);lp.connect(pk);pk.connect(g);g.connect(o);r.start(t);r.stop(t+23.5)}
+  {const c=AC.createBufferSource();c.buffer=AMB.crk;const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;const g=AC.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.6,t+1.5);g.gain.setValueAtTime(0.6,t+6);g.gain.exponentialRampToValueAtTime(0.0001,t+14);
+   c.connect(hp);hp.connect(g);g.connect(o);c.start(t+0.3);c.stop(t+14)}}
 function rocketPuff(x,y,z,big){const S=ROCKET,P=S.puffs.find(p=>p.life<=0);if(!P)return;P.life=P.max=big?6+Math.random()*5:3+Math.random()*3;P.sp.position.set(x,y,z);P.sp.visible=true;
   const a=Math.random()*Math.PI*2,sp=big?3+Math.random()*5:0.4+Math.random()*0.8;P.v.set(Math.cos(a)*sp,big?0.4+Math.random()*1.2:0.3,Math.sin(a)*sp*(big?0.6:1)-(big?2.5:0));P.s0=big?3:2;P.s1=big?12+Math.random()*8:6+Math.random()*4}
 function rocketReset(){const S=ROCKET;S.state='idle';S.t=0;S.y=0;S.vy=0;S.dz=0;S.pitch=0;S.lit=false;S.g.visible=true;S.g.position.set(0,S.M0,S.zp);S.g.rotation.set(0,0,0);S.flame.visible=false;S.flame.scale.set(1,1,1);S.fm.uniforms.uI.value=0;S.sb.rotation.z=0;S.glow.material.opacity=0;S.redraw()}
@@ -3603,7 +3611,7 @@ anims.push((t,dt)=>{const S=ROCKET;S.fm.uniforms.uT.value=t;
   for(const P of S.puffs){if(P.life<=0)continue;P.life-=dt;const k=1-P.life/P.max;P.sp.position.addScaledVector(P.v,dt);P.v.multiplyScalar(1-dt*0.35);const sz=P.s0+(P.s1-P.s0)*Math.sqrt(k);P.sp.scale.set(sz,sz,1);
     P.sp.material.opacity=Math.min(1,k*6)*(1-k)*0.85;if(P.life<=0){P.sp.visible=false;P.sp.material.opacity=0}}
   const inFin=!MENU.open&&started&&pz<zF0-1;
-  if(S.state==='idle'){if(inFin){S.state='count';S.t=0;toast('Rocket launch in 10 seconds! Watch behind the fountain.','good')}return}
+  if(S.state==='idle'){if(inFin){S.state='count';S.t=8.3;S.sb.rotation.z=-0.32;S.redraw();toast('Lift-off! Look behind the fountain.','good')}return}
   S.t+=dt;const prevN=Math.ceil(10-(S.t-dt));
   if(S.state==='count'){if(Math.ceil(10-S.t)!==prevN)S.redraw();if(S.t>5)S.sb.rotation.z=-Math.min(0.32,(S.t-5)*0.08);   // the strongback tilts back
     if(S.t>=7.5&&!S.lit){S.lit=true;S.flame.visible=true;rocketSound()}
@@ -3824,6 +3832,35 @@ if(FROST.pond){const [px0,pz0,rx,rz]=FROST.pond,sk=critterMesh('frostbun','front
   const rider=critterMesh('frostbun','up2');rider.scale.setScalar(0.7);rider.position.y=0.12;sl.add(rider);addScarf(rider);
   anims.push(t=>{const u=(t*0.16)%1,d=u<0.75?u/0.75:1,e=d*d;const r=4.2*(1-0.0)*(0.05+e*0.95),y=1.6*Math.max(0,1-Math.pow(r/4.2,2))+0.02;sl.position.set(hx-r,y,hz);sl.rotation.set(0,-Math.PI/2,0);sl.rotation.z=0;sg.rotation.x=0;
     const slope=Math.atan2(3.2*r/17.6,1);sl.rotation.order='YXZ';sl.rotation.x=-slope;sl.visible=u<0.92})}
+/* ---------- fireworks over the sea beyond Finish Meadow ----------
+   while you are in Finish Meadow, shells are fired from boats out at sea: each climbs from the water with a glowing,
+   sparking trail, slows, and bursts high above the sea into a peony, a ring, a golden willow or a crackling white star.
+   every burst is heard a moment later (sound is slower than light), with a thump at launch and a whistle as it climbs */
+const FW=(()=>{const N=5000,pos=new Float32Array(N*3).fill(-9999),col=new Float32Array(N*3),g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('color',new THREE.BufferAttribute(col,3).setUsage(THREE.DynamicDrawUsage));
+  const tex=canvasTex(64,64,c=>{const gr=c.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.18,'rgba(255,255,255,0.85)');gr.addColorStop(0.5,'rgba(255,255,255,0.16)');gr.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gr;c.fillRect(0,0,64,64)});
+  const m=new THREE.PointsMaterial({size:3.4,map:tex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true,fog:false,toneMapped:false});
+  const pts=new THREE.Points(g,m);pts.frustumCulled=false;pts.userData.noCull=1;pts.renderOrder=6;scene.add(pts);
+  const P=[];for(let i=0;i<N;i++)P.push({life:0,max:1,vx:0,vy:0,vz:0,r:1,g:1,b:1,drag:0.98,grav:1,tw:0});return{pts,pos,col,P,g,N,shells:[],next:1,k:0}})();
+function fwSpawn(x,y,z,vx,vy,vz,c,life,drag,grav,tw){const F=FW;for(let n=0;n<F.N;n++){F.k=(F.k+1)%F.N;const p=F.P[F.k];if(p.life>0)continue;Object.assign(p,{life,max:life,vx,vy,vz,drag,grav,tw:tw||0,r:c[0],g:c[1],b:c[2]});F.pos[F.k*3]=x;F.pos[F.k*3+1]=y;F.pos[F.k*3+2]=z;return}}
+const FWC=[[1,0.25,0.2],[1,0.8,0.2],[0.3,0.6,1],[0.4,1,0.45],[1,0.4,0.9],[0.75,0.45,1],[1,1,1],[1,0.55,0.15]];
+function fwSound(kind,x,y,z){if(!AMB.ready||muted)return;const d=Math.hypot(x-camera.position.x,y-camera.position.y,z-camera.position.z),v=Math.max(0.05,Math.min(1,60/d)),t=AC.currentTime+d/343,o=shotOut(0.5*v,0,t);
+  if(kind==='launch'){ping(o,90,t,0.25,0.6);const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.setValueAtTime(700,t+0.05);os.frequency.exponentialRampToValueAtTime(2100,t+1.6);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.12,t+0.2);g.gain.exponentialRampToValueAtTime(0.0001,t+1.7);os.connect(g);g.connect(o);os.start(t);os.stop(t+1.8)}
+  else{ping(o,55,t,1.4,1);ping(o,90,t,0.8,0.6);hiss(o,t,0.5,'lowpass',900,1,1);hiss(o,t+0.05,1.2,'bandpass',300,0.7,0.5);if(kind==='crackle')for(let i=0;i<40;i++)hiss(o,t+0.5+Math.random()*1.2,0.02,'highpass',2500,1,0.5)}}
+function fwBurst(s){const types=['peony','ring','willow','crackle'],ty=s.type,c1=FWC[Math.floor(Math.random()*FWC.length)],c2=FWC[Math.floor(Math.random()*FWC.length)];fwSound(ty,s.x,s.y,s.z);
+  if(ty==='ring'){const ax=Math.random()*Math.PI,ay=Math.random()*Math.PI,ca=Math.cos(ax),sa=Math.sin(ax),cb=Math.cos(ay),sb=Math.sin(ay);for(let i=0;i<140;i++){const a=i/140*Math.PI*2,v=23;let x=Math.cos(a)*v,y=Math.sin(a)*v,z=0;[y,z]=[y*ca-z*sa,y*sa+z*ca];[x,z]=[x*cb+z*sb,-x*sb+z*cb];fwSpawn(s.x,s.y,s.z,x,y,z,i%2?c1:c2,2.2,0.962,0.3)}}
+  else{const n=ty==='willow'?190:ty==='crackle'?120:220;for(let i=0;i<n;i++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-u*u),v=(ty==='willow'?16:ty==='crackle'?19:22)*(0.85+Math.random()*0.3);
+    const c=ty==='willow'?[1,0.72,0.28]:ty==='crackle'?[1,1,0.95]:(i%3?c1:c2);fwSpawn(s.x,s.y,s.z,Math.cos(a)*r*v,u*v,Math.sin(a)*r*v,c,ty==='willow'?3.4:ty==='crackle'?1.6:2.3,ty==='willow'?0.95:0.965,ty==='willow'?0.6:0.35,ty==='crackle'?1:0)}}
+  for(let i=0;i<14;i++)fwSpawn(s.x,s.y,s.z,(Math.random()-0.5)*4,(Math.random()-0.5)*4,(Math.random()-0.5)*4,[1,1,0.9],0.25,0.9,0)}
+anims.push((t,dt)=>{const F=FW,inFin=!MENU.open&&started&&pz<zF0+1;
+  if(inFin&&(F.next-=dt)<=0){F.next=0.35+Math.random()*0.9;let x,z;if(Math.random()<0.6){x=(Math.random()-0.5)*80;z=ISL_S-6-Math.random()*28}else{const sd=Math.random()<0.5?-1:1;z=zF0-8-Math.random()*(zF0-ISL_S);x=sd*(coastX(sd,z)+14+Math.random()*25)}
+    F.shells.push({x,y:0.1,z,vy:30+Math.random()*7,vx:(Math.random()-0.5)*2,vz:(Math.random()-0.5)*2,type:['peony','peony','ring','willow','crackle'][Math.floor(Math.random()*5)],tt:0});fwSound('launch',x,0,z)}
+  for(let i=F.shells.length-1;i>=0;i--){const s=F.shells[i];s.vy-=9.8*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.z+=s.vz*dt;if((s.tt-=dt)<=0){s.tt=0.018;fwSpawn(s.x,s.y,s.z,(Math.random()-0.5)*1.2,-1-Math.random(),(Math.random()-0.5)*1.2,[1,0.75,0.4],0.45+Math.random()*0.3,0.97,0.2)}
+    if(s.vy<5||s.y>78){fwBurst(s);F.shells.splice(i,1)}}
+  let any=false;for(let n=0;n<F.N;n++){const p=F.P[n];if(p.life<=0)continue;any=true;p.life-=dt;const k=n*3;if(p.life<=0){F.pos[k+1]=-9999;F.col[k]=F.col[k+1]=F.col[k+2]=0;continue}
+    const dr=Math.pow(p.drag,dt*60);p.vx*=dr;p.vy=p.vy*dr-9.8*p.grav*dt;p.vz*=dr;F.pos[k]+=p.vx*dt;F.pos[k+1]+=p.vy*dt;F.pos[k+2]+=p.vz*dt;
+    let b=Math.min(1,p.life/p.max*1.6);if(p.tw)b*=Math.random()<0.5?1.6:0.15;F.col[k]=p.r*b;F.col[k+1]=p.g*b;F.col[k+2]=p.b*b}
+  F.pts.visible=any;if(any){F.g.attributes.position.needsUpdate=true;F.g.attributes.color.needsUpdate=true}});
 // playground in Adding Garden: pets on the swings, the roundabout, both ends of the seesaw and the spring rider
 {const ride=(parent,kind,v,x,y,z,ry,sc)=>{const m=critterMesh(kind,v);m.scale.setScalar(sc||0.8);m.position.set(x,y,z);m.rotation.y=ry||0;parent.add(m);return m};
  if(PLAY.swings[0])ride(PLAY.swings[0],'puffle','up2',0,-1.8,0.02,0,0.82);
