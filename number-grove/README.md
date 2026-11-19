@@ -17,7 +17,7 @@ Places are met in order of difficulty, easiest first:
 | 9 | Match Maker Market | Adding, taking away, times |
 | 10 | Number Bond Beach | Number bonds |
 
-The Welcome Garden has 4 panels and every other place has 8: 76 puzzles in all. At the end, Finish Meadow has a rocket that launches behind the fountain.
+The Welcome Garden has 4 panels and every other place has 8: 76 puzzles in all. In Place Value Castle the drawbridge over the moat comes down once you solve the castle's 4th puzzle. At the end, Finish Meadow launches a rocket from behind the fountain and fireworks burst over the sea.
 
 One day on the island lasts one real hour, with sunrise, sunset, a starry night and moonlight. Everything stays easy to see at night.
 
