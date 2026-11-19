@@ -2531,8 +2531,38 @@ function buildSnow(z0){
   chimneys.filter(c=>c[2]<z0+1&&c[2]>z0-AREA-1).forEach(c=>chimneySmoke(c[0],c[1],c[2]));
 }
 // the frosty path between the glasshouse and the snow: snow on the ground, a frozen puddle and a snowman to say hello
+// Frosty Pine Path: a big decorated fir with baubles, a gold star and fairy lights, light-wound pines along the walk,
+// a skating pond, a fire to warm up by, a sledge of presents, ice sculptures, a bird feeder with robins and a sledging hill
+const FROST={},bulbMat=new THREE.MeshBasicMaterial({vertexColors:true,toneMapped:false}),baubleMat=new THREE.MeshStandardMaterial({vertexColors:true,metalness:0.6,roughness:0.22});
+function lightSpiral(parts,x,z,yb,yt,rb,n,turns){const C=[0xffe9a8,0xff4f4f,0x5fe36a,0x5fa8ff,0xffd23f,0xff8ae0];for(let i=0;i<n;i++){const t=i/n,y=yb+(yt-yb)*t,r=rb*(1-0.78*t)+0.05,a=t*turns*Math.PI*2;
+  const g=new _G.Sph(0.045,8,6);g.translate(x+Math.cos(a)*r,y,z+Math.sin(a)*r);parts.push(colGeo(g,C[i%C.length]))}}
+function present(x,y,z,s,col,rib,ry){const g=sgroup(x,y,z,ry||0);blk(s,s*0.8,s,0,s*0.4,0,col,g);blk(s*1.02,s*0.82,s*0.16,0,s*0.4,0,rib,g);blk(s*0.16,s*0.82,s*1.02,0,s*0.4,0,rib,g);
+  [-1,1].forEach(k=>{const b=mesh(new _G.Tor(s*0.14,s*0.05,6,12),rib,k*s*0.12,s*0.86,0,g);b.rotation.set(0,Math.PI/2,k*0.6)})}
 function buildFrostLink(gz,c){snowGround(c,GAP);snowDrifts(gz,gz-GAP);
-  frozenPond(13,c+1,4,2.6);snowman(-5.5,c+3,0.9,Math.PI/2);snowballs(5,c-6);bench(3,c-3,'w')}
+  frozenPond(13,c+1,4,2.6);snowman(-5.5,c+3,0.9,Math.PI/2);snowballs(5,c-6);bench(3,c-3,'w');
+  const bulbs=[],baubles=[];
+  {const fx=-13,fz=c-1,S=2.3,yb=1.4*S,yt=4.1*S,rb=1.3*S*0.95;addTree(fx,fz,{type:'pine',s:S,c:0x2f6a44});reserve(fx,fz,4.2);
+   const BC=[0xd8352a,0xffc21a,0x3d7cc9,0xe8e8f0,0xb03aa0];for(let i=0;i<46;i++){const t=Math.pow((i+0.5)/46,0.8),y=yb+(yt-yb)*t,r=rb*(1-0.74*t)*0.98,a=i*2.399;const g=new _G.Sph(0.13,14,10);g.translate(fx+Math.cos(a)*r,y,fz+Math.sin(a)*r);baubles.push(colGeo(g,BC[i%BC.length]))}
+   lightSpiral(bulbs,fx,fz,yb,yt,rb*1.02,160,7);
+   const sh=new THREE.Shape();for(let k=0;k<10;k++){const a=Math.PI/2+k*Math.PI/5,r=k%2?0.18:0.45;k?sh.lineTo(Math.cos(a)*r,Math.sin(a)*r):sh.moveTo(Math.cos(a)*r,Math.sin(a)*r)}
+   const st=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:0.08,bevelEnabled:true,bevelThickness:0.03,bevelSize:0.03,bevelSegments:2}),new THREE.MeshStandardMaterial({color:lin(0xffcf3a),emissive:lin(0xffb400),emissiveIntensity:0.9,metalness:0.6,roughness:0.3}));st.position.set(fx,yt+0.7,fz);st.rotation.y=0.6;scene.add(st);
+   [[fx+1.9,fz+1.2,0.5,0xd8352a,0xffd23f],[fx+2.5,fz+0.1,0.38,0x3d7cc9,0xffffff],[fx+1.2,fz+2.1,0.32,0x2f9d6a,0xff6b57],[fx-0.2,fz+2.6,0.44,0xffd23f,0xd8352a],[fx+2.9,fz+1.6,0.28,0xb48cff,0xffffff]].forEach(([x,z,sz,col,rib],i)=>present(x,0,z,sz,col,rib,i*0.7))}
+  for(const sd of [-1,1])for(const z of [gz-4,gz-10.5,gz-17,gz-21.5]){const x=sd*6.4;addTree(x,z,{type:'pine',s:1.05});reserve(x,z,1.6);lightSpiral(bulbs,x,z,1.4*1.05,4.0*1.05,1.3*1.05,44,4)}
+  sledge(7.5,c-8.5,0.5,0xd8352a);[[7.45,c-8.6,0.34,0x3d7cc9,0xffd23f],[7.6,c-8.15,0.28,0xd8352a,0xffffff],[7.4,c-9.0,0.26,0x2f9d6a,0xff6b57]].forEach(([x,z,sz,col,rib],i)=>present(x,0.32,z,sz,col,rib,0.5+i*0.4));
+  // ice sculptures on snow plinths: a star and a snowflake
+  {const ice=new THREE.MeshStandardMaterial({color:lin(0xc6ecff),transparent:true,opacity:0.7,roughness:0.05,metalness:0.1,envMapIntensity:1.4});
+   [[-3.8,c+8.5],[3.8,c+8.5]].forEach(([x,z],i)=>{blk(0.9,0.6,0.9,x,0.3,z,0xf2f7fb);colCirc(x,z,0.6);reserve(x,z,1.4);const g=new THREE.Group();g.position.set(x,1.25,z);g.rotation.y=i?-0.4:0.4;scene.add(g);
+     if(!i){const sh=new THREE.Shape();for(let k=0;k<10;k++){const a=Math.PI/2+k*Math.PI/5,r=k%2?0.25:0.6;k?sh.lineTo(Math.cos(a)*r,Math.sin(a)*r):sh.moveTo(Math.cos(a)*r,Math.sin(a)*r)}const m=new THREE.Mesh(new THREE.ExtrudeGeometry(sh,{depth:0.18,bevelEnabled:true,bevelThickness:0.05,bevelSize:0.04,bevelSegments:2}),ice);m.position.z=-0.09;g.add(m)}
+     else for(let k=0;k<6;k++){const arm=new THREE.Group();arm.rotation.z=k*Math.PI/3;g.add(arm);const b=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.62,0.1),ice);b.position.y=0.31;arm.add(b);[0.3,0.48].forEach(y=>[-1,1].forEach(sd=>{const t=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.2,0.06),ice);t.position.set(sd*0.07,y,0);t.rotation.z=-sd*0.8;arm.add(t)}))}})}
+  // a bird feeder on a post, with robins
+  {const x=-8.6,z=c+6.5;blk(0.1,1.6,0.1,x,0.8,z,0x6b4226);blk(0.6,0.05,0.5,x,1.6,z,0x8a5a3b);const r1=blk(0.42,0.04,0.62,x-0.18,1.95,z,0x7a4a2c);r1.rotation.z=0.6;const r2=blk(0.42,0.04,0.62,x+0.18,1.95,z,0x7a4a2c);r2.rotation.z=-0.6;
+   [-0.27,0.27].forEach(dx=>blk(0.04,0.35,0.04,x+dx,1.78,z,0x6b4226));[0.18,0.2].forEach(y=>blk(0.64,0.05,0.54,x,1.98+y*0.6,z,0xf6fafc));colCirc(x,z,0.3);reserve(x,z,1.2);
+   [[-0.18,0.1,0.3],[0.12,-0.12,-0.7],[0.2,0.15,2.4]].forEach(([dx,dz,ry])=>{const g=sgroup(x+dx,1.66,z+dz,ry);mesh(new _G.Sph(0.06,12,10),0x6b4a30,0,0.05,0,g).scale.set(0.9,0.85,1.3);mesh(new _G.Sph(0.045,12,10),0xe0542a,0,0.045,0.04,g);mesh(new _G.Sph(0.04,12,10),0x6b4a30,0,0.1,0.05,g);mesh(new _G.Cone(0.012,0.04,6),0x2a2420,0,0.1,0.1,g).rotation.x=Math.PI/2;mesh(new _G.Cone(0.03,0.08,6),0x5a3e28,0,0.06,-0.09,g).rotation.x=-1.9})}
+  // a sledging hill
+  {const hx=21,hz=c-5,hg=new _G.Sph(4.2,40,16,0,Math.PI*2,0,Math.PI/2);hg.scale(1,0.38,1);mesh(hg,0xf4f8fb,hx,0,hz);colCirc(hx,hz,4.1);reserve(hx,hz,5.2)}
+  brazier(-7.5,c-8.5);[[-9.2,c-8.5,Math.PI/2],[-7.5,c-10.3,0]].forEach(([x,z,ry])=>{const lg=mesh(new _G.Cyl(0.22,0.22,1.4,14),0x7a5236,x,0.22,z);lg.rotation.set(0,ry,Math.PI/2);colCirc(x,z,0.5)});reserve(-7.8,c-9,2.6);
+  Object.assign(FROST,{pond:[13,c+1,4,2.6],fire:[-7.5,c-8.5],hill:[21,c-5]});
+  const bm=new THREE.Mesh(mergeColored(bulbs),bulbMat);scene.add(bm);const bb=new THREE.Mesh(mergeColored(baubles),baubleMat);bb.castShadow=true;scene.add(bb)}
 
 /* ---------- links between the places: rivers with bridges, and garden walks ---------- */
 // a big kingfisher perched on the bridge handrail, sculpted as one smooth bird: deep azure back and folded wings
@@ -3773,6 +3803,14 @@ Object.keys(CRIT).forEach(k=>critters(k,1,zF0,zF0-FIN,1.15));
   [[-4.4,'puffle'],[4.4,'embertail']].forEach(([x,k],i)=>{const m=critterMesh(k,'knight front');m.scale.setScalar(1.05);m.position.set(x,0,zc0-48.6);m.rotation.y=i?-0.25:0.25;scene.add(m);colCirc(x,zc0-48.6,0.45);reserve(x,zc0-48.6,1.4);
     const ph=i*1.7;anims.push(t=>{m.position.y=Math.abs(Math.sin(t*1.1+ph))*0.012;m.rotation.y=(i?-0.25:0.25)+Math.sin(t*0.3+ph)*0.15})});
 }
+if(FROST.pond){const [px0,pz0,rx,rz]=FROST.pond,sk=critterMesh('frostbun','front');sk.scale.setScalar(0.85);scene.add(sk);addScarf(sk);
+  anims.push(t=>{const a=t*0.55,x=px0+Math.cos(a)*rx*0.62,z=pz0+Math.sin(a*2)*rz*0.45,dx=-Math.sin(a)*rx*0.62,dz=Math.cos(a*2)*rz*0.9;sk.position.set(x,0.03,z);sk.rotation.set(0,Math.atan2(dx,dz),Math.sin(a*2)*0.18)});
+  const [fx,fz]=FROST.fire;[[fx-1.25,fz,Math.PI/2],[fx,fz-1.3,0]].forEach(([x,z,ry],i)=>{const m=critterMesh(i?'frostbun':'puffle','front');m.scale.setScalar(0.85);m.position.set(x,0,z);m.rotation.y=ry+(i?Math.PI:0)*0;scene.add(m);addScarf(m);colCirc(x,z,0.4);
+    m.lookAt(fx,0,fz);const ph=i*2;anims.push(t=>{m.position.y=Math.abs(Math.sin(t*1.3+ph))*0.01})});
+  const [hx,hz]=FROST.hill,sl=new THREE.Group();scene.add(sl);const sg=new THREE.Group();sl.add(sg);for(let k=0;k<4;k++)blk(0.5,0.035,0.18,0,0.12,-0.36+k*0.24,0xc58a3a,sg);[-0.22,0.22].forEach(dx=>blk(0.03,0.03,1.0,dx,0.04,0,0xd8352a,sg));
+  const rider=critterMesh('frostbun','up2');rider.scale.setScalar(0.7);rider.position.y=0.12;sl.add(rider);addScarf(rider);
+  anims.push(t=>{const u=(t*0.16)%1,d=u<0.75?u/0.75:1,e=d*d;const r=4.2*(1-0.0)*(0.05+e*0.95),y=1.6*Math.max(0,1-Math.pow(r/4.2,2))+0.02;sl.position.set(hx-r,y,hz);sl.rotation.set(0,-Math.PI/2,0);sl.rotation.z=0;sg.rotation.x=0;
+    const slope=Math.atan2(3.2*r/17.6,1);sl.rotation.order='YXZ';sl.rotation.x=-slope;sl.visible=u<0.92})}
 // playground in Adding Garden: pets on the swings, the roundabout, both ends of the seesaw and the spring rider
 {const ride=(parent,kind,v,x,y,z,ry,sc)=>{const m=critterMesh(kind,v);m.scale.setScalar(sc||0.8);m.position.set(x,y,z);m.rotation.y=ry||0;parent.add(m);return m};
  if(PLAY.swings[0])ride(PLAY.swings[0],'puffle','up2',0,-1.8,0.02,0,0.82);
