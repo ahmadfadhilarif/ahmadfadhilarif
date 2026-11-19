@@ -414,7 +414,7 @@ const ROOMS=[
     {type:'mult',W:6,H:6,k:8,need:6,near:true,wind:0.65,start:[2,5],end:[3,0]},
     {type:'mult',W:7,H:7,k:7,need:7,near:true,wind:0.6}]},
   {name:'Odd and Even Pond',topic:'Odd and even numbers',
-   spots:[[-3.6,-6.5,'e'],[0,-19.2,'s'],[3,-27,'e'],[-15.2,-33.93,'s','wall'],[-4,-46.5,'s'],[-21,-56,'e'],[4,-65.5,'s'],[20.5,-58,'w']],panels:[
+   spots:[[-3.6,-6.5,'e'],[0,-19.2,'s'],[3,-27,'e'],[-15.2,-33.93,'s','wall'],[-4,-46.5,'s'],[-20,-48,'e'],[4,-65.5,'s'],[14,-48,'w']],panels:[
     {type:'sep',W:3,H:3,fill:1,maxN:10},
     {type:'sep',W:3,H:3,fill:1,maxN:20,start:[0,0],end:[2,2]},
     {type:'sep',W:4,H:4,fill:0.8,maxN:20},
@@ -454,7 +454,7 @@ const ROOMS=[
     {type:'bond',W:6,H:6,target:100,unit:5,minRegions:4,maxPer:3,minTiles:9,wind:0.65,start:[2,5],end:[3,0]},
     {type:'bond',W:7,H:7,target:100,minRegions:5,maxPer:3,minTiles:12,wind:0.6}]},
   {name:'Place Value Castle',topic:'Ordering numbers',scatter:{trees:10,bushes:30},
-   spots:[[-4,-8,'e'],[7,-16,'w'],[-12,-24,'e'],[6,-33,'s'],[-5,-50,'e'],[10,-52,'w'],[-10.93,-56,'e','wall'],[8,-64,'s']],panels:[
+   spots:[[-4,-8,'e'],[7,-16,'w'],[-12,-24,'e'],[3.6,-33,'w'],[-5,-50,'e'],[10,-52,'w'],[-10.93,-56,'e','wall'],[8,-64,'s']],panels:[
     {type:'rank',W:3,H:3,count:3,lo:1,hi:20,minLen:7},
     {type:'rank',W:3,H:3,count:4,lo:10,hi:60,minLen:7,end:[2,2]},
     {type:'rank',W:4,H:4,count:4,lo:10,hi:99},
@@ -2294,7 +2294,7 @@ function cocoaHut(x,z){const g=sgroup(x,0,z,Math.PI/2);
   mesh(new THREE.TorusGeometry(0.24,0.07,10,24),0xfffaf0,0.55,3.06,-0.3,g);[[0.15,0.1],[-0.12,-0.05],[0.02,-0.2]].forEach(([a,b])=>blk(0.13,0.13,0.13,a,3.52,-0.3+b,0xfffaf0,g));
   const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.4,0.62),new THREE.MeshBasicMaterial({map:signTex(['Hot Cocoa','10 cups − 3 cups = ?'],640,170),toneMapped:false}));sg.position.set(0,1.75,0.73);g.add(sg);
   colBox(x-1.4,x+1.0,z-1.7,z+1.7);reserve(x,z,3)}
-function iceBlock(x,z,n){mesh(new THREE.CylinderGeometry(0.42,0.5,0.4,20),matSnowBall,x,0.2,z);
+function iceBlock(x,z,n){mesh(new THREE.CylinderGeometry(0.42,0.5,0.4,20),matSnowBall,x,0.2,z);colCirc(x,z,0.5);
   const c=new THREE.Mesh(new THREE.BoxGeometry(0.75,0.75,0.75),new THREE.MeshStandardMaterial({map:numberTex(String(n),'#cdeefc','#1d5a7a'),roughness:0.15,transparent:true,opacity:0.92}));c.position.set(x,0.8,z);c.castShadow=true;scene.add(c);
   const ph=n*0.7;anims.push(t=>{c.rotation.y=Math.sin(t*0.4+ph)*0.6});colCirc(x,z,0.5);reserve(x,z,1)}
 function snowballs(x,z){[[0,0,0],[0.28,0,0.05],[-0.26,0,0.1],[0.02,0,-0.27],[0.03,0.22,-0.05],[0.12,0.2,0.12]].forEach(([a,b,c])=>mesh(new THREE.SphereGeometry(0.15,16,12),matSnowBall,x+a,0.14+b,z+c));colCirc(x,z,0.4)}
@@ -2317,7 +2317,7 @@ function buildSnow(z0){
   house(18,z0-46,8,7,'w',0x8a5a3b,0xf4f8fb,0);
   cocoaHut(-15,z0-47);
   sledge(-5.5,z0-20,0.4,0xd8352a);sledge(13.5,z0-24.5,1.9,0x3d7cc9);sledge(-21,z0-62,0.8,0x2f9d6a);
-  [10,8,6,4,2].forEach((n,i)=>iceBlock(-2.7,z0-51-i*3,n));
+  [10,8,6,4,2].forEach((n,i)=>iceBlock(-2.7,z0-46-i*2.5,n));
   snowballs(-6,z0-50);snowballs(-21,z0-38);snowballs(21,z0-56);
   lamp(2.2,z0-5);lamp(-2.2,z0-20);lamp(2.2,z0-53);lamp(2.2,z0-62);
   snowfall(z0+GAP,z0-AREA,{x:0,z:ic,r:10.5,h:6.9});
@@ -2648,10 +2648,20 @@ buildApproach();
 
 // panels
 const panelFaces=[],gates=[],entryCables=[];
+// how far a 1.6 m strip of path would run straight from (ax,az) along (dx,dz) before it meets a walkway: -1 if a wall,
+// bench, bed, water or raised ground is in the way first (cols: the colliders to test against)
+function straightRun(ax,az,dx,dz,max,cols){const PW2=0.8,isT=(x,z)=>onWalk(x,z,-0.45)||heightAt(x,z)>0.05,
+  ok=(x,z)=>{if(inWater(x,z,0.3))return false;for(const c of cols){if(c.t==='box'?(x>c.minX-0.3&&x<c.maxX+0.3&&z>c.minZ-0.3&&z<c.maxZ+0.3):((x-c.x)**2+(z-c.z)**2<(c.r+0.3)**2))return false}return true};
+  for(let t=0;t<=max;t+=0.25){const x=ax+dx*t,z=az+dz*t;if(t>0.5&&isT(x,z))return t;
+    for(let o=-PW2;o<=PW2+1e-6;o+=PW2/2){const qx=x-dz*o,qz=z+dx*o;if(!ok(qx,qz)||(heightAt(qx,qz)>0.03&&!isT(x,z)))return -1}}return -1}
 function buildPanel(p,spot,z0){
   const x=spot[0],z=z0+spot[1],wall=spot[3]==='wall',base=heightAt(x,z);let n=FACES[spot[2]];
   // a free-standing panel that has a walkway beside it (but not in front) turns to face that walkway
-  if(!wall){const ok=m=>onWalk(x+m[0]*1.9,z+m[1]*1.9,0.3)||heightAt(x+m[0]*1.9,z+m[1]*1.9)>0.05;if(!ok(n))for(const k of ['s','n','e','w'])if(ok(FACES[k])){n=FACES[k];break}}
+  if(!wall){const ok=m=>onWalk(x+m[0]*1.9,z+m[1]*1.9,0.3)||heightAt(x+m[0]*1.9,z+m[1]*1.9)>0.05;if(!ok(n)){let f=null;for(const k of ['s','n','e','w'])if(ok(FACES[k])){f=FACES[k];break}
+    // otherwise it faces the way a straight side path can run from its front to a walkway, keeping its own facing if it can
+    if(!f){const cols=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z-28&&c.minZ<z+28:c.t==='circ'?Math.abs(c.z-z)<30:false));let bl=1e9;
+      for(const m of [n,...['s','n','e','w'].map(k=>FACES[k])]){const t=straightRun(x+m[0]*0.55,z+m[1]*0.55,m[0],m[1],25,cols);if(t>0&&(m===n?t-6:t)<bl){bl=m===n?t-6:t;f=m}}}
+    if(f)n=f}}
   p.normal=new THREE.Vector3(n[0],0,n[1]);p.pos=new THREE.Vector3(x,base+EYE,z);p.wall=wall;
   p.cablePt=wall?[x+n[0]*0.2,z+n[1]*0.2]:[x-n[0]*0.15,z-n[1]*0.15];
   const g=sgroup(x,base,z,Math.atan2(n[0],n[1]));
@@ -2688,6 +2698,7 @@ ROOMS.forEach((room,r)=>{
 });
 /* ---------- every puzzle sits by a path: where a panel's standing spot isn't on a path, plaza, floor or deck, a short
    side path is routed on a 0.5 m grid (around walls, water, benches, beds and other panels) to the nearest walkway ---------- */
+const SIDEP=[],PPLOG=[];
 (function panelPaths(){const CG=0.5,DI=[1,-1,0,0],DJ=[0,0,1,-1];
   ROOMS.forEach((room,r)=>{const z0=z0s[r],x0=-AW+0.8,zT=z0-0.6,NX=Math.floor((2*AW-1.6)/CG)+1,NZ=Math.floor((AREA-1.2)/CG)+1,N=NX*NZ,X=i=>x0+i*CG,Z=j=>zT-j*CG;
     const col=ROOMS[r].key==='beach'?0xb98a5a:r===SNOWR?SNOWPATH:PATHC,near=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z0-AREA-2&&c.minZ<z0+2:c.t==='circ'?Math.abs(c.z-(z0-AREA/2))<AREA/2+2:false));
@@ -2695,23 +2706,34 @@ ROOMS.forEach((room,r)=>{
     for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=X(i),z=Z(j),k=j*NX+i;if(onWalk(x,z,-0.45)||heightAt(x,z)>0.05){tgt[k]=1;continue}
       if(inWater(x,z,0.4)){blk[k]=1;continue}for(const c of near){if(c.t==='box'?(x>c.minX-m&&x<c.maxX+m&&z>c.minZ-m&&z<c.maxZ+m):((x-c.x)**2+(z-c.z)**2<(c.r+m)**2)){blk[k]=1;break}}}
     const cellOf=(x,z)=>Math.max(0,Math.min(NZ-1,Math.round((zT-z)/CG)))*NX+Math.max(0,Math.min(NX-1,Math.round((x-x0)/CG)));
+    // a side path is one straight paved strip running out from the panel's front to the nearest walkway. if something stands
+    // in the way it makes a single clean right-angle turn; only if neither works is it routed round on the grid, still as
+    // straight strips. nothing but the panel's cable is allowed on it
+    const PW2=0.8,ok=(x,z)=>{if(inWater(x,z,0.3))return false;for(const c of near){if(c.t==='box'?(x>c.minX-0.3&&x<c.maxX+0.3&&z>c.minZ-0.3&&z<c.maxZ+0.3):((x-c.x)**2+(z-c.z)**2<(c.r+0.3)**2))return false}return true};
+    const march=(ax,az,dx,dz,max)=>straightRun(ax,az,dx,dz,max,near);
     room.list.forEach(p=>{const nx=p.normal.x,nz=p.normal.z,sx=p.pos.x+nx*1.9,sz=p.pos.z+nz*1.9;if(onWalk(sx,sz,0.4)||heightAt(sx,sz)>0.05)return;
+      const ax=p.pos.x+nx*0.55,az=p.pos.z+nz*0.55,lay=segs=>{segs.forEach(([a,b])=>{paths([[a,b]],1.6,0,col);SIDEP.push(PATHR[PATHR.length-1])})};
+      let best=null;{const t=march(ax,az,nx,nz,25);if(t>0)best={len:t,segs:[[[ax,az],[ax+nx*t,az+nz*t]]]}}
+      if(!best)for(let d=1.4;d<=12;d+=0.5){
+        let clear=true;for(let t=0;t<=d;t+=0.25)for(let o=-PW2;o<=PW2+1e-6;o+=PW2/2)if(!ok(ax+nx*t-nz*o,az+nz*t+nx*o)){clear=false;break}if(!clear)break;
+        const cx=ax+nx*d,cz=az+nz*d;for(const sg of [1,-1]){const dx=-nz*sg,dz=nx*sg,t=march(cx,cz,dx,dz,25);if(t>0&&(!best||d+t<best.len))best={len:d+t,segs:[[[ax,az],[cx,cz]],[[cx,cz],[cx+dx*t,cz+dz*t]]]}}
+        if(best)break}
+      if(best){lay(best.segs);PPLOG.push([p.id,best.segs.length]);return}PPLOG.push([p.id,'grid',(()=>{for(let t=0;t<=25;t+=0.25){const x=ax+nx*t,z=az+nz*t;for(let o=-0.8;o<=0.8;o+=0.4){const qx=x-nz*o,qz=z+nx*o;if(inWater(qx,qz,0.3))return [t,'water'];if(heightAt(qx,qz)>0.03)return [t,'height',heightAt(qx,qz)];for(const c of near)if(c.t==='box'?(qx>c.minX-0.3&&qx<c.maxX+0.3&&qz>c.minZ-0.3&&qz<c.maxZ+0.3):((qx-c.x)**2+(qz-c.z)**2<(c.r+0.3)**2))return [t,JSON.stringify(c)]}}return 'none'})()]);
       const s=cellOf(sx,sz),G=new Float64Array(N*4).fill(1e9),from=new Int32Array(N*4).fill(-1),H=[];let end=-1;
       const push=(f,st)=>{H.push([f,st]);let n=H.length-1;while(n>0){const q=(n-1)>>1;if(H[q][0]<=H[n][0])break;[H[q],H[n]]=[H[n],H[q]];n=q}};
       const pop=()=>{const top=H[0],last=H.pop();if(H.length){H[0]=last;let n=0;for(;;){const l=2*n+1,rr=l+1;let mn=n;if(l<H.length&&H[l][0]<H[mn][0])mn=l;if(rr<H.length&&H[rr][0]<H[mn][0])mn=rr;if(mn===n)break;[H[mn],H[n]]=[H[n],H[mn]];n=mn}}return top};
-      {const d0=nx>0.5?0:nx<-0.5?1:nz<-0.5?2:3;G[s*4+d0]=0;push(0,s*4+d0)}   // leave straight out from the panel's front
+      {const d0=nx>0.5?0:nx<-0.5?1:nz<-0.5?2:3;G[s*4+d0]=0;push(0,s*4+d0)}
       while(H.length){const [g,st]=pop();if(g>G[st])continue;const k=st>>2,d=st&3;if(tgt[k]&&k!==s){end=st;break}const i=k%NX,j=(k/NX)|0;
         for(let nd=0;nd<4;nd++){if((nd^1)===d)continue;const ni=i+DI[nd],nj=j+DJ[nd];if(ni<0||nj<0||ni>=NX||nj>=NZ)continue;const nk=nj*NX+ni;if(blk[nk]&&!tgt[nk])continue;
-          const ng=g+1+(nd!==d?7:0),ns=nk*4+nd;if(ng<G[ns]){G[ns]=ng;from[ns]=st;push(ng,ns)}}}
+          const ng=g+1+(nd!==d?40:0),ns=nk*4+nd;if(ng<G[ns]){G[ns]=ng;from[ns]=st;push(ng,ns)}}}
       if(end<0)return;const cells=[];for(let c=end;c>=0;c=from[c])cells.push(c>>2);cells.reverse();
-      const P=cells.map(k=>[X(k%NX),Z((k/NX)|0)]),pts=[[p.pos.x+nx*0.55,p.pos.z+nz*0.55],[sx,sz]];if(Math.abs(P[0][0]-sx)>1e-6&&Math.abs(P[0][1]-sz)>1e-6)pts.push(nx?[P[0][0],sz]:[sx,P[0][1]]);
+      const P=cells.map(k=>[X(k%NX),Z((k/NX)|0)]),pts=[[ax,az]];if(Math.abs(P[0][0]-ax)>1e-6&&Math.abs(P[0][1]-az)>1e-6)pts.push(nx?[P[0][0],az]:[ax,P[0][1]]);
       for(let q=0;q<P.length;q++){if(q>0&&q<P.length-1&&(P[q-1][0]===P[q][0])===(P[q][0]===P[q+1][0]))continue;pts.push(P[q])}
-      // a panel right beside a walkway gets one paved bay with rounded corners joining its front to the path (no lawn
-      // notch left between them); further away it gets a curving side path
-      {const h=0.8,bx0=Math.min(...pts.map(q=>q[0]))-h,bx1=Math.max(...pts.map(q=>q[0]))+h,bz0=Math.min(...pts.map(q=>q[1]))-h,bz1=Math.max(...pts.map(q=>q[1]))+h;
-       const clear=!near.some(c=>c.t==='box'?(c.maxX>bx0&&c.minX<bx1&&c.maxZ>bz0&&c.minZ<bz1&&!c.panel):(c.x+c.r>bx0&&c.x-c.r<bx1&&c.z+c.r>bz0&&c.z-c.r<bz1));
-       if(clear&&bx1-bx0<=5&&bz1-bz0<=5)padPath(bx0,bx1,bz0,bz1,col);else ribbonPath(pts,1.6,col)}});
+      const segs=[];for(let q=1;q<pts.length;q++)if(Math.hypot(pts[q][0]-pts[q-1][0],pts[q][1]-pts[q-1][1])>0.01)segs.push([pts[q-1],pts[q]]);lay(segs)});
     fillPathGaps(z0,col)});
+  // nothing grows or lies on a side path: flowers, grass, bushes and stones that were set down before it was laid are lifted
+  const on=(x,z)=>SIDEP.some(r=>x>r.minX-0.15&&x<r.maxX+0.15&&z>r.minZ-0.15&&z<r.maxZ+0.15);
+  for(const k of ['flower','stem','bush','rock','grass','cabbage','blob','reed','cattail']){const a=INST[k];let w=0;for(const o of a)if(!on(o.x,o.z))a[w++]=o;a.length=w}
 })();
 // no grass in the middle of a path: on a 0.25 m grid, every patch of open ground that is completely surrounded by paths,
 // plazas or things standing on them (benches, panels, beds) is paved over in the same path material. the paving is cut
