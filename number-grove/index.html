@@ -2061,14 +2061,76 @@ function raisedBed(x,z,w,d,kind){blk(w,0.5,d,x,0.25,z,0xa8784e);flat(new THREE.P
     else if(kind==='tomato'){rod([px,0.5,pz],[px,1.75,pz],0.015,0xb98a5a);INST.bush.push({x:px,y:1.05,z:pz,s:0.42,sy:0.9,c:pick(LEAFC),ry:RS()*6});
       for(let k=0;k<4;k++){const a=RS()*6.28;INST.apple.push({x:px+Math.cos(a)*0.3,y:0.8+RS()*0.6,z:pz+Math.sin(a)*0.3,s:0.8})}}
     else flowersAt(px,pz,6,0.35,0.5)}}
-function pottedPlant(x,y,z,k){mesh(potGeo,0xb5653a,x,y,z,scene,true);
-  if(k===0){mesh(new THREE.CylinderGeometry(0.08,0.1,0.42,12),0x4f8a3a,x,y+0.55,z);mesh(new THREE.SphereGeometry(0.08,12,8),0x4f8a3a,x,y+0.76,z);
-    rod([x,y+0.5,z],[x+0.14,y+0.58,z],0.035,0x4f8a3a);rod([x+0.14,y+0.58,z],[x+0.14,y+0.72,z],0.035,0x4f8a3a);mesh(new THREE.SphereGeometry(0.035,8,6),0xff6b9a,x,y+0.84,z,scene,true)}
-  else if(k===1)INST.bush.push({x,y:y+0.55,z,s:0.32,sy:0.3,c:pick(LEAFC),ry:RS()*6});
-  else{for(let f=0;f<5;f++){const a=RS()*6.28,h=0.18+RS()*0.12;INST.flower.push({x:x+Math.cos(a)*0.1,y:y+0.36+h,z:z+Math.sin(a)*0.1,s:0.9,c:pick(FLOWC),ry:RS()*6,rx:0});INST.stem.push({x:x+Math.cos(a)*0.1,y:y+0.36,z:z+Math.sin(a)*0.1,s:1,sy:h})}}}
+/* ---------- glasshouse plants, modelled in detail ----------
+   a leaf is a strip along +y: its width follows a profile, it is folded along the midrib, cupped at the edges and curls
+   (bend) towards +z, darker at the base and lighter at the tip with a pale midrib; splits/tears can be cut out of it.
+   plants are built from leaves, stalks and flowers, merged into one vertex-coloured mesh per kind */
+const plantMat=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:0.55}),PLANTG={};
+function leafGeo(L,W,o){o=o||{};const NS=o.seg||10,NU=o.sw||4,P=[],C=[],I=[],cb=new THREE.Color(o.base||0x2f6a2a).convertSRGBToLinear(),ct=new THREE.Color(o.tip||0x6aa84f).convertSRGBToLinear(),c=new THREE.Color();
+  let py=0,pz=0;const mid=[[0,0]];for(let i=1;i<=NS;i++){const a=(o.bend||0)*Math.pow((i-0.5)/NS,o.bp||2);py+=Math.cos(a)*L/NS;pz+=Math.sin(a)*L/NS;mid.push([py,pz])}
+  for(let i=0;i<=NS;i++){const t=i/NS,w=W*Math.max(0,o.prof?o.prof(t)||0:Math.pow(Math.max(0,Math.sin(Math.PI*Math.min(1,t*0.98+0.02))),0.8));
+    for(let j=0;j<=NU;j++){const u=j/NU*2-1;P.push(u*w,mid[i][0],mid[i][1]+Math.abs(u)*w*(o.fold==null?0.25:o.fold)+(o.cup||0)*u*u*w);
+      c.copy(cb).lerp(ct,Math.pow(t,0.8));c.multiplyScalar(Math.abs(u)<0.15?1.18:1+0.1*Math.abs(u));C.push(c.r,c.g,c.b)}}
+  for(let i=0;i<NS;i++)for(let j=0;j<NU;j++){if(o.split&&o.split((i+0.5)/NS,(j+0.5)/NU*2-1))continue;const a=i*(NU+1)+j;I.push(a,a+NU+1,a+1,a+1,a+NU+1,a+NU+2)}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();return g}
+const xf=(g,o)=>{if(o.s)g.scale(o.s,o.s,o.s);if(o.rz)g.rotateZ(o.rz);if(o.rx)g.rotateX(o.rx);if(o.ry)g.rotateY(o.ry);g.translate(o.x||0,o.y||0,o.z||0);return g};
+const colGeo=(g,c)=>{const A=[];partAdder(A)(g,c);return partsGeo(A)};
+// a pinnate frond: an arching stalk with pairs of small leaflets along it (ferns)
+function frondGeo(L,n,lw,o){o=o||{};const parts=[],R=mulberry32(o.seed||1),bend=o.bend||1.4,pts=[];let py=0,pz=0;for(let i=0;i<=12;i++){const t=i/12;if(i){const a=bend*Math.pow(t-0.04,2);py+=Math.cos(a)*L/12;pz+=Math.sin(a)*L/12}pts.push([0,py,pz])}
+  parts.push(colGeo(tube(pts,0.006,20),o.stem||0x4a6a2a));const crv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))),v=new THREE.Vector3(),tg=new THREE.Vector3();
+  for(let k=0;k<n;k++){const t=0.12+0.86*k/n;crv.getPointAt(t,v);crv.getTangentAt(t,tg);const len=lw*Math.sin(Math.PI*Math.min(1,t*1.05))*(0.85+0.3*R()),pitch=Math.atan2(tg.z,tg.y);
+    for(const s of [-1,1]){const g=leafGeo(len,len*0.22,{seg:4,sw:2,bend:0.5,fold:0.3,base:o.base||0x2f7a2e,tip:o.tip||0x7cc35a});g.rotateZ(-s*(1.25-0.3*t));g.rotateX(pitch);g.translate(v.x,v.y,v.z);parts.push(g)}}
+  return mergeColored(parts)}
+function plantGeo(kind){if(PLANTG[kind])return PLANTG[kind];const R=mulberry32(kind.length*97+7),P=[],S=r=>new _G.Sph(r,16,12);let g;
+  if(kind==='banana'){   // tall pseudostem of wrapped sheaths, huge arching leaves torn along their veins, and a hanging bunch with a purple bud
+    P.push(colGeo(lathe([[0.15,0],[0.14,0.5],[0.12,1.0],[0.1,1.25],[0,1.3]],20),0x7d8f45));for(let k=0;k<5;k++)P.push(colGeo(new _G.Cyl(0.122-k*0.007,0.14-k*0.007,0.26,18,1,true),[0x8a7a4a,0x6f8a3c,0x9a8a58,0x5f7a36,0x7a8a4a][k]).translate(0,0.15+k*0.23,0));
+    for(let k=0;k<8;k++){const tear=(t,u)=>Math.abs(Math.sin(t*37+k*3+u*2.1))>0.93&&Math.abs(u)>0.25;P.push(xf(leafGeo(1.9,0.36,{seg:16,sw:6,bend:1.5,bp:2.2,fold:0.14,base:0x4a9a3a,tip:0x9ad27a,split:tear,prof:t=>t<0.18?0.05:Math.pow(Math.max(0,Math.sin(Math.PI*Math.min(1,(t-0.18)/0.82*0.98+0.02))),0.6)}),{rx:0.55+(k%3)*0.25+R()*0.15,ry:k*2.4+R()*0.3,y:1.18+k*0.02}))}
+    for(let k=0;k<14;k++){const a=k*1.1,y=0.95-Math.floor(k/5)*0.12;P.push(colGeo(new _G.Cyl(0.02,0.018,0.16,8),0xb8c84a).rotateZ(0.6).rotateY(a).translate(0.18+Math.cos(a)*0.06,y,Math.sin(a)*0.06))}
+    P.push(colGeo(new _G.Cone(0.06,0.18,12),0x7a2a4a).rotateX(Math.PI).translate(0.2,0.6,0));P.push(colGeo(tube([[0.05,1.2,0],[0.18,1.1,0],[0.2,0.72,0]],0.012,12),0x6f8a3c))}
+  else if(kind==='monstera'){   // long stalks with big glossy heart-shaped leaves, cut with holes and splits
+    for(let k=0;k<9;k++){const a=k*2.4+R()*0.4,h=0.6+R()*0.6,r=0.3+R()*0.3,sz=0.55+R()*0.2,top=[Math.cos(a)*r,h,Math.sin(a)*r];P.push(colGeo(tube([[0,0.05,0],[top[0]*0.4,h*0.6,top[2]*0.4],top],0.012,16),0x4f7a2e));
+      const s=new THREE.Shape();s.moveTo(0,0);s.bezierCurveTo(-0.5,-0.12,-0.78,0.5,-0.3,0.95);s.quadraticCurveTo(0,1.06,0.3,0.95);s.bezierCurveTo(0.78,0.5,0.5,-0.12,0,0);
+      [[-0.32,0.45,0.05,0.12,0.5],[0.32,0.45,0.05,0.12,-0.5],[-0.42,0.62,0.04,0.1,0.8],[0.42,0.62,0.04,0.1,-0.8],[-0.2,0.25,0.035,0.08,0.3],[0.2,0.25,0.035,0.08,-0.3],[-0.22,0.75,0.035,0.07,0.6],[0.22,0.75,0.035,0.07,-0.6]].forEach(([hx,hy,rx,ry,rot])=>{const p=new THREE.Path();p.absellipse(hx,hy,rx,ry,0,Math.PI*2,false,rot);s.holes.push(p)});
+      const lg=new THREE.ShapeGeometry(s,10),pp=lg.attributes.position,C=[],c=new THREE.Color();for(let i=0;i<pp.count;i++){const x=pp.getX(i),y=pp.getY(i);pp.setZ(i,-0.18*x*x+0.12*y*y);const v=Math.abs(Math.sin(Math.atan2(x,y+0.1)*7))<0.12||Math.abs(x)<0.02;c.set(v?0x6ab85a:0x3a8a3a).convertSRGBToLinear();C.push(c.r,c.g,c.b)}
+      lg.setAttribute('color',new THREE.Float32BufferAttribute(C,3));lg.computeVertexNormals();lg.scale(sz,sz,sz);lg.rotateX(-0.85-R()*0.5);lg.rotateY(-a-Math.PI/2);lg.translate(...top);P.push(lg)}}
+  else if(kind==='treefern'){   // a shaggy brown trunk crowned with a ring of long, finely divided fronds and young curled fiddleheads
+    P.push(colGeo(lathe([[0.16,0],[0.13,0.3],[0.12,1.2],[0.15,1.45],[0,1.5]],18),0x5a3f2a));for(let k=0;k<26;k++){const a=k*2.4,y=0.15+k*0.05;P.push(colGeo(S(0.03),0x6b4a30).scale(1,2,1).translate(Math.cos(a)*0.13,y,Math.sin(a)*0.13))}
+    for(let k=0;k<12;k++)P.push(xf(frondGeo(1.35,26,0.3,{seed:k+3,bend:1.6}),{rx:0.75+R()*0.2,ry:k*0.52+R()*0.2,y:1.45}));
+    for(let k=0;k<3;k++){const pts=[];for(let i=0;i<=16;i++){const t=i/16,a=t*5;pts.push([Math.cos(k*2.1)*0.05+Math.cos(a)*0.05*t,1.5+0.25*Math.min(1,t*2)+Math.sin(a)*0.05*t,Math.sin(k*2.1)*0.05])}P.push(colGeo(tube(pts,0.012,24),0x7a8a3a))}}
+  else if(kind==='bird'){   // bird of paradise: stiff paddle leaves on long stalks, and orange-and-blue flowers like a bird's crest
+    for(let k=0;k<9;k++)P.push(xf(leafGeo(1.35,0.17,{seg:12,sw:4,bend:0.5,fold:0.18,base:0x3a6a3a,tip:0x5f8f4f,prof:t=>t<0.45?0.06:Math.pow(Math.max(0,Math.sin(Math.PI*Math.min(1,(t-0.45)/0.55*0.98+0.02))),0.7),split:(t,u)=>t>0.5&&Math.abs(Math.sin(t*41+k))>0.96}),{rx:0.18+R()*0.25,ry:k*0.7+R()*0.3}));
+    for(const [a,h] of [[0.6,1.05],[2.8,0.95]]){const bx=Math.cos(a)*0.12,bz=Math.sin(a)*0.12;P.push(colGeo(tube([[0,0,0],[bx,h*0.7,bz],[bx*1.4,h,bz*1.4]],0.012,12),0x4f7a3a));
+      P.push(colGeo(new _G.Cone(0.03,0.26,10),0x5a7a5a).rotateZ(-1.35).rotateY(-a).translate(bx*1.4,h,bz*1.4));
+      for(let i=0;i<4;i++)P.push(colGeo(new _G.Cone(0.022,0.2,8),0xff8a1c).rotateZ(-0.35+i*0.18).rotateY(-a+0.2*i).translate(bx*1.4+Math.cos(a)*0.06,h+0.08,bz*1.4+Math.sin(a)*0.06));P.push(colGeo(new _G.Cone(0.016,0.16,8),0x3a5ad8).rotateZ(0.2).rotateY(-a).translate(bx*1.4+Math.cos(a)*0.1,h+0.05,bz*1.4+Math.sin(a)*0.1))}}
+  else if(kind==='fernbed'){for(let k=0;k<34;k++){const a=k*2.4+R()*0.5,d=Math.sqrt((k+0.5)/34)*0.5;P.push(xf(frondGeo(0.6+R()*0.35,20,0.15,{seed:k+40,bend:2.2}),{rx:0.35+d*0.9+R()*0.2,ry:a+Math.PI,x:-Math.sin(a)*d,z:-Math.cos(a)*d}))}}
+  else if(kind==='cactusbed'){   // a desert bed: a branching column cactus, round barrel cacti, a prickly pear and a spiky agave, all with white spines
+    const ribbed=(r,h,ribs,arm)=>{const g=lathe([[r,0],[r,h*0.85],[r*0.75,h*0.96],[0,h]],ribs*4,24),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),a=Math.atan2(z,x),k=1+0.1*Math.cos(a*ribs);p.setX(i,x*k);p.setZ(i,z*k)}g.computeVertexNormals();
+      const A=[];partAdder(A)(g,0x4f8a3a);for(let k=0;k<ribs;k++){const a=k*Math.PI*2/ribs;for(let y=0.06;y<h*0.9;y+=0.07)partAdder(A)(new _G.Sph(0.008,4,3),0xf4f1e0,Math.cos(a)*r*1.1,y,Math.sin(a)*r*1.1)}return partsGeo(A)};
+    P.push(ribbed(0.13,1.3,10));P.push(xf(ribbed(0.08,0.45,8),{x:0.17,y:0.55}));P.push(colGeo(tube([[0.1,0.5,0],[0.17,0.52,0],[0.17,0.58,0]],0.075,10),0x4f8a3a));P.push(xf(ribbed(0.07,0.38,8),{x:-0.16,y:0.75}));P.push(colGeo(tube([[-0.1,0.72,0],[-0.16,0.74,0],[-0.16,0.8,0]],0.065,10),0x4f8a3a));
+    for(const [x,z,r] of [[0.5,0.25,0.15],[-0.45,0.35,0.12],[0.25,-0.5,0.1]]){const b=ribbed(r,r*1.5,14);b.translate(x,0,z);P.push(b);P.push(colGeo(S(r*0.3),0xff4f8a).scale(1,0.5,1).translate(x,r*1.5,z))}
+    for(let k=0;k<5;k++){const pd=S(0.13);pd.scale(1,1.25,0.25);pd.rotateZ((k-2)*0.4);pd.translate(-0.45+(k%2)*0.12,0.12+Math.floor(k/2)*0.2,-0.4);P.push(colGeo(pd,0x6a9a4a))}
+    for(let k=0;k<12;k++)P.push(xf(leafGeo(0.45,0.06,{seg:6,sw:2,bend:0.4,fold:0.6,base:0x5a8a8a,tip:0x8ab0a8}),{rx:0.55+(k%3)*0.25,ry:k*0.52,x:0.05,z:0.55}))}
+  else if(kind==='orchid'){   // an orchid in a pot: broad glossy leaves and an arching spike of white-and-magenta flowers
+    for(let k=0;k<5;k++)P.push(xf(leafGeo(0.34,0.085,{seg:7,sw:3,bend:1.1,fold:0.2,base:0x2f6a3a,tip:0x5a9a4a}),{rx:0.9,ry:k*1.3+0.3,y:0.39}));
+    const sp=[[0,0.36,0],[0.02,0.62,0.02],[0.08,0.78,0.06],[0.18,0.82,0.1]];P.push(colGeo(tube(sp,0.005,16),0x4a6a3a));const crv=new THREE.CatmullRomCurve3(sp.map(p=>new THREE.Vector3(...p))),v=new THREE.Vector3();
+    for(let k=0;k<6;k++){crv.getPointAt(0.45+k*0.1,v);const col=k%2?0xfaf0f6:0xf6d8ea;for(let pi=0;pi<5;pi++){const a=pi*Math.PI*2/5,pg=S(1);pg.scale(0.022,0.032,0.004);pg.translate(0,0.022,0);pg.rotateZ(a);pg.rotateY(0.6);pg.translate(v.x,v.y-0.02,v.z+0.01);P.push(colGeo(pg,col))}
+      P.push(colGeo(S(0.012),0xd02a8a).translate(v.x+0.006,v.y-0.03,v.z+0.02))}}
+  else if(kind==='succulent'){   // an echeveria rosette: fat, cupped, blue-green leaves with pink tips, spiralling in towards the centre
+    for(let k=0;k<26;k++){const t=k/26,L=0.17-t*0.09;P.push(xf(leafGeo(L,0.06-t*0.026,{seg:5,sw:3,bend:-0.3,fold:0.15,cup:0.9,base:0x7aa6a0,tip:0xd88aa0}),{rx:1.25-t*0.9,ry:k*2.4,y:0.37+t*0.03}))}}
+  else if(kind==='pfern'){P.push(...[0,1,2,3,4,5,6,7].map(k=>xf(frondGeo(0.35,12,0.07,{seed:k+90,bend:2.4}),{rx:0.5,ry:k*0.8,y:0.36})))}
+  else if(kind==='pcactus'){const g=lathe([[0.07,0],[0.07,0.2],[0.05,0.27],[0,0.29]],32,20),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),k=1+0.1*Math.cos(Math.atan2(z,x)*8);p.setX(i,x*k);p.setZ(i,z*k)}g.computeVertexNormals();
+    const A=[];partAdder(A)(g,0x4f8a3a,0,0.36,0);for(let k=0;k<8;k++)for(let y=0.04;y<0.26;y+=0.05)partAdder(A)(new _G.Sph(0.006,4,3),0xf4f1e0,Math.cos(k*0.785)*0.077,0.36+y,Math.sin(k*0.785)*0.077);partAdder(A)(S(0.03),0xff6b9a,0,0.66,0);P.push(partsGeo(A))}
+  else if(kind==='ivy'){   // trailing ivy: vines hanging down with small three-lobed leaves along them
+    const ls=new THREE.Shape();ls.moveTo(0,0);ls.lineTo(-0.03,0.02);ls.lineTo(-0.045,0.045);ls.lineTo(-0.015,0.05);ls.lineTo(0,0.08);ls.lineTo(0.015,0.05);ls.lineTo(0.045,0.045);ls.lineTo(0.03,0.02);ls.closePath();
+    for(let k=0;k<7;k++){const a=k*0.9,len=0.7+R()*0.8,pts=[];for(let i=0;i<=10;i++){const t=i/10;pts.push([Math.cos(a)*(0.25+t*0.08)+Math.sin(t*5+k)*0.03,-t*len,Math.sin(a)*(0.25+t*0.08)])}P.push(colGeo(tube(pts,0.004,16),0x5a6a2a));
+      const crv=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(...p))),v=new THREE.Vector3();for(let i=0;i<14;i++){crv.getPointAt(i/14,v);const lg=new THREE.ShapeGeometry(ls,1);lg.rotateY(a+(i%2?0.7:-0.7));lg.rotateX(0.3);lg.translate(v.x,v.y,v.z);P.push(colGeo(lg,i%3?0x2f6a2e:0x4f8a3a))}}}
+  g=mergeColored(P);return PLANTG[kind]=g}
+function plant(kind,x,y,z,ry,sc){const m=mesh(plantGeo(kind),plantMat,x,y,z);m.rotation.y=ry||0;if(sc)m.scale.setScalar(sc);return m}
+function planter(x,z,r,kind,sc){mesh(lathe([[r,0],[r*1.08,0.45],[r*1.12,0.5],[r*1.04,0.5],[r*1.0,0.36],[0,0.36]],40),0xb5653a,x,0,z);flat(new THREE.CircleGeometry(r*1.02,32),0x4a3322,x,0.45,z);plant(kind,x,0.45,z,RS()*6,sc);colCirc(x,z,r*1.12);reserve(x,z,r+0.8)}
+function pottedPlant(x,y,z,k){mesh(potGeo,0xb5653a,x,y,z,scene,true);flat(new _G.Cir(0.19,20),0x3f2c1e,x,y+0.37,z);plant(['pcactus','succulent','orchid','pfern'][((k%4)+4)%4],x,y,z,RS()*6)}
 function pottingBench(x,z,len){blk(1.6,0.08,len,x,0.85,z,0xb98a5a);[-1,1].forEach(a=>[-1,1].forEach(b=>blk(0.08,0.85,0.08,x+a*0.7,0.42,z+b*(len/2-0.1),0x8a5a3b)));
   blk(1.5,0.05,len-0.2,x,0.25,z,0xb98a5a);colBox(x-0.8,x+0.8,z-len/2,z+len/2);
-  for(let s=-len/2+0.4,k=0;s<len/2-0.2;s+=0.55,k++)pottedPlant(x+(k%2?0.35:-0.35),0.89,z+s,k%3)}
+  for(let s=-len/2+0.4,k=0;s<len/2-0.2;s+=0.55,k++)pottedPlant(x+(k%2?0.35:-0.35),0.89,z+s,(k+Math.round(x+z))%4)}
 function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=4.6,RH=7.6,DW=1.6,DH=3.9,GH=WH-0.6;
   flat(new THREE.PlaneGeometry(W,L),0xd9cfb8,cx,0.018,cz);
   const glass=(geo,x,y,z,ry)=>{const m=new THREE.Mesh(geo,matGlass);m.position.set(x,y,z);m.rotation.y=ry||0;m.renderOrder=3;scene.add(m);return m};
@@ -2091,7 +2153,7 @@ function glasshouse(cx,cz,W,L){const x0=cx-W/2,x1=cx+W/2,z0=cz-L/2,z1=cz+L/2,WH=
   const cr=mesh(new THREE.ConeGeometry(1.25,0.8,4),FRAME,cx,RH+1.4,cz);cr.rotation.y=Math.PI/4;mesh(new THREE.SphereGeometry(0.13,16,12),matBrass,cx,RH+1.9,cz);
   // hanging baskets
   [[-3.2,-6],[3.2,-6],[-3.2,6],[3.2,6]].forEach(([a,b])=>{const hx=cx+a,hz=cz+b,hy=WH+rise*(1-Math.abs(a)/(W/2));rod([hx,hy,hz],[hx,4.2,hz],0.012,0x2b3a42);
-    mesh(new THREE.SphereGeometry(0.32,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),0x8a5a3b,hx,4.2,hz,scene,true);INST.bush.push({x:hx,y:4.15,z:hz,s:0.42,sy:0.4,c:pick(LEAFC),ry:RS()*6});
+    mesh(new THREE.SphereGeometry(0.32,20,10,0,Math.PI*2,Math.PI/2,Math.PI/2),0x8a5a3b,hx,4.2,hz,scene,true);plant('ivy',hx,4.0,hz,RS()*6);INST.bush.push({x:hx,y:4.15,z:hz,s:0.42,sy:0.4,c:pick(LEAFC),ry:RS()*6});
     for(let f=0;f<6;f++){const an=RS()*6.28;INST.flower.push({x:hx+Math.cos(an)*0.3,y:4.0+RS()*0.3,z:hz+Math.sin(an)*0.3,s:1,c:pick(FLOWC),ry:RS()*6,rx:(RS()-0.5)*1.5})}});
   for(let x=x0+1;x<x1;x+=2)for(let z=z0+1;z<z1;z+=2)reserve(x,z,2.3);
 }
@@ -2127,6 +2189,8 @@ function buildGreenhouse(z0){const gz=z0-34;
   mesh(new THREE.CylinderGeometry(2.1,2.2,0.4,40),0xcfc3a8,0,0.2,gz);flat(new THREE.CircleGeometry(1.95,32),0x6b4a2f,0,0.41,gz);colCirc(0,gz,2.2);
   palm(0,gz,5.0,0.5,0.4);flowersAt(0,gz,26,1.7,0.3);
   pottingBench(-7.6,gz+6.5,7);pottingBench(-7.6,gz-5.5,7);pottingBench(7.6,gz+6.5,7);pottingBench(7.6,gz-5.5,7);
+  // big planters: banana, monstera, tree fern and bird of paradise in the corners, a fern bed and a cactus garden by the palm
+  planter(-5.4,gz+9.3,0.55,'banana',1.15);planter(5.4,gz+9.3,0.5,'monstera',1.1);planter(-5.4,gz-9.3,0.5,'treefern',1.1);planter(5.4,gz-9.3,0.5,'bird',1.1);planter(-5.6,gz-0.2,0.75,'fernbed');planter(5.6,gz+0.2,0.8,'cactusbed');
   // vegetable beds by the entrance
   [[12,-6,'cabbage'],[18.5,-6,'tomato'],[12,-10.5,'flowers'],[18.5,-10.5,'cabbage'],[12,-17,'tomato'],[18.5,-17,'flowers']].forEach(([x,z,k])=>raisedBed(x,z0+z,5,2,k));
   // pumpkin patch
