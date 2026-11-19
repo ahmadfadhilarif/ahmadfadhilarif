@@ -3846,7 +3846,7 @@ function fwSpawn(x,y,z,vx,vy,vz,c,life,drag,grav,tw){const F=FW;for(let n=0;n<F.
 const FWC=[[1,0.25,0.2],[1,0.8,0.2],[0.3,0.6,1],[0.4,1,0.45],[1,0.4,0.9],[0.75,0.45,1],[1,1,1],[1,0.55,0.15]];
 function fwSound(kind,x,y,z){if(!AMB.ready||muted)return;const d=Math.hypot(x-camera.position.x,y-camera.position.y,z-camera.position.z),v=Math.max(0.05,Math.min(1,60/d)),t=AC.currentTime+d/343,o=shotOut(0.5*v,0,t);
   if(kind==='launch'){ping(o,90,t,0.25,0.6);const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.setValueAtTime(700,t+0.05);os.frequency.exponentialRampToValueAtTime(2100,t+1.6);g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.12,t+0.2);g.gain.exponentialRampToValueAtTime(0.0001,t+1.7);os.connect(g);g.connect(o);os.start(t);os.stop(t+1.8)}
-  else{ping(o,55,t,1.4,1);ping(o,90,t,0.8,0.6);hiss(o,t,0.5,'lowpass',900,1,1);hiss(o,t+0.05,1.2,'bandpass',300,0.7,0.5);if(kind==='crackle')for(let i=0;i<40;i++)hiss(o,t+0.5+Math.random()*1.2,0.02,'highpass',2500,1,0.5)}}
+  else{ping(o,55,t,1.4,1);ping(o,90,t,0.8,0.6);hiss(o,t,0.5,'lowpass',500,1,0.9);hiss(o,t+0.05,1.2,'lowpass',260,0.7,0.5)}}
 function fwBurst(s){const types=['peony','ring','willow','crackle'],ty=s.type,c1=FWC[Math.floor(Math.random()*FWC.length)],c2=FWC[Math.floor(Math.random()*FWC.length)];fwSound(ty,s.x,s.y,s.z);
   if(ty==='ring'){const ax=Math.random()*Math.PI,ay=Math.random()*Math.PI,ca=Math.cos(ax),sa=Math.sin(ax),cb=Math.cos(ay),sb=Math.sin(ay);for(let i=0;i<140;i++){const a=i/140*Math.PI*2,v=23;let x=Math.cos(a)*v,y=Math.sin(a)*v,z=0;[y,z]=[y*ca-z*sa,y*sa+z*ca];[x,z]=[x*cb+z*sb,-x*sb+z*cb];fwSpawn(s.x,s.y,s.z,x,y,z,i%2?c1:c2,2.2,0.962,0.3)}}
   else{const n=ty==='willow'?190:ty==='crackle'?120:220;for(let i=0;i<n;i++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-u*u),v=(ty==='willow'?16:ty==='crackle'?19:22)*(0.85+Math.random()*0.3);
@@ -3959,7 +3959,7 @@ function hoot(){if(!AMB.ready||muted)return;const d=Math.hypot(OWL.g.position.x-
   blip(o,'sine',430,390,t,0.32,['lowpass',900,1],[5,6]);blip(o,'sine',410,360,t+0.42,0.55,['lowpass',900,1],[5,6])}
 const _ov=new THREE.Vector3(),_ov2=new THREE.Vector3();
 anims.push((t,dt)=>{if(!BRIDGE.set)return;const down=ROOMS[RI('castle')].list[3].solved?1:0;if(BRIDGE.init===undefined){BRIDGE.init=1;BRIDGE.set(down);return}
-  if(BRIDGE.t!==down){if(BRIDGE.moving!==down){BRIDGE.moving=down;if(down)gateSound('bridge')}const t2=down?Math.min(1,BRIDGE.t+dt/4.5):Math.max(0,BRIDGE.t-dt/2);const e=t2;BRIDGE.set(t2);if(t2===down)BRIDGE.moving=null}});
+  if(BRIDGE.t!==down){if(BRIDGE.moving!==down){BRIDGE.moving=down;if(down)gateSound('bridge',0,z0s[RI('castle')]-40.4)}const t2=down?Math.min(1,BRIDGE.t+dt/4.5):Math.max(0,BRIDGE.t-dt/2);const e=t2;BRIDGE.set(t2);if(t2===down)BRIDGE.moving=null}});
 anims.push((t,dt)=>{const O=OWL,np=nextPanel();
   if(np!==O.target){const first=O.target===undefined;O.target=np;perchFor(np,O.B);O.yawTo=np?Math.atan2(np.normal.x,np.normal.z):0;
     if(first){O.g.position.copy(O.B);O.yaw=O.yawTo}else{O.A.copy(O.g.position);const prev=PANELS[PANELS.indexOf(np)-1]||PANELS.filter(p=>p.solved).pop(),pts=owlRoute(O.A,O.B,prev&&prev.normal,np&&np.normal);O.curve=pts.length>2?new THREE.CatmullRomCurve3(pts,false,'centripetal'):new THREE.LineCurve3(pts[0],pts[pts.length-1]);
@@ -4041,23 +4041,17 @@ const SHOT={
     if(Math.random()<0.12){hiss(o,t+0.04,0.06,'lowpass',1100,0.7,1);blip(o,'sine',150,55,t+0.04,0.09)}},
   splash:(o,t)=>hiss(o,t,0.35,'bandpass',1700,1.2,1),
   squeak:(o,t)=>{blip(o,'sine',900,1500,t,0.12,null,[30,60]);blip(o,'sine',1100,1300,t+0.16,0.1)}};
-// gate sounds, built like the real thing:
-//  a wooden gate: the latch clacks, the hinges creak (a stick-slip squeal through the wood's resonance) and the gate
-//    bumps softly against its stop;  an iron gate: a metal latch, a higher, squealing hinge and a clang;
-//  a portcullis or drawbridge: a winch ratchet, a long rattle of chain links, a low grind and a heavy iron clank;
-//  sliding glass doors: rollers rumbling along a track, a soft stop and a faint ring of glass
+// gate sounds: cheerful and soft, like a well-oiled garden gate: a light wooden knock or bell-like latch, a gentle swish
+// as it swings (or a smooth ratchet and roll for a portcullis or drawbridge), a soft bump as it settles, and a little
+// rising chime. how loud it is depends on how far away you are, and it comes from the gate's side
 function ping(o,f,t,dec,vol){const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dec);os.connect(g);g.connect(o);os.start(t);os.stop(t+dec+0.05)}
-function creak(o,t,dur,rate,form,vol){const os=AC.createOscillator(),g=AC.createGain(),b1=AC.createBiquadFilter(),b2=AC.createBiquadFilter(),mix=AC.createGain();os.type='sawtooth';
-  os.frequency.setValueAtTime(rate,t);for(let u=0.06;u<dur;u+=0.06+Math.random()*0.07)os.frequency.linearRampToValueAtTime(rate*(0.55+Math.random()*0.9),t+u);
-  b1.type=b2.type='bandpass';b1.frequency.value=form;b2.frequency.value=form*2.3;b1.Q.value=18;b2.Q.value=14;os.connect(b1);os.connect(b2);b1.connect(mix);b2.connect(mix);mix.gain.value=Math.min(16,form/50);mix.connect(g);g.connect(o);
-  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.08);for(let u=0.2;u<dur-0.2;u+=0.15)g.gain.linearRampToValueAtTime(vol*(0.45+Math.random()*0.55),t+u);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);os.start(t);os.stop(t+dur+0.05)}
-function clank(o,t,vol){hiss(o,t,0.12,'bandpass',1400,1.5,vol);[190,433,771,1312,1980].forEach((f,i)=>ping(o,f*(0.97+Math.random()*0.06),t,0.9-i*0.12,vol*0.35/(1+i*0.4)))}
-function chain(o,t,dur,vol){let u=0;while(u<dur){hiss(o,t+u,0.025,'bandpass',2400+Math.random()*3600,8,vol);if(Math.random()<0.35)ping(o,2800+Math.random()*1800,t+u,0.07,vol*0.25);u+=0.035+Math.random()*0.06}}
-function gateSound(kind){if(!AMB.ready||muted)return;const t=AC.currentTime,o=shotOut(0.6,0,t);
-  if(kind==='lift'||kind==='bridge'){const D=kind==='bridge'?4.4:2.6;for(let u=0;u<D;u+=0.125)hiss(o,t+u,0.02,'highpass',3500,1,0.5);chain(o,t+0.05,D-0.1,0.55);hiss(o,t,D,'lowpass',140,1,0.55);clank(o,t+D,0.9)}
-  else if(kind==='slide'){hiss(o,t,1.7,'bandpass',300,1.1,0.7);for(let u=0.15;u<1.6;u+=0.26)hiss(o,t+u,0.018,'bandpass',1800,3,0.15);blip(o,'sine',150,80,t+1.7,0.18);hiss(o,t+1.7,0.08,'lowpass',500,1,0.6);[2610,3920].forEach(f=>ping(o,f,t+1.72,0.45,0.05))}
-  else if(kind==='iron'){hiss(o,t,0.03,'bandpass',4200,3,1);ping(o,2350,t,0.25,0.25);ping(o,3700,t+0.01,0.18,0.15);creak(o,t+0.12,1.5,46,1650,0.32);clank(o,t+1.7,0.55)}
-  else{hiss(o,t,0.03,'bandpass',3200,3,0.9);ping(o,1900,t,0.12,0.18);creak(o,t+0.1,1.55,38,820,0.55);creak(o,t+0.45,0.9,52,1250,0.3);blip(o,'sine',120,60,t+1.7,0.22);hiss(o,t+1.7,0.14,'lowpass',380,1,0.9)}}
+function gateSound(kind,x,z){if(!AMB.ready||muted)return;const d=Math.hypot((x||0)-camera.position.x,(z||0)-camera.position.z),vol=1.15*Math.pow(Math.max(0,1-d/60),1.6);if(vol<0.02)return;
+  const ry=camera.rotation.y,pan=d<1?0:(((x||0)-camera.position.x)*Math.cos(ry)-((z||0)-camera.position.z)*Math.sin(ry))/d,t=AC.currentTime,o=shotOut(vol,pan,t);
+  const chime=(t0,notes)=>notes.forEach((f,i)=>{ping(o,f,t0+i*0.11,0.6,0.16);ping(o,f*2,t0+i*0.11,0.25,0.04)});
+  if(kind==='lift'||kind==='bridge'){const D=kind==='bridge'?4.2:2.4;ping(o,880,t,0.12,0.12);for(let u=0.1;u<D;u+=0.22)ping(o,1300+Math.random()*60,t+u,0.03,0.05);hiss(o,t,D,'lowpass',260,0.7,0.35);ping(o,140,t+D,0.35,0.5);ping(o,280,t+D,0.2,0.18);chime(t+D+0.1,[523,659,784,1047])}
+  else if(kind==='slide'){hiss(o,t,1.4,'bandpass',700,0.6,0.35);ping(o,1760,t+1.4,0.25,0.12);chime(t+1.5,[659,784,988])}
+  else if(kind==='iron'){ping(o,1480,t,0.5,0.22);ping(o,2220,t,0.35,0.1);hiss(o,t+0.1,1.2,'bandpass',900,0.6,0.3);ping(o,330,t+1.4,0.2,0.25);chime(t+1.45,[784,988,1175])}
+  else{ping(o,520,t,0.09,0.4);hiss(o,t,0.04,'bandpass',1400,2,0.4);hiss(o,t+0.08,1.2,'bandpass',600,0.6,0.32);ping(o,200,t+1.35,0.16,0.45);hiss(o,t+1.35,0.08,'lowpass',500,1,0.3);chime(t+1.45,[523,659,784])}}
 function ambUpdate(dt,ts){if(!AMB.ready)return;
   const cx=camera.position.x,cz=camera.position.z,ry=camera.rotation.y,cr=Math.cos(ry),sr=Math.sin(ry),now=AC.currentTime;
   const panOf=(ax,az)=>{const dx=ax-cx,dz=az-cz,d=Math.hypot(dx,dz);return d<0.6?0:(dx*cr-dz*sr)/d};
@@ -4137,11 +4131,11 @@ function refreshWorld(){
   PANELS.forEach(drawPanel);
 }
 function poseGate(g){const e=g.t*g.t*(3-2*g.t);if(g.kind==='lift')g.leaves[0].position.y=2.4*e;else if(g.kind==='slide'){g.leaves[0].position.x=-1.53-1.45*e;g.leaves[1].position.x=1.53+1.45*e}else{g.leaves[0].rotation.y=1.5*e;g.leaves[1].rotation.y=-1.5*e}}
-function openG(g,instant){if(!g||g.open)return;g.open=true;g.col.on=false;if(instant){g.t=1;poseGate(g)}else gateSound(g.snd)}
+function openG(g,instant){if(!g||g.open)return;g.open=true;g.col.on=false;if(instant){g.t=1;poseGate(g)}else gateSound(g.snd,0,g.z)}
 function closeG(g){if(!g)return;g.open=false;g.col.on=true;g.t=0;poseGate(g)}
 function openGate(r,instant){openG(gates[r],instant)}
 // the next place's entrance opens once you are halfway along the walk from the last place's open exit
-function openEntr(r,instant){const g=ENTR[r];if(!g||g.open)return;openG(g,instant);if(!instant)toast(`The gate into ${ROOMS[r].name} is opening.`)}
+function openEntr(r,instant){const g=ENTR[r];if(!g||g.open)return;openG(g,instant)}
 function closeGate(r){closeG(gates[r]);closeG(ENTR[r])}
 function roomDone(r){return ROOMS[r].list.every(p=>p.solved)}
 
@@ -4266,7 +4260,7 @@ function check(p){
   if(res.ok){
     p.solved=true;p.complete=true;p.flash=null;sfx.win();
     save();refreshWorld();
-    if(roomDone(p.room)){openGate(p.room);sfx.gate();toast(p.room<NR-1?`${PRAISE[p.index%PRAISE.length]} The gate to ${ROOMS[p.room+1].name} is open.`:'Amazing! The last gate is open. Walk through to the finish.','good')}
+    if(roomDone(p.room)){openGate(p.room);sfx.gate();toast(PRAISE[p.index%PRAISE.length],'good')}
     else toast(PRAISE[p.index%PRAISE.length]+' Follow the yellow cable to the next panel.','good');
     updateHud();
     exitSolve();   // step back straight away
