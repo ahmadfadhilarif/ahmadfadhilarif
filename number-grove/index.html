@@ -3786,13 +3786,13 @@ const nextPanel=()=>PANELS.find(p=>!p.solved)||null;
 const OWLG=(()=>{const DK=0x33220f,BR=0x6b4a2c,BF=0xb88a55,LT=0xd8bf96,WH=0xeee2cc,RIM=0x24180c;
   const body=sculpt([{t:'e',c:[0,0.14,0],r:[0.13,0.15,0.12],col:BR,k:0.04},{t:'e',c:[0,0.11,0.035],r:[0.115,0.12,0.095],col:BF,k:0.05},{t:'e',c:[0,0.245,-0.005],r:[0.105,0.07,0.095],col:BR,k:0.05},
     {t:'e',c:[0,0.05,-0.105],r:[0.055,0.016,0.075],rot:[-0.5,0,0],col:DK,k:0.03},...[-1,1].map(s=>({t:'e',c:[s*0.045,0.03,0.035],r:[0.04,0.045,0.04],col:BF,k:0.03}))],
-    {h:0.0045,blend:0.012,paint:(c,x,y,z,nx,ny,nz)=>{c.set(BR).convertSRGBToLinear();const front=sstep(-0.1,0.45,nz);mixC(c,BF,front*sstep(0.28,0.2,y));
+    {h:0.0035,blend:0.012,paint:(c,x,y,z,nx,ny,nz)=>{c.set(BR).convertSRGBToLinear();const front=sstep(-0.1,0.45,nz);mixC(c,BF,front*sstep(0.28,0.2,y));
       if(front>0.3&&y<0.26){mixC(c,DK,sstep(0.12,0.03,Math.abs(Math.sin(x*95+Math.sin(y*40)*0.8)))*0.7*front);mixC(c,DK,sstep(0.94,0.995,Math.abs(Math.sin(y*160+x*20)))*0.3*front)}
       if(nz<0.2){if(hash3(Math.floor(x/0.012),Math.floor(y/0.012),Math.floor(z/0.012))>0.76)mixC(c,LT,0.55);mixC(c,DK,sstep(0.2,0.7,ny)*0.3)}
       if(y<0.07&&front>0.3)mixC(c,LT,0.45)}});
   const head=sculpt([{t:'e',c:[0,0,0],r:[0.118,0.1,0.105],col:BR,k:0.03},{t:'e',c:[0,-0.012,0.045],r:[0.102,0.085,0.06],col:BF,k:0.03},{t:'e',c:[0,-0.075,-0.01],r:[0.095,0.06,0.088],col:BR,k:0.04},
     ...[-1,1].map(s=>({t:'c',a:[s*0.055,0.06,0],b:[s*0.09,0.155,-0.028],ra:0.028,rb:0.006,col:DK,k:0.02})),...[-1,1].map(s=>({t:'e',c:[s*0.045,0.024,0.07],r:[0.036,0.015,0.02],rot:[0,0,s*0.35],col:LT,k:0.012}))],
-    {h:0.0036,blend:0.008,paint:(c,x,y,z,nx,ny,nz)=>{const ax=Math.abs(x),el=Math.hypot(x/0.097,(y+0.012)/0.082);
+    {h:0.003,blend:0.008,paint:(c,x,y,z,nx,ny,nz)=>{const ax=Math.abs(x),el=Math.hypot(x/0.097,(y+0.012)/0.082);
       if(nz>0.15&&el<1.1){const de=Math.hypot(ax-0.045,y,(z-0.085)*0.6);mixC(c,LT,sstep(0.9,0.4,el)*0.6);mixC(c,DK,sstep(0.86,1,Math.abs(Math.sin(de*130)))*0.22*sstep(1,0.6,el));mixC(c,RIM,sstep(0.82,0.95,el)*sstep(1.12,1.0,el)*0.85)}
       else if(ny>0.1){mixC(c,DK,sstep(0.15,0.04,Math.abs(Math.sin(x*120+z*30)))*0.5);if(hash3(Math.floor(x/0.01),Math.floor(y/0.01),Math.floor(z/0.01))>0.8)mixC(c,LT,0.5)}
       if(nz>0.2)mixC(c,WH,sstep(1,0.45,Math.hypot(x/0.034,(y+0.055)/0.022))*0.65);if(y>0.06&&ax>0.05)mixC(c,DK,0.4)}});
@@ -3800,17 +3800,47 @@ const OWLG=(()=>{const DK=0x33220f,BR=0x6b4a2c,BF=0xb88a55,LT=0xd8bf96,WH=0xeee2
     {t:'e',c:[s*0.008,-0.18,-0.04],r:[0.017,0.06,0.045],rot:[0.35,0,0],col:DK,k:0.015}],
     {h:0.004,blend:0.01,paint:(c,x,y,z,nx,ny,nz)=>{if(y<-0.11)mixC(c,BF,sstep(0.6,0.95,Math.sin(y*95))*0.6);if(hash3(Math.floor(x/0.011),Math.floor(y/0.011),Math.floor(z/0.011))>0.78)mixC(c,LT,0.55);if(nx*s<0)mixC(c,BF,0.5);if(y>-0.05)mixC(c,DK,0.2)}}));
   const F=[],T=[],E=[],H=[],S=r=>new _G.Sph(r,24,16),fa=partAdder(F),ta=partAdder(T);
-  [-1,1].forEach(s=>{fa(S(0.03),0xff9a1a,s*0.045,0.002,0.082);partAdder(E)(S(1),0,s*0.045,0.002,0.104,0.019,0.019,0.009);partAdder(H)(S(0.006),0,s*0.038,0.012,0.113);
+  [-1,1].forEach(s=>{fa(S(0.03),0xffa21c,s*0.045,0.002,0.083);fa(S(0.0325),0x8a4a08,s*0.045,0.002,0.0805);partAdder(E)(S(1),0,s*0.045,0.002,0.104,0.019,0.019,0.009);partAdder(H)(S(0.006),0,s*0.038,0.012,0.113);
     for(const dx of [-0.018,0,0.018])ta(tube([[s*0.045+dx,0.01,0.06],[s*0.045+dx*1.3,0.006,0.085],[s*0.045+dx*1.4,-0.01,0.097]],0.0055,10),0x2a2622);ta(tube([[s*0.045,0.012,0.02],[s*0.045,0.004,-0.005],[s*0.045,-0.008,-0.012]],0.005,8),0x2a2622)});
   const bk=new _G.Cone(0.016,0.05,20);bk.rotateX(Math.PI-0.5);fa(bk,0x2e2925,0,-0.026,0.113);fa(S(1),0x5a5048,0,-0.004,0.107,0.017,0.011,0.012);
   return{body,head,wings,face:partsGeo(F),feet:partsGeo(T),eyes:partsGeo(E),hi:partsGeo(H),mat:triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.75,sheen:new THREE.Color(0.4,0.35,0.3)}),featherTex,32,0,true)}})();
-const OWL=(()=>{const G=OWLG,g=new THREE.Group();scene.add(g);const b=new THREE.Group();b.scale.setScalar(1.35);g.add(b);
+// the owl's flight feathers: each feather is a long blade with a pale shaft, barred in dark and buff bands like an
+// eagle-owl's, built strip by strip so it can curve. the open wing has coverts over the arm, ten secondaries along its
+// trailing edge and ten primaries fanning from the wrist with slotted tips; the tail is a fan of twelve barred feathers
+function featherGeo(L,W,cA,cB,bars,curl,shaft){const sc=shaft!=null?new THREE.Color(shaft).convertSRGBToLinear():null;const NS=9,P=[],C=[],I=[],a=new THREE.Color(cA).convertSRGBToLinear(),b=new THREE.Color(cB).convertSRGBToLinear(),c=new THREE.Color();
+  for(let i=0;i<=NS;i++){const t=i/NS,w=W*Math.pow(Math.sin(Math.PI*Math.min(1,0.15+t*0.85)),0.55)*(1-0.35*t),bend=(curl||0)*t*t;
+    for(let j=0;j<=2;j++){const u=j-1;P.push(u*w*(u>0?1.25:0.75),-t*L,bend+Math.abs(u)*w*0.12);const bar=0.5+0.5*Math.sin(t*bars*Math.PI*2);c.copy(a).lerp(b,0.2+bar*0.65);if(u===0){if(sc)c.copy(sc);else c.lerp(b,0.4)}C.push(c.r,c.g,c.b)}}
+  for(let i=0;i<NS;i++)for(let j=0;j<2;j++){const k=i*3+j;I.push(k,k+3,k+1,k+1,k+3,k+4)}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();return g}
+const OWLW=(()=>{const DK=0x3a2612,BR=0x6b4a2c,BF=0xc89a62,LT=0xe2c9a0,parts=s=>{const arm=[],hand=[];
+    // secondaries hang back from the arm, overlapping; coverts in two rows on top of them
+    for(let k=0;k<10;k++){const x=0.015+k*0.0165,g=featherGeo(0.16-k*0.003,0.03,DK,BF,3.4,0.012);g.rotateZ(0.05);g.translate(x,0.02,-0.002*k);arm.push(g)}
+    for(let k=0;k<9;k++){const g=featherGeo(0.085,0.027,BR,LT,1.8,0.006);g.translate(0.02+k*0.018,0.028,-0.012);arm.push(g)}
+    for(let k=0;k<10;k++){const g=featherGeo(0.05,0.024,BR,BF,1.2,0.004);g.translate(0.018+k*0.017,0.034,-0.018);arm.push(g)}
+    // primaries fan out from the wrist, longest in the middle, with gaps between the tips (the owl's "fingers")
+    for(let k=0;k<10;k++){const L=0.15+Math.sin((k+1)/11*Math.PI)*0.07,g=featherGeo(L,0.026,DK,BF,3.8,0.014);g.rotateZ(0.2+k*0.15);g.translate(0.004,0.022,-0.002*k);hand.push(g)}
+    for(let k=0;k<7;k++){const g=featherGeo(0.07,0.024,BR,LT,1.5,0.005);g.rotateZ(0.3+k*0.18);g.translate(0.0,0.03,-0.014);hand.push(g)}
+    const fix=gs=>{const m=mergeColored(gs);if(s<0)m.scale(-1,1,1);return m};return{arm:fix(arm),hand:fix(hand)}};
+  const tail=[];for(let k=0;k<12;k++){const a=(k-5.5)/5.5*0.42,g=featherGeo(0.13,0.026,DK,BF,3.4,-0.01);g.rotateZ(a);g.translate(0,0,-0.003*Math.abs(k-5.5));tail.push(g)}
+  return{L:parts(-1),R:parts(1),tail:mergeColored(tail),mat:new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:0.8})}})();
+const OWLF=(()=>{const DK=0x3a2612,BR=0x6b4a2c,BF=0xc89a62,LT=0xe2c9a0,RIM=0x24180c,body=[],head=[],tips=[[],[]];
+  const rj=mulberry32(77);let row=0;for(let y=0.045;y<0.27;y+=0.021,row++)for(let a0=-2.5;a0<=2.5;a0+=0.21){const a=a0+(row%2?0.105:0)+(rj()-0.5)*0.06,c=[0,0.14,0],r=[0.13,0.15,0.12],v=(y-c[1])/r[1];if(Math.abs(v)>0.97)continue;const k=Math.sqrt(1-v*v),front=Math.cos(a);
+    const px=Math.sin(a)*r[0]*k,pz=Math.cos(a)*r[2]*k,brst=front>0.2&&y<0.25,L=(brst?0.034:0.03)*(0.85+rj()*0.3),g=featherGeo(L,brst?0.013:0.014,brst?BF:BR,brst?LT:BF,0.6,0.004,brst?DK:RIM);
+    g.rotateX(0.25);g.rotateY(a);g.translate(px*1.03,y+0.012,pz*1.03+(front>0?0.003:0));body.push(g)}
+  for(let k=0;k<30;k++){const a=k/30*Math.PI*2,ex=Math.cos(a)*0.1,ey=-0.012+Math.sin(a)*0.086;if(ey>0.06)continue;const g=featherGeo(0.026,0.011,RIM,BR,0.3,0.003,RIM);g.rotateZ(Math.atan2(ey+0.012,ex)+Math.PI/2);g.translate(ex*1.02,ey,0.058-Math.abs(ex)*0.25);head.push(g)}
+  [-1,1].forEach(s=>{for(let k=0;k<4;k++){const g=featherGeo(0.075-k*0.01,0.012,DK,BR,1.2,0.004,RIM);g.rotateZ(Math.PI-s*(0.35+k*0.06));g.rotateX(-0.25);g.translate(s*(0.055+k*0.008),0.055,-0.005-k*0.006);head.push(g)}});
+  [0,1].forEach(i=>{const s=i?1:-1;for(let k=0;k<5;k++){const g=featherGeo(0.11-k*0.008,0.022,DK,BF,3.2,-0.006);g.rotateX(0.35);g.translate(s*(0.012-k*0.003),-0.12-k*0.006,-0.03-k*0.012);tips[i].push(g)}});
+  return{body:mergeColored(body),head:mergeColored(head),tips:tips.map(t=>mergeColored(t))}})();
+const OWL=(()=>{const G=OWLG,g=new THREE.Group();scene.add(g);const P=new THREE.Group();P.position.y=0.27;g.add(P);const b=new THREE.Group();b.scale.setScalar(1.35);b.position.y=-0.27;P.add(b);
   const add=(geo,mat,p)=>{const m=new THREE.Mesh(geo,mat);m.castShadow=mat!==hiMat;p.add(m);return m};
-  add(G.body,G.mat,b);add(G.feet,glossMat,b);
-  const head=new THREE.Group();head.position.set(0,0.33,0);b.add(head);add(G.head,G.mat,head);add(G.face,glossMat,head);
+  add(G.body,G.mat,b);add(G.feet,glossMat,b);add(OWLF.body,OWLW.mat,b);
+  const head=new THREE.Group();head.position.set(0,0.33,0);b.add(head);add(G.head,G.mat,head);add(G.face,glossMat,head);add(OWLF.head,OWLW.mat,head);
   const hp=new THREE.Group();head.add(hp);add(G.eyes,eyeMat,hp);add(G.hi,hiMat,hp);
-  const wings=[-1,1].map((s,i)=>{const w=new THREE.Group();w.position.set(s*0.115,0.235,-0.01);b.add(w);add(G.wings[i],G.mat,w);return w});
-  return{g,head,wings,target:undefined,fly:false,t:0,dur:1,A:new THREE.Vector3(),B:new THREE.Vector3(),C:new THREE.Vector3(),yaw:0,yawTo:0}})();
+  const wings=[-1,1].map((s,i)=>{const w=new THREE.Group();w.position.set(s*0.115,0.235,-0.01);b.add(w);add(G.wings[i],G.mat,w);add(OWLF.tips[i],OWLW.mat,w);return w});
+  const open=[-1,1].map(s=>{const sh=new THREE.Group();sh.position.set(s*0.1,0.225,-0.03);sh.visible=false;b.add(sh);const Wg=s<0?OWLW.L:OWLW.R;add(Wg.arm,OWLW.mat,sh);
+    const hand=new THREE.Group();hand.position.x=s*0.17;sh.add(hand);add(Wg.hand,OWLW.mat,hand);return{sh,hand}});
+  const tail=new THREE.Group();tail.position.set(0,0.07,-0.095);tail.rotation.x=0.35;b.add(tail);add(OWLW.tail,OWLW.mat,tail);
+  return{g,P,head,wings,open,tail,fp:0,target:undefined,fly:false,t:0,dur:1,A:new THREE.Vector3(),B:new THREE.Vector3(),C:new THREE.Vector3(),yaw:0,yawTo:0}})();
 
 function perchFor(p,out){if(!p)return out.set(0,4.45,zF0-15);return out.set(p.pos.x-p.normal.x*0.06,p.pos.y+(PH+0.14)/2,p.pos.z-p.normal.z*0.06)}
 function hoot(){if(!AMB.ready||muted)return;const d=Math.hypot(OWL.g.position.x-camera.position.x,OWL.g.position.z-camera.position.z);if(d>30)return;const v=0.06*(1-d/30),t=AC.currentTime,o=shotOut(v,0,t);
@@ -3825,8 +3855,13 @@ anims.push((t,dt)=>{const O=OWL,np=nextPanel();
   if(O.fly){O.t=Math.min(1,O.t+dt/O.dur);const k=O.t*O.t*(3-2*O.t),u=1-k;
     O.curve.getPointAt(k,_ov);
     _ov2.subVectors(_ov,O.g.position);if(_ov2.x*_ov2.x+_ov2.z*_ov2.z>1e-6)O.yaw=Math.atan2(_ov2.x,_ov2.z);O.g.position.copy(_ov);
-    const f=Math.sin(t*15);O.wings[0].rotation.z=-1.25-f*0.7;O.wings[1].rotation.z=1.25+f*0.7;O.g.rotation.x=0.35;
-    if(O.t>=1){O.fly=false;hoot()}}
+    const el=O.t*O.dur,rem=(1-O.t)*O.dur,pose=Math.max(0,Math.min(1,el/0.35,rem/0.55)),brake=Math.max(0,1-rem/1.0);O.curve.getTangentAt(Math.min(0.999,k),_ov2);
+    const glide=el>0.9&&rem>1.3&&_ov2.y<0.08;O.fp=(O.fp+dt*(glide?0.7:2.7))%1;const ph=O.fp;let a,fold;
+    if(glide){a=0.1+Math.sin(ph*Math.PI*2)*0.06;fold=0.04}else if(ph<0.42){const u=ph/0.42;a=0.95-1.6*(u*u*(3-2*u));fold=0.0}else{const u=(ph-0.42)/0.58;a=-0.65+1.6*(u*u*(3-2*u));fold=Math.sin(u*Math.PI)*0.95}
+    O.P.rotation.x=1.22*pose*(1-0.6*brake);O.head.rotation.x=-O.P.rotation.x*0.92;O.P.position.y=0.27-a*0.025*pose;
+    O.open.forEach((w,i)=>{const sd=i?1:-1;w.sh.visible=pose>0.03;w.sh.rotation.y=sd*a;w.sh.scale.setScalar(0.3+0.7*pose);w.hand.rotation.z=-sd*fold});O.wings.forEach(w=>w.visible=pose<0.45);
+    O.tail.rotation.x=0.35*(1-pose)+0.05*pose-0.25*brake;O.tail.scale.set(1+0.6*pose,1,1);
+    if(O.t>=1){O.fly=false;hoot();O.P.rotation.x=0;O.head.rotation.x=0;O.P.position.y=0.27;O.open.forEach(w=>w.sh.visible=false);O.wings.forEach(w=>w.visible=true);O.tail.rotation.x=0.35;O.tail.scale.set(1,1,1)}}
   else{let dy=O.yawTo-O.yaw;while(dy>Math.PI)dy-=Math.PI*2;while(dy<-Math.PI)dy+=Math.PI*2;O.yaw+=dy*Math.min(1,dt*3);
     O.wings.forEach((w,i)=>w.rotation.z+=((i?0.08:-0.08)-w.rotation.z)*Math.min(1,dt*8));O.g.rotation.x*=Math.max(0,1-dt*6);
     // look at the player, within what an owl's neck allows
