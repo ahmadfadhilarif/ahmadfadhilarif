@@ -4952,6 +4952,8 @@ function env(g,t,a,hold,rel,peak){g.gain.setValueAtTime(0.0001,t);g.gain.exponen
 function blip(out,type,f0,f1,t,dur,filt,vib){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
   if(vib){const l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=vib[0];lg.gain.value=vib[1];l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+dur+0.05)}
   let n=o;if(filt){const b=AC.createBiquadFilter();b.type=filt[0];b.frequency.value=filt[1];b.Q.value=filt[2]||1;o.connect(b);n=b}n.connect(g);g.connect(out);env(g,t,Math.min(0.02,dur*0.2),dur*0.4,dur*0.5);o.start(t);o.stop(t+dur+0.1)}
+// a short sine tone that strikes and dies away (the thump of the rocket, firework launches and bursts, metal clanks)
+function ping(o,f,t,dec,vol){const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dec);os.connect(g);g.connect(o);os.start(t);os.stop(t+dec+0.05)}
 function hiss(out,t,dur,type,f,q,peak){const s=AC.createBufferSource();s.buffer=AMB.noise;s.playbackRate.value=0.8+Math.random()*0.4;const b=AC.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q||1;const g=AC.createGain();
   s.connect(b);b.connect(g);g.connect(out);env(g,t,Math.min(0.03,dur*0.3),dur*0.2,dur*0.6,peak);s.start(t,Math.random()*1.5);s.stop(t+dur+0.1)}
 const SHOT={
@@ -5545,7 +5547,13 @@ const CULL=[];{const bb=new THREE.Box3(),sp=new THREE.Sphere();scene.updateMatri
     const ms=[];o.traverse(c=>{if(c.isMesh||c.isSprite)ms.push(c)});if(ms.length)CULL.push({o,ms,off:sp.center.clone().sub(o.position),r:sp.radius,out:false})})}
 function distCull(){const cp=camera.position;for(const c of CULL){const x=c.o.position.x+c.off.x-cp.x,z=c.o.position.z+c.off.z-cp.z,lim=70+c.r*22,out=x*x+z*z>lim*lim;
   if(out!==c.out){c.out=out;for(const m of c.ms)m.layers.set(out?1:0)}}}
-function frame(t){
+// nothing that goes wrong in one effect may stop the game: the next frame is always asked for first, and each per-frame
+// job (every animation, gate, decoration and the ambient sound) runs on its own. a job that throws is reported once in
+// the console and simply skipped for that frame; only one that fails frame after frame for ten seconds is switched off
+function jobFail(f,e){f.fails=(f.fails||0)+1;if(!f.told){f.told=true;console.error('Number Grove: an effect failed and was skipped',e)}if(f.fails>600)f.dead=true}
+function run(f,a,b){if(f.dead)return;try{f(a,b);f.fails=0}catch(e){jobFail(f,e)}}
+function frame(t){requestAnimationFrame(frame);try{frameStep(t)}catch(e){jobFail(frame,e)}}
+function frameStep(t){
   const dt=Math.min(0.05,(t-lastT)/1000);lastT=t;const ts=t/1000;
   if(mode==='walk'){
     let fx=0,fz=0;
@@ -5588,12 +5596,12 @@ function frame(t){
   sky.position.copy(camera.position);
   OCEAN.position.set(Math.round(camera.position.x/4.5)*4.5,0.07,Math.round(camera.position.z/4.5)*4.5);   // the sea's fine grid follows you
   dayUpdate();sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
-  gates.concat(ENTR).forEach(g=>{if(g&&g.open&&g.t<1){g.t=Math.min(1,g.t+dt/(g.dur||2.4));poseGate(g)}});
+  gates.concat(ENTR).forEach(g=>{if(g&&g.open&&g.t<1){g.t=Math.min(1,g.t+dt/(g.dur||2.4));run(poseGate,g)}});
   if(!MENU.open)for(let r=1;r<NR;r++){const g=ENTR[r];if(g&&!g.open&&gates[r-1].open&&pz<z0s[r-1]-AREA-GAP/2)openEntr(r)}
-  GDECO.forEach(f=>f(ts));
+  for(const f of GDECO)run(f,ts);
   trophy.rotation.y+=dt*0.6;
-  for(const a of anims)a(ts,dt);
-  if(started)ambUpdate(dt,ts);
+  for(const a of anims)run(a,ts,dt);
+  if(started)run(ambUpdate,dt,ts);
   U_TIME.value=ts;waterNormal.offset.set(ts*0.012,ts*0.007);
   if((cullTick+=dt)>0.15){cullTick=0;updateLOD();distCull()}
   fpsN++;prN++;const rdt=(t-(frame.lt||t))/1000;frame.lt=t;fpsT+=rdt;prT+=rdt;
@@ -5612,7 +5620,6 @@ function frame(t){
     if(active){POST.dofF=solveDist()+0.7;POST.dofR=6}
     POST.render(ts);
   }else renderer.render(scene,camera);
-  requestAnimationFrame(frame);
 }
 refreshWorld();updateHud();camera.position.set(px,EYE,pz);
 requestAnimationFrame(frame);
