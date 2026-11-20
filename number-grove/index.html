@@ -3520,6 +3520,7 @@ reserve(0,zF0-44,16);   // keep the ground behind the finish clear (the launch p
 {const spot=m=>{for(let t=0;t<30;t++){const z=ISL_S+3+RS()*(ISL_N-ISL_S-6),side=RS()<0.5?-1:1,w=coastX(side,z),inGarden=z<z0s[0]-1&&z>zF0-FIN+1;
     if(inGarden&&w<AW+m+1.5)continue;const x=inGarden?side*(AW+0.6+RS()*(w-AW-0.6-m)):side*RS()*(w-m);if(onIsland(x,z,m)&&!onWalk(x,z,1.2)&&!inWater(x,z,1))return[x,z]}return null};
  for(let n=0;n<420;n++){const q=spot(3.2);if(!q||!isFree(q[0],q[1],1.6))continue;const [x,z]=q;if(snowAmt(z)>0.4)snowPine(x,z,0.9+RS()*0.7);else addTree(x,z,{type:RS()<0.12?'blossom':RS()<0.35?'pine':'round',s:0.9+RS()*0.8})}
+ TREES.filter(T=>Math.abs(T.x)<3.2&&T.z>ISL_N-10&&T.z<ISL_N+16).forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}const i=TREES.indexOf(T);if(i>=0)TREES.splice(i,1)});
  for(let n=0;n<520;n++){const q=spot(2.2);if(!q||!isFree(q[0],q[1],0.8))continue;const s=0.7+RS()*0.7;addBush(q[0],q[1],s,snowAmt(q[1])>0.4?0x6f8f7f:undefined);reserve(q[0],q[1],0.9*s)}
  for(let n=0;n<300;n++){const q=spot(2.5);if(!q||snowAmt(q[1])>0.3||!isFree(q[0],q[1],-0.4))continue;flowersAt(q[0],q[1],4,0.6)}
  for(let n=0;n<11000;n++){const q=spot(1.6);if(!q||RS()<snowAmt(q[1])||!isFree(q[0],q[1],-0.6))continue;INST.grass.push({x:q[0],y:0,z:q[1],s:0.8+RS()*0.6,ry:RS()*6,c:pick(GRASSC)})}
@@ -4021,12 +4022,20 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   if(knight){const ST=0xc4ccd6,DK=0x6b7480,GD=0xd4a017,RD=0xc0302a;
     gl(S(1,32,20),ST,0,0.33,0.035,0.262,0.215,0.25);x(new _G.Tor(0.238,0.02,8,36),0x5a3a26,0,0.205,0.02,1,1,0.95,Math.PI/2,0,0);gl(new THREE.BoxGeometry(0.06,0.045,0.02),GD,0,0.205,0.258);
     [0.29,0.36,0.43].forEach(y=>x(new _G.Tor(0.25-Math.abs(y-0.36)*0.4,0.006,6,36,Math.PI),DK,0,y,0.03,1,1,1,Math.PI/2,0,0));
-    [-1,1].forEach(s=>{gl(new _G.Sph(0.11,20,12,0,Math.PI*2,0,Math.PI/2),ST,s*0.215,0.46,0.0,1,0.75,1,0,0,s*0.55);x(new _G.Tor(0.1,0.008,6,24),DK,s*0.215,0.455,0,1,1,1,Math.PI/2,0,s*0.55)});
     {const rp=[];for(let k=0;k<=10;k++){const y=0.47-k*0.025;rp.push([0,y,0.035+0.25*Math.sqrt(Math.max(0,1-((y-0.33)/0.215)**2))+0.004])}gl(tube(rp,0.009,20),0xe2e8ee)}
     for(let k=0;k<11;k++){const a=-1.2+k*0.24;gl(S(0.009,8,6),GD,Math.sin(a)*0.2,0.505-Math.abs(Math.sin(a))*0.05,0.035+Math.cos(a)*0.19)}
     [0.5,0.535].forEach((y,i)=>gl(new _G.Tor(0.175-i*0.02,0.024,8,32),i?0xe2e8ee:ST,0,y,0.01,1,1,0.95,Math.PI/2,0,0));
-    [-1,1].forEach(s=>{[[0.24,0.41,0.098,0.2],[0.262,0.37,0.085,0.42]].forEach(([px,py,r,tilt])=>{gl(new _G.Sph(r,20,10,0,Math.PI*2,0,Math.PI/2),ST,s*px,py,0.0,1,0.6,1,0,0,s*(0.55+tilt));x(new _G.Tor(r,0.006,6,24),DK,s*px,py,0,1,1,1,Math.PI/2,0,s*(0.55+tilt))});
-      gl(new _G.Cyl(0.062,0.058,0.045,16,1,true),ST,s*0.158,0.422,0.205,1,1,1,Math.PI/2,0,0);x(new _G.Tor(0.062,0.006,6,20),GD,s*0.158,0.422,0.228,1,1,1,0,0,0)});
+    // arm armour built along each arm exactly as it is posed: a domed pauldron over the shoulder, overlapping plate rings
+    // down the arm with a round elbow cop on the outside, and a flared gauntlet cuff with a brass rim at the wrist (the mail
+    // sleeve shows between the plates)
+    {const YA=new THREE.Vector3(0,1,0),ZA=new THREE.Vector3(0,0,1),q=new THREE.Quaternion(),mx=new THREE.Matrix4(),rot=(g,from,to)=>{q.setFromUnitVectors(from,to);g.applyMatrix4(mx.makeRotationFromQuaternion(q));return g};
+     [-1,1].forEach((s,k)=>{if(SPLIT&&s>0)return;const A=new THREE.Vector3(...ARM[k][0]),B=new THREE.Vector3(...ARM[k][1]),D=B.clone().sub(A),L=D.length();D.normalize();
+       const n=new THREE.Vector3(s*0.62,0.78,-0.05).normalize(),P=t=>A.clone().addScaledVector(D,L*t),rA=t=>0.066-0.016*t,sh=A.clone().addScaledVector(n,0.012);
+       gl(rot(new _G.Sph(0.1,24,12,0,Math.PI*2,0,Math.PI/2),YA,n),ST,sh.x,sh.y,sh.z);x(rot(new _G.Tor(0.1,0.007,6,28),ZA,n),DK,sh.x,sh.y,sh.z);
+       for(let r2=0;r2<2;r2++){const p=P(0.12+r2*0.13),r=rA(0.12+r2*0.13)+0.022-r2*0.004;gl(rot(new _G.Cyl(r-0.004,r,0.045,22,1,true),YA,D),ST,p.x,p.y,p.z)}
+       [0.42,0.6,0.78].forEach((t,i)=>{const p=P(t),r=rA(t)+0.013;gl(rot(new _G.Cyl(r,r+0.005,0.05,22,1,true),YA,D),i===1?0xe2e8ee:ST,p.x,p.y,p.z);x(rot(new _G.Tor(r+0.004,0.005,6,22),ZA,D),DK,p.x-D.x*0.025,p.y-D.y*0.025,p.z-D.z*0.025)});
+       {const p=P(0.6),o=new THREE.Vector3(s,0,0).addScaledVector(D,-D.x*s).normalize(),rr=rA(0.6)+0.014;gl(rot(new _G.Sph(0.04,14,8,0,Math.PI*2,0,Math.PI/2),YA,o),ST,p.x+o.x*rr,p.y+o.y*rr,p.z+o.z*rr);gl(new _G.Sph(0.009,8,6),GD,p.x+o.x*(rr+0.04),p.y+o.y*(rr+0.04),p.z+o.z*(rr+0.04))}
+       const w=P(0.96);gl(rot(new _G.Cyl(0.068,0.058,0.05,22,1,true),YA,D),ST,w.x,w.y,w.z);x(rot(new _G.Tor(0.068,0.006,6,22),ZA,D),GD,w.x+D.x*0.025,w.y+D.y*0.025,w.z+D.z*0.025)})}
     [[0.168,0.262],[0.128,0.255]].forEach(([y,r])=>{gl(new _G.Cyl(r,r+0.012,0.045,40,1,true),ST,0,y,0.02,1,1,0.95);x(new _G.Tor(r+0.012,0.005,6,40),DK,0,y-0.022,0.02,1,1,0.95,Math.PI/2,0,0)});
     gl(new _G.Sph(1,32,16,0,Math.PI*2,0,Math.PI*0.5),ST,0,0.83,0.0,0.29,0.25,0.28);x(new _G.Tor(0.285,0.022,8,40),DK,0,0.835,0.0,1,1,0.97,Math.PI/2,0,0);
     {const vg=new _G.Sph(0.3,28,8,Math.PI/2-0.75,1.5,0.32,0.42);gl(vg,ST,0,0.83,0.0,1,0.9,1);for(let k=0;k<4;k++)x(new THREE.BoxGeometry(0.008,0.035,0.01),0x1d1d1d,-0.045+k*0.03,1.05,0.179,1,1,1,-0.6,0,0);
@@ -4118,7 +4127,7 @@ anims.push((t,dt)=>{for(const w of PINW)w.rotation.z-=dt*1.4});
 const BODYG=new Map();const critMat=triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.6,sheen:new THREE.Color(0.3,0.28,0.26)}),softTex,2.2,0,true),CRITG={};
 const critBlob=new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false,color:0x000000}),critBlobGeo=new THREE.PlaneGeometry(0.75,0.75).rotateX(-Math.PI/2);
 function critOK(x,z,a){return x>a.x0&&x<a.x1&&z<a.z0&&z>a.z1&&offIce(x,z)&&!blocked(x,z,heightAt(x,z))&&!(inWater(x,z,0.2)&&!onDeck(x,z))}
-function critter(kind,x,z,a,sc,scarf,variant){const m=critterMesh(kind,variant);m.scale.setScalar(sc);scene.add(m);if(scarf||kind==='frostbun')addScarf(m);
+function critter(kind,x,z,a,sc,scarf,variant,solid){const m=critterMesh(kind,variant),col=solid?{t:'circ',x,z,r:0.36*sc,on:true,dyn:true}:null;if(col)colliders.push(col);const okHere=(nx,nz)=>{if(col)col.on=false;const r=critOK(nx,nz,a);if(col)col.on=true;return r};m.scale.setScalar(sc);scene.add(m);if(scarf||kind==='frostbun')addScarf(m);
   const sh=new THREE.Mesh(critBlobGeo,critBlob);sh.renderOrder=1;sh.scale.setScalar(sc);scene.add(sh);
   let h=RS()*6,tx=x,tz=z,st='idle',tm=RS()*4,hop=RS()*6;const ph=RS()*6;m.position.set(x,heightAt(x,z),z);
   SNDS.push({k:'squeak',o:m.position,t:3+RS()*14});
@@ -4126,10 +4135,10 @@ function critter(kind,x,z,a,sc,scarf,variant){const m=critterMesh(kind,variant);
     const turn=(goal,sp)=>{let df=goal-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=Math.max(-dt*sp,Math.min(dt*sp,df));return df};
     const gy=heightAt(p.x,p.z);
     if(st==='idle'){tm-=dt;if(dp<12)turn(Math.atan2(dpx,dpz),3);p.y=gy+Math.abs(Math.sin(t*2.4+ph))*0.03;
-      if(tm<0){for(let k=0;k<8;k++){const nx=p.x+(RS()-0.5)*12,nz=p.z+(RS()-0.5)*12;if(critOK(nx,nz,a)){tx=nx;tz=nz;st='walk';break}}tm=1+RS()*2}}
+      if(tm<0){for(let k=0;k<8;k++){const nx=p.x+(RS()-0.5)*12,nz=p.z+(RS()-0.5)*12;if(okHere(nx,nz)){tx=nx;tz=nz;st='walk';break}}tm=1+RS()*2}}
     else{const dx=tx-p.x,dz=tz-p.z,d=Math.hypot(dx,dz),df=turn(Math.atan2(dx,dz),4.5);
       if(Math.abs(df)<0.6){const sp=dt*1.5*sc,nx=p.x+Math.sin(h)*sp,nz=p.z+Math.cos(h)*sp;
-        if(critOK(nx,nz,a)&&(nx-px)**2+(nz-pz)**2>0.6){p.x=nx;p.z=nz;hop+=dt*10}else{st='idle';tm=0.6+RS()*2}}
+        if(okHere(nx,nz)&&(nx-px)**2+(nz-pz)**2>0.6){p.x=nx;p.z=nz;hop+=dt*10;if(col){col.x=nx;col.z=nz}}else{st='idle';tm=0.6+RS()*2}}
       p.y=heightAt(p.x,p.z)+Math.abs(Math.sin(hop))*0.24*sc;
       if(d<0.3){st='idle';tm=2+RS()*5}}
     m.rotation.y=h;m.rotation.z=st==='walk'?Math.sin(hop)*0.08:0;sh.position.set(p.x,heightAt(p.x,p.z)+0.03,p.z)});return m}
@@ -4481,7 +4490,7 @@ KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMes
 // strolling about Match Maker Hall (it waves when you come near)
 {const zm=z0s[RI('match')];critter('puffle',0.5,zm-26.4,{x0:-3.4,x1:3.4,z0:zm-22.4,z1:zm-30.2},1,false,'mayor')}
 // the king and one of his guards stroll round the well in the castle courtyard
-{const zc=z0s[RI('castle')],a={x0:10.2,x1:17.8,z0:zc-54.2,z1:zc-61.8};critter('puffle',11.4,zc-55.6,a,1,false,'king');critter('drakelet',16.6,zc-60.4,a,1,false,'knight front')}
+{const zc=z0s[RI('castle')],a={x0:10.2,x1:17.8,z0:zc-54.2,z1:zc-61.8};critter('puffle',11.4,zc-55.6,a,1,false,'king',true);critter('drakelet',16.6,zc-60.4,a,1,false,'knight front',true)}
 // playground in Adding Garden: pets on the swings, the roundabout, both ends of the seesaw and the spring rider
 {const ride=(parent,kind,v,x,y,z,ry,sc)=>{const m=critterMesh(kind,v);m.scale.setScalar(sc||0.8);m.position.set(x,y,z);m.rotation.y=ry||0;parent.add(m);return m};
  if(PLAY.swings[0])ride(PLAY.swings[0],'puffle','up2',0,-1.8,0.02,Math.PI,0.82);
