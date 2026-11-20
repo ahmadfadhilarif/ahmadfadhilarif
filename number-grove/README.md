@@ -19,7 +19,7 @@ Places are met in order of difficulty, easiest first:
 
 The Welcome Garden has 4 panels and every other place has 8: 76 puzzles in all. In Place Value Castle the drawbridge over the moat comes down once you solve the castle's 4th puzzle. At the end, Finish Meadow launches a rocket from behind the fountain and fireworks burst over the sea.
 
-The island is full of life: fish in the rivers and ponds, a fisherman, farmers, beekeepers, market sellers, a mayor, a king, ice skaters, a polar bear cub and its friend, kingfishers with their chicks, seagulls, a jetski and skimboarders at the beach, and two snack kiosks with picnic tables. Pets with a free paw wave when you come up to them.
+The island is full of life: fish in the rivers and ponds, a fisherman, farmers, beekeepers, market sellers, a mayor, a king, a princess and her maid, an archer, a lifeguard, ice skaters, a snowball fight, a polar bear cub and its friend, kingfishers with their chicks, seagulls, a jetski and skimboarders at the beach, and two snack kiosks with picnic tables. Pets with a free paw wave when you come up to them.
 
 One day on the island lasts one real hour, with sunrise, sunset, a starry night and moonlight. Everything stays easy to see at night.
 

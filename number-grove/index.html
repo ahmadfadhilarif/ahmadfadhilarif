@@ -1378,7 +1378,7 @@ function clockTower(tx,tz){const H=11.8,hands=[];
   const vane=new THREE.Group();vane.position.set(tx,by+9.1,tz);scene.add(vane);const va=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.03,0.03),matBrass);vane.add(va);const vt=new THREE.Mesh(new _G.Cone(0.08,0.2,16),matBrass);vt.rotation.z=-Math.PI/2;vt.position.x=0.5;vane.add(vt);
   const vf=new THREE.Mesh(new THREE.PlaneGeometry(0.28,0.22),new THREE.MeshStandardMaterial({color:lin(0xc9a24a),side:THREE.DoubleSide,metalness:0.35,roughness:0.35}));vf.position.x=-0.42;vane.add(vf);
   anims.push(t=>{vane.rotation.y=Math.sin(t*0.13)*0.8});
-  colBox(tx-2.05,tx+2.05,tz-2.05,tz+2.05);reserve(tx,tz,4);reserve(tx,tz+4.2,2);SNDS.push({k:'bell',x:tx,z:tz,t:15+RS()*20})}
+  colBox(tx-2.05,tx+2.05,tz-2.05,tz+2.05);reserve(tx,tz,4);reserve(tx,tz+4.2,2);RS()}
 
 // ---- tall tower windmill ----
 function sailArm(){const parts=[],cl=[];const box=(w,h,d,x,y,z)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);parts.push(g)};
@@ -1821,6 +1821,32 @@ function buildArea3(z0){
   {const sh=new THREE.Shape();sh.moveTo(-8.9,0);sh.lineTo(8.9,0);sh.lineTo(0,2.6);sh.closePath();const geo=new THREE.ExtrudeGeometry(sh,{depth:13.2,bevelEnabled:false});geo.translate(0,0,-6.6);mesh(geo,0xb5523b,0,4.8,z0-27)}
   {const t=signTex(['Match Maker Hall'],640,116);const m=new THREE.Mesh(new THREE.PlaneGeometry(4.6,0.84),new THREE.MeshBasicMaterial({map:t,toneMapped:false}));m.position.set(0,4.55,z0-20.58);scene.add(m)}
   reserve(0,z0-27,10.5);
+  // the mayor's office: a red carpet with gold edging up to a big carved desk (green leather top, papers, an inkwell and quill,
+  // a brass nameplate), a tall red velvet chair, the island flags either side, the mayor's portrait in a gold frame,
+  // bookcases full of books, a globe on a stand, a chandelier, and two armchairs with a tea table for visitors
+  {const Y=0.3,zb=z0-32.55,WD=0x6b4226,GD=0xd4a017;
+   flat(new THREE.PlaneGeometry(1.7,10.2),0xa81c28,0,Y+0.012,z0-26.0);[-0.85,0.85].forEach(x=>flat(new THREE.PlaneGeometry(0.07,10.2),GD,x,Y+0.014,z0-26.0));
+   const dz=z0-31.2;blk(2.2,0.74,0.85,0,Y+0.37,dz,WD);blk(2.32,0.06,0.97,0,Y+0.77,dz,0x5a3a20);blk(1.7,0.01,0.62,0,Y+0.805,dz,0x2f5a3a);[-0.75,0.75].forEach(x=>{blk(0.5,0.5,0.02,x,Y+0.4,dz+0.43,0x5a3418);blk(0.12,0.03,0.03,x,Y+0.55,dz+0.45,GD)});
+   [[-0.45,0.05,0.4],[-0.25,-0.05,-0.3],[0.35,0.02,0.15]].forEach(([x,o,r])=>{const pp=blk(0.3,0.008,0.4,x,Y+0.812+o*0.05,dz+o,0xf8f4ea);pp.rotation.y=r});
+   mesh(new _G.Cyl(0.05,0.06,0.07,14),0x1d2430,0.6,Y+0.845,dz-0.1);{const q=mesh(new _G.Cone(0.025,0.3,6),0xfaf6ee,0.62,Y+0.98,dz-0.1);q.rotation.z=-0.35}
+   {const np=new THREE.Mesh(new THREE.PlaneGeometry(0.62,0.14),new THREE.MeshBasicMaterial({map:signTex(['Mayor'],256,64),toneMapped:false}));np.position.set(0,Y+0.62,dz+0.436);scene.add(np);blk(0.66,0.17,0.01,0,Y+0.62,dz+0.43,GD)}
+   colBox(-1.2,1.2,dz-0.5,dz+0.5);
+   {const cz=z0-32.1;blk(0.7,0.08,0.62,0,Y+0.5,cz,0x5a3a20);blk(0.62,0.1,0.56,0,Y+0.58,cz,0xb0202a);blk(0.7,1.25,0.1,0,Y+1.1,cz-0.28,0x5a3a20);blk(0.58,1.05,0.04,0,Y+1.12,cz-0.22,0xb0202a);mesh(new _G.Sph(0.06,12,10),GD,0,Y+1.8,cz-0.28);
+    [[-0.3,-0.26],[0.3,-0.26],[-0.3,0.26],[0.3,0.26]].forEach(([a,b])=>blk(0.06,0.48,0.06,a,Y+0.24,cz+b,0x5a3a20));[-1,1].forEach(sd=>blk(0.07,0.26,0.6,sd*0.36,Y+0.72,cz,0x5a3a20));colCirc(0,cz,0.45)}
+   [-1.9,1.9].forEach((x,i)=>{mesh(new _G.Cyl(0.03,0.03,2.4,10),0x5a3a20,x,Y+1.2,zb+0.35);mesh(new _G.Sph(0.06,12,10),GD,x,Y+2.43,zb+0.35);
+     const fg=withW(new THREE.PlaneGeometry(0.75,0.5,8,4),px=>Math.max(0,(px+0.375)/0.75));fg.translate(0.375,0,0);mesh(fg,clothPatch(dbl(i?0x3d7cc9:0xd8352a),0.05),x+0.03,Y+2.05,zb+0.35).rotation.y=i?Math.PI-0.5:0.5;colCirc(x,zb+0.35,0.12)});
+   {const pt=canvasTex(256,320,c=>{const g=c.createLinearGradient(0,0,0,320);g.addColorStop(0,'#3a5a7a');g.addColorStop(1,'#1d2d3d');c.fillStyle=g;c.fillRect(0,0,256,320);c.fillStyle='#23304a';c.beginPath();c.ellipse(128,300,110,90,0,Math.PI,0);c.fill();
+      c.fillStyle='#ff9ecf';c.beginPath();c.arc(128,170,78,0,7);c.fill();c.fillStyle='#fff0f6';c.beginPath();c.ellipse(128,196,40,28,0,0,7);c.fill();c.fillStyle='#17110d';[[100,158],[156,158]].forEach(([x,y])=>{c.beginPath();c.ellipse(x,y,9,12,0,0,7);c.fill()});
+      c.fillStyle='#ff7fa8';[[86,190],[170,190]].forEach(([x,y])=>{c.beginPath();c.arc(x,y,12,0,7);c.fill()});c.fillStyle='#161616';c.fillRect(78,52,100,62);c.fillRect(52,108,152,12);c.fillStyle='#c0302a';c.fillRect(78,96,100,12);
+      c.strokeStyle='#d4a017';c.lineWidth=6;c.beginPath();c.arc(128,256,42,0.15*Math.PI,0.85*Math.PI);c.stroke()});
+    const pf=new THREE.Mesh(new THREE.PlaneGeometry(1.0,1.25),new THREE.MeshStandardMaterial({map:pt,roughness:0.6}));pf.position.set(0,Y+2.55,zb+0.03);scene.add(pf);blk(1.18,1.43,0.05,0,Y+2.55,zb+0.01,GD)}
+   [-5.7,5.7].forEach((x,i)=>{blk(1.6,2.3,0.4,x,Y+1.15,zb+0.2,WD);[0.45,1.0,1.55,2.1].forEach(y=>{blk(1.5,0.04,0.36,x,Y+y-0.2,zb+0.22,0x5a3a20);for(let k=0;k<11;k++){const h=0.3+((k*7+i*3+Math.round(y*10))%4)*0.04;blk(0.11,h,0.26,x-0.62+k*0.125,Y+y-0.18+h/2,zb+0.24,[0xb0202a,0x2f5a9a,0x2f7a4a,0xd4a017,0x6b3a8a,0x8a5a3b][(k+Math.round(y*7))%6])}});colBox(x-0.85,x+0.85,zb,zb+0.45)});
+   {const gx=-3.0,gz=z0-30.9;mesh(lathe([[0.28,0],[0.3,0.04],[0.05,0.1],[0.04,0.65],[0,0.65]],20),WD,gx,Y,gz);const gb=new THREE.Mesh(new _G.Sph(0.24,24,16),new THREE.MeshStandardMaterial({map:canvasTex(256,128,c=>{c.fillStyle='#3d7cc9';c.fillRect(0,0,256,128);c.fillStyle='#7cc35a';[[40,40,30,20],[120,60,40,25],[190,35,25,18],[80,95,22,14],[210,90,30,16]].forEach(([x,y,a,b])=>{c.beginPath();c.ellipse(x,y,a,b,0.4,0,7);c.fill()})}),roughness:0.4}));gb.position.set(gx,Y+0.92,gz);gb.rotation.z=0.4;scene.add(gb);anims.push((t,dt)=>{gb.rotation.y+=dt*0.15});
+    const mr=mesh(new _G.Tor(0.27,0.012,6,32),GD,gx,Y+0.92,gz);mr.rotation.z=0.4;colCirc(gx,gz,0.32)}
+   {const cx=0,cy=Y+3.45,cz=z0-27;mesh(new _G.Cyl(0.012,0.012,0.8,6),0x2b2b2b,cx,cy+0.55,cz);mesh(new _G.Tor(0.5,0.025,8,40),GD,cx,cy,cz).rotation.x=Math.PI/2;mesh(new _G.Tor(0.28,0.02,8,32),GD,cx,cy+0.18,cz).rotation.x=Math.PI/2;
+    for(let k=0;k<8;k++){const a=k/8*Math.PI*2;rod([cx,cy+0.4,cz],[cx+Math.cos(a)*0.5,cy,cz+Math.sin(a)*0.5],0.01,GD);mesh(new _G.Cyl(0.025,0.025,0.12,10),0xfaf6ee,cx+Math.cos(a)*0.5,cy+0.07,cz+Math.sin(a)*0.5);mesh(new THREE.SphereGeometry(0.04,10,8),matGlow,cx+Math.cos(a)*0.5,cy+0.17,cz+Math.sin(a)*0.5,scene,true)}}
+   [-1,1].forEach(sd=>{const ax=sd*5.4,az=z0-22.9,g=sgroup(ax,Y,az,sd>0?-2.4:2.4);blk(0.75,0.35,0.7,0,0.28,0,0xb0202a,g);blk(0.75,0.6,0.15,0,0.68,-0.3,0xb0202a,g);[-1,1].forEach(q=>blk(0.13,0.3,0.7,q*0.35,0.55,0,0x9a1a24,g));[-1,1].forEach(a=>[-1,1].forEach(b=>blk(0.06,0.12,0.06,a*0.3,0.06,b*0.28,0x5a3a20,g)));colCirc(ax,az,0.45)});
+   {const tx=0,tz=z0-22.6;mesh(new _G.Cyl(0.35,0.35,0.04,24),WD,tx+4.2,Y+0.55,tz);mesh(new _G.Cyl(0.04,0.06,0.55,10),WD,tx+4.2,Y+0.27,tz);mesh(lathe([[0.06,0],[0.09,0.08],[0.05,0.13],[0,0.13]],16),0xf6f2ea,tx+4.2,Y+0.57,tz);mesh(new _G.Cyl(0.03,0.025,0.05,10),0xf6f2ea,tx+4.0,Y+0.595,tz+0.1);colCirc(tx+4.2,tz,0.38)}}
   [[-3.5,-31.5],[3.5,-31.5]].forEach(([x,z])=>{blk(1,0.6,1,x,0.6,z0+z,0xb5773e);addTree(x,z0+z,{y:0.9,s:0.55,collide:false,near:true,type:'round'});colCirc(x,z0+z,0.7)});
   clockTower(14,z0-39);
   lamp(-2.8,z0-5);lamp(2.8,z0-5);lamp(-2.8,z0-19.6);lamp(13,z0-21);lamp(9,z0-34);
@@ -1953,21 +1979,37 @@ function beeGeo(){if(BEEG)return BEEG;const A=[],ad=partAdder(A),Y=0xffcf33,K=0x
     ad(new _G.Cyl(0.004,0.004,0.08,6),K,s*0.025,0.11,0.12,1,1,1,0.4,0,-s*0.35);ad(new _G.Sph(0.014,10,8),K,s*0.04,0.15,0.135)});
   ad(new _G.Tor(0.016,0.0035,6,16,Math.PI),K,0,0,0.165,1,1,1,0,0,Math.PI);return BEEG=partsGeo(A)}
 const beeBodyMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.55}),beeWingGeo=new _G.Cir(0.07,20);
+// butterflies and bees keep at least three metres from the walls either side of every gate
+const wallClear=z=>{for(let r=0;r<NR;r++)for(const w of [z0s[r],z0s[r]-AREA]){const d=z-w;if(Math.abs(d)<3)return w+(d<0?-3:3)}return z};
 function cuteBees(cx,cz,n,sx,sz){for(let i=0;i<n;i++){const g=new THREE.Group();g.scale.setScalar(1.2);scene.add(g);
   const body=new THREE.Mesh(beeGeo(),beeBodyMat);body.castShadow=true;g.add(body);
   const wings=[-1,1].map(s=>{const w=new THREE.Group();w.position.set(s*0.03,0.08,0);g.add(w);const m=new THREE.Mesh(beeWingGeo,beeMats.w);m.position.set(s*0.06,0,-0.01);m.scale.set(1,0.6,1);m.rotation.x=-Math.PI/2;w.add(m);return w});
   const ph=RS()*6,a=0.25+RS()*0.2,b=0.17+RS()*0.15,hy=1.5+RS()*0.6,px0=new THREE.Vector3();
   anims.push((t,dt)=>{const ddx=cx-camera.position.x,ddz=cz-camera.position.z,far=ddx*ddx+ddz*ddz>(55+sx+sz)**2;g.visible=!far;if(far)return;
-    px0.copy(g.position);g.position.set(cx+Math.sin(t*a+ph)*sx,hy+Math.sin(t*1.3+ph)*0.25,cz+Math.sin(t*b+ph*2)*sz);
+    px0.copy(g.position);g.position.set(cx+Math.sin(t*a+ph)*sx,hy+Math.sin(t*1.3+ph)*0.25,wallClear(cz+Math.sin(t*b+ph*2)*sz));
     const dx=g.position.x-px0.x,dz=g.position.z-px0.z;if(dx*dx+dz*dz>1e-8)g.rotation.y=Math.atan2(dx,dz);g.rotation.z=Math.sin(t*2+ph)*0.15;
     const f=Math.sin(t*55+ph)*0.6;wings[0].rotation.z=0.3+f;wings[1].rotation.z=-0.3-f})}
   SNDS.push({k:'bees',x:cx,z:cz})}
-function beehive(x,z){blk(0.7,0.25,0.7,x,0.12,z,0x8a5a3b);[0,1,2].forEach(i=>blk(0.6,0.32,0.6,x,0.42+i*0.34,z,0xf5efe2));blk(0.8,0.1,0.8,x,1.45,z,0x7a4a2c);colCirc(x,z,0.45);SNDS.push({k:'bees',x,z})}
+// a beehive: a stand, three white boxes and a roof. golden honey oozes out from under the roof and between the boxes and
+// runs down the sides in glossy drips; on the front, a drop slowly swells at the end of a drip, falls and lands in a
+// little pool of honey on the stand
+const honeyMat=new THREE.MeshPhysicalMaterial({color:lin(0xe8960f),roughness:0.08,clearcoat:1,clearcoatRoughness:0.04,emissive:lin(0x5a2a00),emissiveIntensity:0.25});
+function beehive(x,z){blk(0.7,0.25,0.7,x,0.12,z,0x8a5a3b);[0,1,2].forEach(i=>blk(0.6,0.32,0.6,x,0.42+i*0.34,z,0xf5efe2));blk(0.8,0.1,0.8,x,1.45,z,0x7a4a2c);colCirc(x,z,0.45);SNDS.push({k:'bees',x,z});
+  const P=[],a=partAdder(P),R=mulberry32(Math.round(x*17+z*7));
+  [[0,1],[1,0],[0,-1],[-1,0]].forEach(([nx,nz],f)=>{for(let k=0;k<(f?2:1);k++){const off=(R()-0.5)*0.4,y0=k?0.93:1.27,len=0.12+R()*0.22,px=x+nx*0.306+nz*off,pz=z+nz*0.306-nx*off;
+      a(new _G.Sph(1,10,8),0,px,y0-len/2,pz,0.022,len/2,0.013,0,Math.atan2(nx,nz),0);a(new _G.Sph(0.024,10,8),0,px,y0-len,pz);a(new _G.Sph(1,10,6),0,px,y0,pz,0.06,0.012,0.02,0,Math.atan2(nx,nz),0)}});
+  const st=new THREE.Mesh(partsGeo(P),honeyMat);st.castShadow=true;scene.add(st);
+  const dx=x+0.14,dz=z+0.306,top=1.27,bot=0.78;{const d=new THREE.Mesh(new _G.Sph(1,10,8),honeyMat);d.position.set(dx,(top+bot)/2,dz);d.scale.set(0.02,(top-bot)/2,0.012);scene.add(d)}
+  const pool=new THREE.Mesh(new _G.Cyl(0.06,0.07,0.008,16),honeyMat);pool.position.set(dx,0.252,dz+0.008);scene.add(pool);
+  const drop=new THREE.Mesh(new _G.Sph(0.024,10,8),honeyMat);scene.add(drop);
+  anims.push(t=>{const dd=(dx-camera.position.x)**2+(dz-camera.position.z)**2;if(dd>900){drop.visible=false;return}drop.visible=true;const c=(t+x)%3.2;
+    if(c<2.8){const g=c/2.8;drop.position.set(dx,bot-0.01-g*0.02,dz);drop.scale.set(0.5+0.5*g,0.6+0.9*g,0.5+0.5*g)}
+    else{const f=(c-2.8)/0.4;drop.position.set(dx,bot-0.03-(bot-0.28)*f*f,dz);drop.scale.set(0.8,1.4-0.4*f,0.8)}pool.scale.set(1+0.1*Math.sin(t*0.5+x),1,1+0.1*Math.sin(t*0.5+x))})}
 function butterflies(cx,cz,n,spread){const wg=(()=>{const s=new THREE.Shape();s.moveTo(0,0);s.quadraticCurveTo(0.12,0.12,0.1,-0.02);s.quadraticCurveTo(0.06,-0.1,0,0);return new THREE.ShapeGeometry(s,6)})();
   for(let i=0;i<n;i++){const g=new THREE.Group();scene.add(g);const m=new THREE.MeshBasicMaterial({color:lin(pick([0xffd23f,0xff9ecf,0x7ab8ff,0xffffff,0xff8a1c])),side:THREE.DoubleSide});
     const L=new THREE.Mesh(wg,m),R=new THREE.Mesh(wg,m);R.scale.x=-1;g.add(L);g.add(R);g.scale.setScalar(1.4);
     const ox=cx+(RS()-0.5)*spread,oz=cz+(RS()-0.5)*spread*0.6,ph=RS()*6,sp=0.3+RS()*0.4;
-    anims.push(t=>{const a=t*sp+ph;g.position.set(ox+Math.sin(a)*2.5,0.9+Math.sin(t*1.7+ph)*0.4,oz+Math.cos(a*1.3)*1.8);g.rotation.y=a;const f=Math.sin(t*14+ph)*1.1;L.rotation.y=f;R.rotation.y=-f})}}
+    anims.push(t=>{const a=t*sp+ph;g.position.set(ox+Math.sin(a)*2.5,0.9+Math.sin(t*1.7+ph)*0.4,wallClear(oz+Math.cos(a*1.3)*1.8));g.rotation.y=a;const f=Math.sin(t*14+ph)*1.1;L.rotation.y=f;R.rotation.y=-f})}}
 
 function annex0(z0){const c=z0-56;
   paths([[[0,z0-43.5],[0,c+5]],[[0,c-5],[0,z0-67.5]],[[5.2,c],[21,c]],[[-5.2,c],[-21,c]]],3);
@@ -2150,8 +2192,8 @@ function lighthouse(x,z){const H=11,R=y=>1.5-(y-1)/(H-1)*0.5;
     fragmentShader:'uniform vec3 col;uniform float k;varying vec3 vP;varying vec3 vN;varying vec3 vV;void main(){float d=clamp(length(vP)/26.0,0.0,1.0);float e=abs(dot(normalize(vN),normalize(vV)));float a=0.3*k*pow(1.0-d,1.5)*pow(e,1.6);gl_FragColor=vec4(col*a,1.0);}'});
   [1,-1].forEach(sd=>{const cg=new _G.Cone(2.6,26,32,1,true);cg.rotateZ(sd*Math.PI/2);cg.translate(sd*13,0,0);beam.add(new THREE.Mesh(cg,bm))});
   const lg=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xfff2cc,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,fog:false,opacity:0.9}));lg.position.set(x,H+0.8,z);lg.scale.set(4,4,1);lg.userData.noCull=1;scene.add(lg);
-  // the light is on from 7 pm to 7 am island time, and fades on and off over a few minutes
-  anims.push((t,dt)=>{const h=DAY.tod*24,on=sstep(18.9,19.1,h)+sstep(7.1,6.9,h);beam.visible=lg.visible=on>0.01;beam.rotation.y+=dt*0.8;bm.uniforms.k.value=on*(1+DAY.night*1.4);
+  // the light comes on as night falls (the moment the moon shows on the clock) and goes off when day breaks
+  anims.push((t,dt)=>{const on=sstep(-0.01,-0.05,DAY.s);beam.visible=lg.visible=on>0.01;beam.rotation.y+=dt*0.8;bm.uniforms.k.value=on*(1+DAY.night*1.4);
     lg.material.opacity=0.9*on;lg.scale.setScalar(3.5+DAY.night*3);lampM.color.copy(lampOff).lerp(matGlow.color,on)})}
 function buildBeach(z0){const S=11,zc=z0-AREA/2;
   flat(new THREE.PlaneGeometry(AW+S,AREA),0xf0dca0,(S-AW)/2,0.016,zc);flat(new THREE.PlaneGeometry(2.2,AREA),0xd4bf8e,S-0.6,0.018,zc);
@@ -2267,7 +2309,7 @@ function brazier(x,z){mesh(new THREE.CylinderGeometry(0.06,0.1,1.1,12),0x2b3a42,
       s.x+=(s.vx+Math.sin(t*3+i)*0.15)*dt;s.z+=(s.vz+Math.cos(t*2.7+i)*0.15)*dt;s.y+=s.vy*dt;s.vy*=1-dt*0.4;const k=Math.pow(1-s.life,1.5)*(Math.sin(t*30+i*7)>-0.6?1:0.3);
       SP[i*3]=s.x;SP[i*3+1]=s.y;SP[i*3+2]=s.z;SC[i*3]=1*k;SC[i*3+1]=(0.55+0.3*(1-s.life))*k;SC[i*3+2]=0.15*k}sg.attributes.position.needsUpdate=true;sg.attributes.color.needsUpdate=true;
     const a=smoke.geometry.attributes.position;for(let i=0;i<10;i++){const [k,an]=so[i],q=(t*0.18+k)%1;a.setXYZ(i,x+Math.cos(an+q*2)*q*0.5+q*0.6,2.1+q*3.2,z+Math.sin(an+q*2)*q*0.5)}a.needsUpdate=true});
-  colCirc(x,z,0.4);SNDS.push({k:'fire',x,z},{k:'crackle',x,z,t:RS()})}
+  colCirc(x,z,0.4);SNDS.push({k:'fire',x,z})}
 // the great keep: a tall stone hall with buttresses, string courses, rows of arched windows, a corbelled parapet,
 // four big corner towers, a central donjon rising from the roof, a grand arched door and long hanging banners.
 // (the east face stays flat and clear below 4 m: a puzzle panel hangs on it)
@@ -2402,7 +2444,7 @@ function buildCastle(z0){
    const face=new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:0.12,roughness:0.45,metalness:0.2}),rim=new THREE.MeshStandardMaterial({color:lin(0xd4a017),metalness:0.8,roughness:0.3});
    const sg=new THREE.Mesh(g,[face,rim]);sg.scale.setScalar(1.55);sg.position.set(-19+8+0.2,13+6.0,z0-57);sg.rotation.y=Math.PI/2;sg.castShadow=true;scene.add(sg);SIGIL.mat=face;
    [-2,2].forEach(dz=>blk(0.4,4.8,0.4,-19+7.3,13+2.4,z0-57+dz,0x7a6a5a));
-   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19+8.6,13+5.8,z0-57);halo.scale.set(16,19,1);halo.userData.noCull=1;scene.add(halo);SIGIL.halo=halo}
+   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19+8.6,13+5.8,z0-57);halo.scale.set(16,19,1);halo.userData.noCull=1;SIGIL.halo=halo}
   birds(0,z0-50,5);
 }
 
@@ -3147,6 +3189,13 @@ CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);e
    icicles for the frosty path...), and an entrance gate dressed for the place behind it (a portcullis for the castle, an
    igloo door for the snow, glass doors for the glasshouse...). gates swing, lift or slide open */
 const GDECO=[];   // little animations on gates: windmill sails
+// a rose: a tight spiral bud in the middle, then rings of cupped petals that open wider and curl back at the tips
+function roseFlowerGeo(){if(roseFlowerGeo.g)return roseFlowerGeo.g;return roseFlowerGeo.g=(()=>{const P=[],C=[],I=[],L=[[4,0.006,0.026,1.5,0.0,0.55],[5,0.012,0.034,1.25,0.5,0.66],[5,0.02,0.044,0.95,0.15,0.78],[6,0.03,0.052,0.62,0.6,0.9],[7,0.038,0.058,0.32,0.3,1.0]];
+   L.forEach(([n,r0,len,open,ph,sh],li)=>{for(let k=0;k<n;k++){const a0=(k+ph)/n*Math.PI*2+li*0.9,hw=Math.PI/n*1.35,base=P.length/3,SU=4,SV=5;
+     for(let v=0;v<=SV;v++)for(let u=0;u<=SU;u++){const uu=u/SU*2-1,vv=v/SV,a=a0+uu*hw*(0.55+0.45*Math.sin(vv*2.6+0.25)),op=open-(li>2?vv*vv*1.1:0),
+       rad=r0+len*vv*Math.cos(op)-0.18*len*uu*uu*vv,y=len*vv*Math.sin(op)+0.12*len*uu*uu*vv;P.push(Math.cos(a)*rad,y,Math.sin(a)*rad);const c=sh*(0.72+0.28*vv)+0.06*Math.abs(uu)*vv;C.push(c,c*0.98,c*0.95)}
+     for(let v=0;v<SV;v++)for(let u=0;u<SU;u++){const q=base+v*(SU+1)+u;I.push(q,q+SU+1,q+1,q+1,q+SU+1,q+SU+2)}}});
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();g.scale(1.65,1.65,1.65);return g})();}
 function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; returns {leaves,kind,snd}
   const L=1.5,H=2.3,leaf=(sd,fn)=>{const h=new THREE.Group();h.position.set(sd*1.53,0,z);scene.add(h);fn(h,v=>-sd*v,sd);return h},S=(r,w,hh)=>new _G.Sph(r,w||16,hh||12),
     st=(geo,col,x,y,zz)=>mesh(geo,col,x,y,z+zz,scene,true),sb=(w,h,d,x,y,zz,col)=>blk(w,h,d,x,y,z+zz,col),
@@ -3192,20 +3241,28 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0xf6f8fa,H+0.2);blk(0.08,H+0.1,0.08,dx(L/2),H/2+0.1,0,0xf6f8fa,h);blk(L,0.08,0.08,dx(L/2),1.0,0,0xf6f8fa,h);
       const p=new THREE.Mesh(new THREE.PlaneGeometry(L-0.12,H-0.05),gm);p.position.set(dx(L/2),H/2+0.15,0);h.add(p);blk(0.04,0.5,0.06,dx(L-0.22),1.15,0.06,0xb8c2cc,h)}));leaves.forEach(h=>h.position.z+=0.55*face);
     [-1,1].forEach(s=>{for(let k=0;k<4;k++)sb(0.07,3.3,0.07,s*(1.75+k*0.35),1.65,face*0.7,0xf6f8fa);sb(1.5,0.08,0.08,s*2.3,3.3,face*0.7,0xf6f8fa)})}
-  else if(th==='snow'){snd='swing';   // an igloo door: a heavy round-topped wooden door set in a tunnel of snow blocks
-    const dtop=v=>0.12+2.75*Math.sqrt(Math.max(0,1-((1.53-v)/2.05)**2))-0.1;
-    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{const sh=new THREE.Shape();sh.moveTo(dx(0.03),0.15);sh.lineTo(dx(L-0.03),0.15);for(let k=0;k<=24;k++){const v=L-0.03-(L-0.06)*k/24;sh.lineTo(dx(v),dtop(v))}sh.closePath();
-      const lg=new THREE.ExtrudeGeometry(sh,{depth:0.07,bevelEnabled:true,bevelThickness:0.01,bevelSize:0.01,bevelSegments:1,curveSegments:8});lg.translate(0,0,-0.035);mesh(lg,0x8f5f3e,0,0,0,h);
-      for(let k=1;k<6;k++){const v=k*L/6,hh=dtop(v)-0.22;[-1,1].forEach(zz=>blk(0.018,hh,0.012,dx(v),0.17+hh/2,zz*0.047,0x5a3a26,h))}
-      [0.6,1.6].forEach(y=>[-1,1].forEach(zz=>blk(L-0.14,0.1,0.03,dx(L/2),y,zz*0.055,0x5a3a26,h)));hinges(h,dx,0x3a3f44);mesh(new _G.Tor(0.09,0.02,10,28),0x3a3f44,dx(L-0.2),1.2,0.07,h);
-      for(let k=0;k<6;k++){const v=0.15+k*0.24;mesh(new _G.Cone(0.03,0.16+0.05*(k%3),8),0xe8f6ff,dx(v),dtop(v)-0.1,0.055,h).rotation.x=Math.PI}}));
+  else if(th==='snow'){kind='slide';snd='slide';   // two doors of clear blue ice, each etched with a big snowflake, that slide apart
+    // into the walls of ice blocks on either side, set in an arch of packed snow
+    const dtop=v=>0.12+2.75*Math.sqrt(Math.max(0,1-((1.53-v)/2.05)**2))-0.07;
+    const iceTex=canvasTex(256,512,c=>{const g=c.createLinearGradient(0,0,0,512);g.addColorStop(0,'rgba(214,240,252,0.62)');g.addColorStop(1,'rgba(150,205,236,0.82)');c.fillStyle=g;c.fillRect(0,0,256,512);
+      const rr=mulberry32(9);for(let k=0;k<260;k++){c.fillStyle=`rgba(255,255,255,${0.08+rr()*0.25})`;c.beginPath();c.arc(rr()*256,rr()*512,0.6+rr()*2.2,0,7);c.fill()}
+      const gr=c.createLinearGradient(0,0,256,0);gr.addColorStop(0,'rgba(255,255,255,0.35)');gr.addColorStop(0.12,'rgba(255,255,255,0)');gr.addColorStop(0.88,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(255,255,255,0.35)');c.fillStyle=gr;c.fillRect(0,0,256,512);
+      c.save();c.translate(128,232);c.strokeStyle='rgba(255,255,255,0.95)';c.lineCap='round';c.shadowColor='rgba(120,190,235,0.9)';c.shadowBlur=8;
+      for(let k=0;k<6;k++){c.save();c.rotate(k*Math.PI/3);c.lineWidth=11;c.beginPath();c.moveTo(0,0);c.lineTo(0,-96);c.stroke();c.lineWidth=7;[[-34,26],[-62,22],[-84,13]].forEach(([y,l])=>{c.beginPath();c.moveTo(0,y);c.lineTo(-l,y-l*0.9);c.moveTo(0,y);c.lineTo(l,y-l*0.9);c.stroke()});c.restore()}
+      c.lineWidth=6;c.beginPath();for(let k=0;k<=6;k++){const a=k*Math.PI/3+Math.PI/6;c.lineTo(Math.cos(a)*20,Math.sin(a)*20)}c.stroke();c.restore()});
+    const glass=new THREE.MeshPhysicalMaterial({map:iceTex,transparent:true,roughness:0.08,metalness:0,clearcoat:1,clearcoatRoughness:0.05,side:THREE.DoubleSide,depthWrite:false}),rim=new THREE.MeshStandardMaterial({color:lin(0xe4f5fd),roughness:0.15,metalness:0.05});
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{const out=[[dx(0.03),0.15],[dx(L-0.03),0.15]];for(let k=0;k<=24;k++){const v=L-0.03-(L-0.06)*k/24;out.push([dx(v),dtop(v)])}
+      const sh=new THREE.Shape();out.forEach(([x,y],k)=>k?sh.lineTo(x,y):sh.moveTo(x,y));sh.closePath();const g=new THREE.ShapeGeometry(sh,24),pa=g.attributes.position,uv=g.attributes.uv;
+      for(let k=0;k<pa.count;k++)uv.setXY(k,(-sd*pa.getX(k))/L,pa.getY(k)/2.9);const pane=new THREE.Mesh(g,glass);pane.renderOrder=2;h.add(pane);
+      const rp=out.concat([out[0]]).map(([x,y])=>[x,y,0]);const fr=new THREE.Mesh(tube(rp,0.035,160,8),rim);fr.castShadow=true;h.add(fr);
+      const hd=new THREE.Mesh(new _G.Cyl(0.022,0.022,0.5,10),rim);hd.position.set(dx(L-0.22),1.15,0.06);h.add(hd);const hd2=hd.clone();hd2.position.z=-0.06;h.add(hd2)}));
     // a solid arch of packed snow blocks, with the joints between the blocks pressed in
     const sh=new THREE.Shape();sh.absellipse(0,0,2.85,3.55,0,Math.PI,false);sh.lineTo(-2.05,0);sh.absellipse(0,0,2.05,2.75,Math.PI,0,true);sh.lineTo(2.85,0);
     const ag=new THREE.ExtrudeGeometry(sh,{depth:1.7,bevelEnabled:true,bevelThickness:0.12,bevelSize:0.1,bevelSegments:3,curveSegments:28});ag.translate(0,0.12,-0.85);
     mesh(ag,new THREE.MeshStandardMaterial({color:0xf4f9fc,roughness:0.55}),0,0,z,scene,true);
     for(let k=1;k<8;k++){const a=Math.PI*k/8;[-0.98,0.98].forEach(zz=>{const j=sb(0.06,0.84,0.04,Math.cos(a)*2.45,0.12+Math.sin(a)*3.15,zz,0xc9dbe6);j.rotation.z=a-Math.PI/2})}
     [-0.98,0.98].forEach(zz=>{for(let k=0;k<=16;k++){const a=Math.PI*k/16;sb(0.24,0.04,0.04,Math.cos(a)*2.45,0.12+Math.sin(a)*3.15,zz,0xc9dbe6).rotation.z=a}})
-    sb(5.6,0.15,1.8,0,0.07,0,0xe8f2f8)}
+    sb(5.6,0.15,1.8,0,0.07,0,0xe8f2f8);[-1,1].forEach(sd=>sb(0.06,0.04,1.8,sd*1.55,0.16,0,0xc9e6f5))}
   else if(th==='sun'){   // sunflower gate: yellow pickets, a sunflower face on each leaf, honeycomb, sunflowers by the posts and bees
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x8a5a3b);boards(h,dx,8,0xffd23f,0xf5c518,t=>H-0.35+0.25*Math.sin(t*Math.PI));hinges(h,dx);ring(h,dx);
       const fx=dx(L/2);mesh(new _G.Cyl(0.25,0.25,0.05,24),0x6b3a1e,fx,1.35,0.06,h).rotation.x=Math.PI/2;for(let k=0;k<16;k++){const a=k*Math.PI/8;const p=mesh(S(0.13,10,8),0xffb000,fx+Math.cos(a)*0.36,1.35+Math.sin(a)*0.36,0.07,h);p.scale.set(0.45,1,0.25);p.rotation.z=a-Math.PI/2}
@@ -3213,11 +3270,29 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     [-1,1].forEach(s=>{for(let k=0;k<2;k++){const x=s*(2.65+k*0.55),hh=2.2+k*0.5;st(new _G.Cyl(0.03,0.04,hh,8),0x4f8a3a,x,hh/2,face*0.9);st(new _G.Cyl(0.24,0.24,0.06,20),0x6b3a1e,x,hh,face*0.95).rotation.x=Math.PI/2;
       for(let q=0;q<14;q++){const a=q*Math.PI/7,p=st(S(0.12,10,8),0xffc21a,x+Math.cos(a)*0.32,hh+Math.sin(a)*0.32,face*0.95);p.scale.set(0.45,1,0.25);p.rotation.z=a-Math.PI/2}}});
   }
-  else if(th==='roses'){   // rose arch: wrought-iron leaves with scrolls, climbing roses all over the arch
-    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x2b3a42);for(let i=1;i<9;i++)blk(0.035,H-0.3,0.035,dx(i*L/9),H/2,0,0x2b3a42,h);for(let i=0;i<3;i++){const t=mesh(new _G.Tor(0.18,0.02,8,24),0x2b3a42,dx(0.3+i*0.45),1.75,0,h)}
-      hinges(h,dx);ring(h,dx,0xc8a24a);[[0.3,1.75],[0.75,1.75],[1.2,1.75]].forEach(([x,y],i)=>rose(h,dx(x),y,0.05,[0xd8352a,0xff7fa8,0xd8352a][i]))}));
-    for(let k=0;k<26;k++){const t=k/25,a=Math.PI*t,x=Math.cos(a)*2.05,y=3.0+Math.sin(a)*1.05,side=k%2?1:-1;st(S(0.22,10,8),0x3f7f36,x,y,face*0.62*side).scale.set(1,0.7,0.6);if(k%2===0)rose(scene,x,y+0.1,z+face*0.75*side,[0xd8352a,0xff7fa8,0xfff0f0,0xc2185b][k%4],0.09)}
-    [-1,1].forEach(s=>{for(let y=0.4;y<3.2;y+=0.45){st(S(0.2,10,8),0x3f7f36,s*1.9,y,face*0.66).scale.set(1.6,1,0.5);rose(scene,s*(1.9+((y*7)%0.4)-0.2),y+0.1,z+face*0.78,[0xd8352a,0xff7fa8,0xc2185b][Math.round(y*3)%3],0.08)}})}
+  else if(th==='roses'){   // a rose gate: white wooden trellis leaves with climbing roses woven through them, rose vines winding
+    // up both pillars and a garland of roses along the top, with tubs of rose bushes at the foot of each pillar
+    const RC=[0xd8202a,0xff7fa8,0xffc4d2,0xfff1ec,0xff6f61,0xc2185b],WH=0xf6f4ee,rg=mulberry32(41),rcol=new THREE.Color(),
+      roseCopy=(c,sc,x,y,zz,rx,ry)=>{const g=roseFlowerGeo().clone();g.scale(sc,sc,sc);g.rotateX(rx);g.rotateY(ry);g.translate(x,y,zz);const C=g.attributes.color;rcol.set(c).convertSRGBToLinear();
+        for(let k=0;k<C.count;k++)C.setXYZ(k,C.getX(k)*rcol.r*1.25,C.getY(k)*rcol.g*1.25,C.getZ(k)*rcol.b*1.25);return g};
+    leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,WH);hinges(h,dx,0x3a3f44);ring(h,dx,0xc8a24a);
+      for(let k=-7;k<=7;k++)[1,-1].forEach(dir=>{const sl=blk(0.03,2.6,0.025,dx(L/2+k*0.2),1.2,0,WH,h);sl.rotation.z=dir*0.78;sl.scale.y=Math.max(0.15,1-Math.abs(k)*0.13)});
+      const P=[],vine=[];for(let q=0;q<=40;q++){const t=q/40,v=0.12+t*(L-0.24),y=0.35+1.7*t+0.22*Math.sin(t*Math.PI*3);vine.push([dx(v),y,0.05])}P.push(colGeo(tube(vine,0.011,80,5),0x4a5a28));
+      for(let k=0;k<26;k++){const t=(k+0.5)/26,v=0.12+t*(L-0.24),y=0.35+1.7*t+0.22*Math.sin(t*Math.PI*3)+(rg()-0.5)*0.18;
+        if(k%2===0){const lg=leafGeo(0.09,0.045,{seg:4,sw:2,base:0x2f6a2a,tip:0x5f9a46});lg.rotateZ((rg()-0.5)*2.6);lg.rotateX(-1.2);lg.translate(dx(v)+(rg()-0.5)*0.1,y,0.06);P.push(lg)}
+        else P.push(roseCopy(RC[k%RC.length],0.85+rg()*0.35,dx(v),y,0.07,1.45,rg()*6))}
+      [[0.35,0.65],[0.8,1.05],[1.2,0.55]].forEach(([v,y],k)=>P.push(roseCopy(RC[(k+2)%RC.length],1.1,dx(v),y,0.07,1.45,k)));
+      const m=new THREE.Mesh(mergeColored(P),plantMat);m.castShadow=true;h.add(m)}));
+    // vines and roses on the pillars and the beam (static, so they use the same roses as the rose arches)
+    {const P=[];[-1,1].forEach(s=>{for(const side of [1,-1]){const pts=[];for(let q=0;q<=60;q++){const t=q/60,a=t*Math.PI*6+(side>0?0:Math.PI);pts.push([s*1.9+Math.cos(a)*0.42,0.2+t*3.3,z+Math.sin(a)*0.66])}P.push(colGeo(tube(pts,0.016,120,5),0x4a5a28))}
+       for(let k=0;k<18;k++){const t=(k+0.5)/18,a=t*Math.PI*6+(k%2?Math.PI:0),x=s*1.9+Math.cos(a)*0.44,y=0.2+t*3.3,zz=z+Math.sin(a)*0.68;
+         if(k%3===2){const lg=leafGeo(0.11,0.05,{seg:4,sw:2,base:0x2f6a2a,tip:0x5f9a46});lg.rotateY(a);lg.translate(x,y,zz);P.push(lg)}
+         else INST.flower.push({x,y,z:zz,s:1.0+rg()*0.35,c:RC[(k+(s>0?3:0))%RC.length],ry:-a+Math.PI/2,rx:1.4,k:'rose'})}});
+     for(const zz of [z+0.66,z-0.66]){const pts=[];for(let q=0;q<=40;q++){const t=q/40;pts.push([-2.35+4.7*t,3.55-0.12*Math.sin(t*Math.PI)+0.05*Math.sin(t*20),zz])}P.push(colGeo(tube(pts,0.016,80,5),0x4a5a28));
+       for(let k=0;k<20;k++){const t=(k+0.5)/20,x=-2.3+4.6*t;INST.flower.push({x,y:3.5-0.12*Math.sin(t*Math.PI)+(k%2?0.08:-0.04),z:zz+(zz>z?0.04:-0.04),s:1.05+rg()*0.3,c:RC[k%RC.length],ry:rg()*6,rx:zz>z?1.35:-1.35,k:'rose'})}}
+     const vm=new THREE.Mesh(mergeColored(P),plantMat);vm.castShadow=true;scene.add(vm)}
+    [-1,1].forEach(s=>{const tx=s*2.85,tz=z+face*0.95;st(lathe([[0.3,0],[0.36,0.05],[0.4,0.45],[0.43,0.5],[0,0.48]],28),0xf2ece0,tx,0,tz-z);st(new _G.Cir(0.39,24),0x5a3e28,tx,0.47,tz-z).rotation.x=-Math.PI/2;
+      INST.bush.push({x:tx,y:0.85,z:tz,s:0.55,sy:0.5,c:0x2f6a44,ry:rg()*6});for(let k=0;k<7;k++){const a=k*0.9+s;INST.flower.push({x:tx+Math.cos(a)*0.28,y:1.0+(k%3)*0.08,z:tz+Math.sin(a)*0.28,s:1.1,c:RC[(k+1)%RC.length],ry:rg()*6,rx:(rg()-0.5)*0.8,k:'rose'})}})}
   else if(th==='lavender'){   // lavender gate: lilac lattice leaves, pots of lavender on the posts and sprigs along the arch
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x7a5aa6);for(let i=-3;i<=3;i++)[1,-1].forEach(dir=>{const sl=blk(0.035,2.4,0.03,dx(L/2+i*0.25),1.2,0,0xb79ad9,h);sl.rotation.z=dir*0.62;sl.scale.y=Math.max(0.3,2.4-Math.abs(i)*0.5)});
       hinges(h,dx);ring(h,dx);for(let k=0;k<5;k++){mesh(new _G.Cyl(0.006,0.006,0.4,5),0x6a8a4a,dx(0.4+k*0.17),1.85,0.06,h);mesh(new _G.Cone(0.025,0.16,8),0x8a5ad0,dx(0.4+k*0.17),2.1,0.06,h)}}));
@@ -3282,7 +3357,7 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     if(th==='stones')[-1,1].forEach(s=>{[0.3,0.24,0.18,0.12].forEach((r,i)=>st(S(r,12,8),[0x8a8a84,0xa8a49a,0x76736a,0x9a968c][i],s*1.9,3.6+[0,0.22,0.4,0.54][i]+0.05,0).scale.set(1,0.55,1))})}
   return {leaves,kind,snd}}
 // a gate at z: its arch and sign, its themed leaves and a collider while it is shut. face is the side people approach from
-function makeGate(z,th,name,topic,face){archway(z,name,topic,th);const t=gateTheme(z,th,face||1),snd=t.kind==='lift'?'lift':t.kind==='slide'?'slide':['roses','adding','fin'].includes(th)?'metal':'wood';
+function makeGate(z,th,name,topic,face){archway(z,name,topic,th);const t=gateTheme(z,th,face||1),snd=t.kind==='lift'?'lift':t.kind==='slide'?'slide':['adding','fin'].includes(th)?'metal':'wood';
   return Object.assign(t,{z,snd,dur:{lift:3.4,slide:2.0,metal:2.4,wood:2.6}[snd],col:colBox(-1.6,1.6,z-0.3,z+0.3),open:false,t:0})}
 function archway(zA,name,topic,th){const own=th==='castle'||th==='snow'||th==='glass',tex=new THREE.MeshBasicMaterial({map:signTex([name,topic],820,226),toneMapped:false});
   if(!own){[-1.9,1.9].forEach(x=>{blk(0.7,3.5,1.2,x,1.75,zA,0xd9cfb8);blk(0.9,0.3,1.4,x,0.15,zA,0xcfc3a8);blk(0.86,0.2,1.36,x,3.45,zA,0xcfc3a8)});
@@ -3296,23 +3371,47 @@ function archway(zA,name,topic,th){const own=th==='castle'||th==='snow'||th==='g
 // outer hedges (the front one has an open archway onto the road)
 archway(1,ROOMS[0].name,ROOMS[0].topic);
 // a hedge across the island from the gate posts right down to the sea on both sides, so the only way on is through the gate
-function divider(z,stone){[-1,1].forEach(sd=>{const len=coastX(sd,z)+0.8-1.6,cx=sd*(1.6+len/2);if(!stone){hedge(cx,z,len,0.9);return}
-  blk(len,3.4,1.2,cx,1.7,z,0xd9cfb8);blk(len,0.3,1.4,cx,0.15,z,0xcfc3a8);blk(len,0.2,1.4,cx,3.45,z,0xcfc3a8);crenels(cx,z+0.55,len,true,3.55,0xcfc3a8);crenels(cx,z-0.55,len,true,3.55,0xcfc3a8);colBox(cx-len/2,cx+len/2,z-0.7,z+0.7)})}
+// the walls either side of a place's gates are built in that place's own style: a garden hedge for the Welcome Garden,
+// castle walls for the castle, a dry-stone wall with a fence for the farm, a painted fence for the playground, a whitewashed
+// wall with tiles for the village, timber boarding on a stone footing for the pond, ice blocks for the snow, glass for the
+// glasshouse, red brick for the market and beach-hut boarding for the beach. none of them has anything living on it
+const WALLTHEME={castle:'castle',windmill:'farm',adding:'play',times:'village',oddeven:'pond',snow:'ice',glass:'glass',match:'brick',beach:'beach'};
+const brickTex=(()=>{const t=canvasTex(256,128,c=>{c.fillStyle='#d8cfc0';c.fillRect(0,0,256,128);const R=mulberry32(3),C=['#a8483a','#b5523b','#9c4032','#b85a40','#a24a36'];
+  for(let r=0;r<8;r++)for(let k=-1;k<5;k++){const x=k*64+(r%2)*32+2,y=r*16+2;c.fillStyle=C[Math.floor(R()*5)];c.fillRect(x,y,60,12);c.fillStyle='rgba(0,0,0,0.08)';c.fillRect(x,y+9,60,3)}});t.wrapS=t.wrapT=THREE.RepeatWrapping;return t})();
+const iceBlockMat=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.12,metalness:0,clearcoat:1,clearcoatRoughness:0.08}),wallGlass=new THREE.MeshStandardMaterial({color:0xdff3ff,transparent:true,opacity:0.3,roughness:0.05,metalness:0.1,side:THREE.DoubleSide,depthWrite:false});
+function divider(z,key){const th=WALLTHEME[key]||'hedge';[-1,1].forEach(sd=>{const len=coastX(sd,z)+0.8-1.6,cx=sd*(1.6+len/2),R=mulberry32(Math.round(z*7+sd*13)+5);
+  if(th==='hedge'){hedge(cx,z,len,0.9);return}
+  if(th==='castle'){blk(len,3.4,1.2,cx,1.7,z,0xd9cfb8);blk(len,0.3,1.4,cx,0.15,z,0xcfc3a8);blk(len,0.2,1.4,cx,3.45,z,0xcfc3a8);crenels(cx,z+0.55,len,true,3.55,0xcfc3a8);crenels(cx,z-0.55,len,true,3.55,0xcfc3a8);colBox(cx-len/2,cx+len/2,z-0.7,z+0.7);return}
+  const g=sgroup(cx,0,z,0),H2=len/2,each=(step,f)=>{const n=Math.max(1,Math.round(len/step));for(let k=0;k<n;k++)f(-H2+(k+0.5)*len/n,k)};
+  if(th==='farm'){blk(len,1.25,0.8,0,0.62,0,0xb8ad98,g);each(0.62,(x,k)=>{const b=blk(0.58,0.18,0.92,x,1.33,0,k%2?0xa89d88:0xc2b8a2,g);b.rotation.y=(R()-0.5)*0.12});
+    each(0.45,(x,k)=>{if(k%3===0)blk(0.38,0.2,0.84,x,0.25+R()*0.7,0.0,k%2?0xa0957f:0xcac0aa,g)});each(2.2,x=>blk(0.13,1.15,0.13,x,1.95,0,0x8a5a3b,g));[1.85,2.3].forEach(y=>blk(len,0.09,0.07,0,y,0,0xa8784e,g))}
+  else if(th==='play'){const C=[0xff6b57,0xffd23f,0x7cc35a,0x3d9be0,0xb48cff];each(0.5,(x,k)=>{const hh=2.0+0.18*(k%2);blk(0.46,hh,0.1,x,hh/2,0,C[k%5],g);const tp=mesh(new _G.Cone(0.33,0.22,4),C[k%5],x,hh+0.11,0,g);tp.rotation.y=Math.PI/4;tp.scale.z=0.3});
+    [0.45,1.6].forEach(y=>blk(len,0.1,0.07,0,y,-0.09,0xffffff,g))}
+  else if(th==='village'){blk(len,2.0,0.6,0,1.0,0,0xf6e3c6,g);blk(len,0.14,0.82,0,2.07,0,0xb5523b,g);blk(len,0.1,0.5,0,2.19,0,0x9c4532,g);
+    each(4,x=>{blk(0.78,2.3,0.78,x,1.15,0,0xe8d6b0,g);blk(0.9,0.12,0.9,x,2.36,0,0xb5523b,g)})}
+  else if(th==='pond'){blk(len,0.6,0.85,0,0.3,0,0x8f9aa0,g);each(0.5,(x,k)=>{if(k%2===0)blk(0.42,0.22,0.9,x,0.55,0,k%4?0x7f8a90:0x9aa5ab,g)});
+    each(0.32,(x,k)=>blk(0.3,1.62,0.08,x,1.41,0,k%2?0x8a6a48:0x7a5c3e,g));blk(len,0.1,0.16,0,2.25,0,0x6b4a30,g);each(2.4,x=>blk(0.16,2.35,0.16,x,1.17,0.09,0x5a3a26,g))}
+  else if(th==='ice'){const P=[],add=partAdder(P),IC=[0xd6eef8,0xc6e6f6,0xe2f4fb,0xbfe0f2];for(let r=0;r<4;r++){const off=r%2?0.45:0;for(let x=-H2-off;x<H2;x+=0.9){const a=Math.max(-H2,x),b=Math.min(H2,x+0.9);if(b-a<0.05)continue;
+      add(new THREE.BoxGeometry(b-a-0.04,0.51,0.78),IC[Math.floor(R()*4)],(a+b)/2,0.27+r*0.55,(R()-0.5)*0.03)}}
+    const m=new THREE.Mesh(partsGeo(P),iceBlockMat);m.castShadow=m.receiveShadow=true;g.add(m);const cap=mesh(new _G.Cyl(0.32,0.36,len,14,1,false),0xf8fcff,0,2.32,0,g);cap.rotation.z=Math.PI/2;cap.scale.set(0.55,1,1.25);
+    each(1.1,(x,k)=>{if(k%2===0){const ic=mesh(new _G.Cone(0.04,0.2+R()*0.18,8),0xe8f6ff,x,2.12,0.44,g);ic.rotation.x=Math.PI}})}
+  else if(th==='glass'){blk(len,0.35,0.42,0,0.17,0,0xf2f4f6,g);each(1.5,x=>blk(0.08,2.4,0.08,x,1.4,0,0xf6f8fa,g));[0.38,1.4,2.6].forEach(y=>blk(len,0.08,0.09,0,y,0,0xf6f8fa,g));
+    const pn=new THREE.Mesh(new THREE.PlaneGeometry(len,2.2),wallGlass);pn.position.y=1.48;pn.renderOrder=2;g.add(pn)}
+  else if(th==='brick'){const bg=new THREE.BoxGeometry(len,2.1,0.5),uv=bg.attributes.uv;for(let k=0;k<uv.count;k++)uv.setXY(k,uv.getX(k)*len/1.2,uv.getY(k)*2.1/0.6);
+    mesh(bg,new THREE.MeshStandardMaterial({map:brickTex,roughness:0.85}),0,1.05,0,g);blk(len,0.12,0.64,0,2.16,0,0xd9cfb8,g);each(4,x=>{blk(0.72,2.45,0.72,x,1.22,0,0xa8483a,g);blk(0.82,0.1,0.82,x,2.49,0,0xd9cfb8,g);mesh(new _G.Sph(0.17,14,10),0xd9cfb8,x,2.72,0,g)})}
+  else if(th==='beach'){each(0.3,(x,k)=>blk(0.28,2.0,0.08,x,1.0,0,k%2?0x8fc8e8:0xf6f6f2,g));blk(len,0.09,0.18,0,2.04,0,0xf6f6f2,g);blk(len,0.08,0.12,0,0.5,-0.1,0xf6f6f2,g);
+    each(2.6,x=>{blk(0.16,2.2,0.16,x,1.1,0.1,0xb98a5a,g)})}
+  colBox(cx-len/2,cx+len/2,z-0.5,z+0.5)})}
 
 /* ---------- the landing: you start here, on the jetty at the island's north tip ---------- */
 function railFence(x1,z1,x2,z2){const len=Math.hypot(x2-x1,z2-z1),ux=(x2-x1)/len,uz=(z2-z1)/len,n=Math.ceil(len/2.5);
   for(let i=0;i<=n;i++){const s=len*i/n;blk(0.16,1.15,0.16,x1+ux*s,0.575,z1+uz*s,0x8a5a3b)}
   [0.45,0.92].forEach(y=>blk(Math.abs(ux)>0.5?len:0.07,0.11,Math.abs(uz)>0.5?len:0.07,(x1+x2)/2,y,(z1+z2)/2,0xa8784e));
   colBox(Math.min(x1,x2)-0.12,Math.max(x1,x2)+0.12,Math.min(z1,z2)-0.12,Math.max(z1,z2)+0.12)}
-function buildApproach(){   // the landing: a wooden jetty at the island's north tip, where your boat came in, and a path up to the Welcome Garden
+function buildApproach(){   // the landing: the beach at the island's north tip, where your boat ran aground, and a path up to the Welcome Garden
   const jz0=ISL_N-8,jz1=ISL_N+15,jc=(jz0+jz1)/2;
-  platforms.push({t:'box',minX:-1.4,maxX:1.4,minZ:jz0,maxZ:jz1,h:0.4,deck:true});
-  blk(2.8,0.14,jz1-jz0,0,0.33,jc,0xb98a5a);for(let z=jz0+0.3;z<jz1;z+=0.42)blk(2.82,0.02,0.03,0,0.405,z,0x8a5a3b,scene,true);
-  for(let z=jz0+1;z<=jz1;z+=2.4)[-1.4,1.4].forEach(x=>mesh(new THREE.CylinderGeometry(0.12,0.12,1.8,12),0x7a4a2c,x,0.0,z));
-  [-1.45,1.45].forEach(x=>{rod([x,1.25,jz0+1],[x,1.25,jz1],0.04,0x8a5a3b);for(let z=jz0+1;z<=jz1+0.01;z+=1.5)blk(0.08,0.85,0.08,x,0.82,z,0x8a5a3b);colBox(x-0.06,x+0.06,jz0+0.8,jz1+0.1)});
-  rod([-1.45,1.25,jz1],[1.45,1.25,jz1],0.04,0x8a5a3b);colBox(-1.5,1.5,jz1-0.06,jz1+0.06);
-  mesh(new THREE.TorusGeometry(0.32,0.08,12,32),0xff6b57,1.5,0.95,jc);
-  // the boat has run aground on the shore beside the jetty: nose up the beach, tipped onto its side, with sand heaped up
+  // (no jetty: the boat has simply run aground on the beach)
+  // the boat has run aground on the shore: nose up the beach, tipped onto its side, with sand heaped up
   // against the hull, a broken oar and a loose plank lying nearby
   {const bx=4.9,bz=ISL_N-3.0,boat=boatModel();boat.rotation.order='YXZ';boat.rotation.set(-0.06,Math.PI-0.55,0.24);boat.position.set(bx,heightAt(bx,bz)+0.04,bz);scene.add(boat);
    const fx=Math.sin(Math.PI-0.55),fz=Math.cos(Math.PI-0.55),SAND=0xd9c49a;
@@ -3321,8 +3420,7 @@ function buildApproach(){   // the landing: a wooden jetty at the island's north
    {const bl=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.4,0.025),M(0xb98a5a));bl.position.y=0.75;bl.rotation.z=0.15;oar.add(bl)}
    const pl=blk(1.1,0.03,0.16,bx+1.2,0.03,bz+1.4,0xa55f35);pl.rotation.y=-0.7;
    colCirc(bx,bz,1.35);colCirc(bx+fx*1.0,bz+fz*1.0,0.7);reserve(bx,bz,2.4);NOGREEN.push({x0:bx-2.2,x1:bx+2.2,z0:bz-2.2,z1:bz+2.2})}
-  [[-1.2,jz1-3],[1.2,jz0+4]].forEach(([x,z])=>{mesh(new THREE.CylinderGeometry(0.1,0.12,0.5,12),0x5a3a26,x,0.62,z);mesh(new THREE.TorusGeometry(0.1,0.03,8,16),0xd9c9a0,x,0.7,z).rotation.x=Math.PI/2});
-  paths([[[0,jz0+0.4],[0,1.2]]],3);reserve(0,jc,4);
+  paths([[[0,ISL_N-4],[0,1.2]]],3);
   signPost(3.9,10.5,['Welcome to Number Grove',NR+' places and '+PANELS.length+' puzzles. In you go!'],-0.45);
   flowerBed(-6.5,4.6,1.4);flowerBed(6.5,4.6,1.4);lamp(2.4,6.5);lamp(-2.4,13);bench(-3.4,9,'e');
   for(const [x,z] of [[-8,9],[8.5,15],[-10,15]])addTree(x,z,{type:'round',s:1.1});
@@ -3364,9 +3462,9 @@ ROOMS.forEach((room,r)=>{
   room.list.forEach((p,i)=>buildPanel(p,room.spots[i],z0));
   // (cables are laid later by layCables, once everything they must go around exists)
   // divider with gate arch; past it, a short river or garden walk leads to the next place's open entrance
-  divider(zBot,ROOMS[r].key==='castle');
+  divider(zBot,ROOMS[r].key);
   gates[r]=makeGate(zBot,r<NR-1?linkTheme(CONN[r]):'fin',r<NR-1?CONN[r].name:'Finish Meadow',r<NR-1?'On the way to '+ROOMS[r+1].name:'Solve every panel to get here');
-  if(r<NR-1){const zE=z0s[r+1];divider(zE);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
+  if(r<NR-1){const zE=z0s[r+1];divider(zE,ROOMS[r+1].key);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
   reserve(0,zBot+2.5,3);reserve(0,zBot-2.5,3);
 });
 // no tree may reach over or behind a panel: its leaves would poke through the board or crowd the view (run once the
@@ -3393,10 +3491,9 @@ const SIDEP=[],PPLOG=[];
     room.list.forEach(p=>{const nx=p.normal.x,nz=p.normal.z,sx=p.pos.x+nx*1.9,sz=p.pos.z+nz*1.9;if(onWalk(sx,sz,0.4)||heightAt(sx,sz)>0.05)return;
       const ax=p.pos.x+nx*0.55,az=p.pos.z+nz*0.55,lay=segs=>{segs.forEach(([a,b])=>{paths([[a,b]],1.6,0,col);SIDEP.push(PATHR[PATHR.length-1])})};
       let best=null;{const t=march(ax,az,nx,nz,25);if(t>0)best={len:t,segs:[[[ax,az],[ax+nx*t,az+nz*t]]]}}
-      if(!best)for(let d=1.4;d<=12;d+=0.5){
+      for(let d=1.4;d<=12&&(!best||d<best.len);d+=0.5){
         let clear=true;for(let t=0;t<=d;t+=0.25)for(let o=-PW2;o<=PW2+1e-6;o+=PW2/2)if(!ok(ax+nx*t-nz*o,az+nz*t+nx*o)){clear=false;break}if(!clear)break;
-        const cx=ax+nx*d,cz=az+nz*d;for(const sg of [1,-1]){const dx=-nz*sg,dz=nx*sg,t=march(cx,cz,dx,dz,25);if(t>0&&(!best||d+t<best.len))best={len:d+t,segs:[[[ax,az],[cx,cz]],[[cx,cz],[cx+dx*t,cz+dz*t]]]}}
-        if(best)break}
+        const cx=ax+nx*d,cz=az+nz*d;for(const sg of [1,-1]){const dx=-nz*sg,dz=nx*sg,t=march(cx,cz,dx,dz,25);if(t>0&&(!best||d+t<best.len-0.5))best={len:d+t,segs:[[[ax,az],[cx,cz]],[[cx,cz],[cx+dx*t,cz+dz*t]]]}}}
       if(best){lay(best.segs);PPLOG.push([p.id,best.segs.length]);return}PPLOG.push([p.id,'grid',(()=>{for(let t=0;t<=25;t+=0.25){const x=ax+nx*t,z=az+nz*t;for(let o=-0.8;o<=0.8;o+=0.4){const qx=x-nz*o,qz=z+nx*o;if(inWater(qx,qz,0.3))return [t,'water'];if(heightAt(qx,qz)>0.03)return [t,'height',heightAt(qx,qz)];for(const c of near)if(c.t==='box'?(qx>c.minX-0.3&&qx<c.maxX+0.3&&qz>c.minZ-0.3&&qz<c.maxZ+0.3):((qx-c.x)**2+(qz-c.z)**2<(c.r+0.3)**2))return [t,JSON.stringify(c)]}}return 'none'})()]);
       const s=cellOf(sx,sz),G=new Float64Array(N*4).fill(1e9),from=new Int32Array(N*4).fill(-1),H=[];let end=-1;
       const push=(f,st)=>{H.push([f,st]);let n=H.length-1;while(n>0){const q=(n-1)>>1;if(H[q][0]<=H[n][0])break;[H[q],H[n]]=[H[n],H[q]];n=q}};
@@ -3416,6 +3513,10 @@ const SIDEP=[],PPLOG=[];
   // the paving: every ground-level path and filler of one colour along each stretch of the island becomes one seamless
   // surface (laid on a shared grid of all their edges, so there are no cracks, overlaps or seams between pieces), sitting
   // just under plazas and floors so they always show cleanly on top
+  {const GZ=[];for(let r=0;r<NR;r++)GZ.push(z0s[r],z0s[r]-AREA);const all=PATHR.concat(FILLR);
+   for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++){const a=all[i],b=all[j];if(a.col===b.col||a.minX>=b.maxX||b.minX>=a.maxX||a.minZ>=b.maxZ||b.minZ>=a.maxZ)continue;
+     const lo=Math.max(a.minZ,b.minZ),hi=Math.min(a.maxZ,b.maxZ),g=GZ.find(z=>z>=lo-0.01&&z<=hi+0.01);if(g==null)continue;
+     [a,b].forEach(r=>{if((r.minZ+r.maxZ)/2>g)r.minZ=Math.max(r.minZ,g);else r.maxZ=Math.min(r.maxZ,g);if(r.m&&r.y){r.m.scale.z=Math.max(0.01,(r.maxZ-r.minZ)/r.m.geometry.parameters.height);r.m.position.z=(r.minZ+r.maxZ)/2}})}}
   const groups=new Map();PATHR.filter(r=>r.m&&!r.y).concat(FILLR).forEach(r=>{const k=r.col+'|'+Math.floor(-(r.minZ+r.maxZ)/2/46);let a=groups.get(k);if(!a)groups.set(k,a=[]);a.push(r)});
   const UM={};groups.forEach((rects,k)=>{const col=+k.split('|')[0],q=v=>Math.round(v*1000)/1000,ux=a=>[...new Set(a.map(q))].sort((p,r)=>p-r),xs=ux(rects.flatMap(r=>[r.minX,r.maxX])),zs=ux(rects.flatMap(r=>[r.minZ,r.maxZ]));
     const bs=(a,v)=>{let lo=0,hi=a.length-1;v=q(v);while(lo<hi){const m=(lo+hi)>>1;if(a[m]<v)lo=m+1;else hi=m}return lo},NX=xs.length-1,NZ=zs.length-1,cov=new Uint8Array(NX*NZ);
@@ -3437,15 +3538,15 @@ function fillPathSlots(z0,col){const zA=z0-AREA,pr=PATHR.filter(r=>r.maxZ>zA&&r.
   const NX=xs.length-1,NZ=zs.length-1,st=new Uint8Array(NX*NZ),fill=new Uint8Array(NX*NZ);   // 0 open lawn, 1 walk, 2 blocked
   const near=colliders.filter(c=>!c.dyn&&!c.panel&&(c.t==='box'?c.maxZ>zA&&c.minZ<z0:c.t==='circ'?c.z>zA-2&&c.z<z0+2:false));
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x=(xs[i]+xs[i+1])/2,z=(zs[j]+zs[j+1])/2,k=j*NX+i;
-    if(polys.some(w=>walkHit(w,x,z,0.05))){st[k]=2;continue}if(onWalk(x,z,0)){st[k]=1;continue}if(inWater(x,z,0.05)||heightAt(x,z)>0.03){st[k]=2;continue}
+    if(polys.some(w=>walkHit(w,x,z,0.05))){st[k]=2;continue}if(onWalk(x,z,0)){st[k]=SIDEP.some(r=>x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ)&&!pr.some(r=>!SIDEP.includes(r)&&x>r.minX&&x<r.maxX&&z>r.minZ&&z<r.maxZ)?3:1;continue}if(inWater(x,z,0.05)||heightAt(x,z)>0.03){st[k]=2;continue}
     for(const c of near)if(c.t==='box'?(x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ):((x-c.x)**2+(z-c.z)**2<c.r*c.r)){st[k]=2;break}}
   const runs=(len,at,size)=>{let a=0;while(a<len){if(st[at(a)]!==0){a++;continue}let b=a;while(b+1<len&&st[at(b+1)]===0)b++;
-    if(a>0&&b<len-1&&st[at(a-1)]===1&&st[at(b+1)]===1&&size(a,b)<1.5)for(let q=a;q<=b;q++)fill[at(q)]=1;a=b+1}};
+    const A=a>0?st[at(a-1)]:0,Bq=b<len-1?st[at(b+1)]:0;if((A===1||A===3)&&(Bq===1||Bq===3)&&size(a,b)<(A===3||Bq===3?0.6:1.5))for(let q=a;q<=b;q++)fill[at(q)]=1;a=b+1}};
   // repeat until settled: paving one sliver can leave its neighbour newly boxed in between paths
   for(let it=0;it<6;it++){let n0=0;for(let k=0;k<fill.length;k++)n0+=fill[k];
     for(let j=0;j<NZ;j++)runs(NX,i=>j*NX+i,(a,b)=>xs[b+1]-xs[a]);
     for(let i=0;i<NX;i++)runs(NZ,j=>j*NX+i,(a,b)=>zs[b+1]-zs[a]);
-    let n1=0;for(let k=0;k<fill.length;k++){if(fill[k])st[k]=1;n1+=fill[k]}if(n1===n0)break}
+    let n1=0;for(let k=0;k<fill.length;k++){if(fill[k]&&st[k]===0)st[k]=1;n1+=fill[k]}if(n1===n0)break}
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){if(!fill[j*NX+i])continue;let w=1;while(i+w<NX&&fill[j*NX+i+w])w++;for(let a=0;a<w;a++)fill[j*NX+i+a]=0;
     const o=0.06,minX=xs[i]-o,maxX=xs[i+w]+o,minZ=zs[j]-o,maxZ=zs[j+1]+o;FILLR.push({minX,maxX,minZ,maxZ,col});walkRect(minX,maxX,minZ,maxZ)}}
 function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z0-0.3,NX=Math.floor((2*AW-1)/G)+1,NZ=Math.floor((AREA-0.6)/G)+1,N=NX*NZ,X=i=>x0+i*G,Z=j=>zT-j*G;
@@ -3461,7 +3562,7 @@ function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z
   for(let s0=0;s0<N;s0++){if(walk[s0]||seen[s0])continue;const comp=[];let open=false;st.push(s0);seen[s0]=1;
     while(st.length){const k=st.pop();comp.push(k);const i=k%NX,j=(k/NX)|0;if(i===0||j===0||i===NX-1||j===NZ-1||blk[k]===2)open=true;
       for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+a,jj=j+b;if(ii<0||jj<0||ii>=NX||jj>=NZ)continue;const q=jj*NX+ii;if(!walk[q]&&!seen[q]){seen[q]=1;st.push(q)}}}
-    if(!open&&comp.length*G*G<12)comp.forEach(k=>{if(!blk[k])fill[k]=1})}
+    if(!open&&comp.length*G*G<2.5)comp.forEach(k=>{if(!blk[k])fill[k]=1})}
   for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){if(!fill[j*NX+i])continue;let w=1;while(i+w<NX&&fill[j*NX+i+w])w++;let h=1;
     grow:while(j+h<NZ){for(let a=0;a<w;a++)if(!fill[(j+h)*NX+i+a])break grow;h++}
     for(let b=0;b<h;b++)for(let a=0;a<w;a++)fill[(j+b)*NX+i+a]=0;
@@ -3706,12 +3807,7 @@ buildLOD([{geo:rockGeo(36,24),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0.03
 {const fm=windPatch(std({vertexColors:true,side:THREE.DoubleSide,roughness:0.55}),0.05,0.5),far=flowerGeo(5,false),by=k=>INST.flower.filter(o=>(o.k||'tulip')===k);
  // a rose: a tight spiral bud in the middle, then rings of cupped petals that open wider and curl back at the tips
  // towards the outside; darker deep inside, lighter at the petal edges
- const rose=(()=>{const P=[],C=[],I=[],L=[[4,0.006,0.026,1.5,0.0,0.55],[5,0.012,0.034,1.25,0.5,0.66],[5,0.02,0.044,0.95,0.15,0.78],[6,0.03,0.052,0.62,0.6,0.9],[7,0.038,0.058,0.32,0.3,1.0]];
-   L.forEach(([n,r0,len,open,ph,sh],li)=>{for(let k=0;k<n;k++){const a0=(k+ph)/n*Math.PI*2+li*0.9,hw=Math.PI/n*1.35,base=P.length/3,SU=4,SV=5;
-     for(let v=0;v<=SV;v++)for(let u=0;u<=SU;u++){const uu=u/SU*2-1,vv=v/SV,a=a0+uu*hw*(0.55+0.45*Math.sin(vv*2.6+0.25)),op=open-(li>2?vv*vv*1.1:0),
-       rad=r0+len*vv*Math.cos(op)-0.18*len*uu*uu*vv,y=len*vv*Math.sin(op)+0.12*len*uu*uu*vv;P.push(Math.cos(a)*rad,y,Math.sin(a)*rad);const c=sh*(0.72+0.28*vv)+0.06*Math.abs(uu)*vv;C.push(c,c*0.98,c*0.95)}
-     for(let v=0;v<SV;v++)for(let u=0;u<SU;u++){const q=base+v*(SU+1)+u;I.push(q,q+SU+1,q+1,q+1,q+SU+1,q+SU+2)}}});
-   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.setIndex(I);g.computeVertexNormals();g.scale(1.65,1.65,1.65);return g})();
+ const rose=roseFlowerGeo();
  buildLOD([{geo:tulipGeo(),mat:fm,d:32},{geo:far,mat:fm,d:65}],by('tulip'),16);
  buildLOD([{geo:sunflowerGeo(),mat:fm,d:50},{geo:far,mat:fm,d:95}],by('sun'),16);
  {const still=std({vertexColors:true,side:THREE.DoubleSide,roughness:0.55});buildLOD([{geo:rose,mat:still,d:36},{geo:far,mat:still,d:70}],by('rose'),16)}   // roses don't sway
@@ -3942,7 +4038,7 @@ function dayUpdate(){DAY.tod=DAY.fixed!=null?DAY.fixed:(0.354+(performance.now()
   else{_ld.copy(DAY.moonDir);if(_ld.y<0.3){_ld.y=0.3;_ld.normalize()}I=0.85*THREE.MathUtils.smoothstep(-s,0.03,0.15);sun.color.copy(MOONC)}
   sun.intensity=I*P.ex;SUN_OFF.copy(_ld).multiplyScalar(67);
   hemi.intensity=P.hemi*P.ex;hemi.color.copy(P.hs).convertSRGBToLinear();hemi.groundColor.copy(P.hg).convertSRGBToLinear();PROBE_DAY.intensity=P.pd*P.ex;PROBE_NIGHT.intensity=P.pn*P.ex;
-  clouds.mat.color.copy(P.cl).convertSRGBToLinear();clouds.mat.emissive.copy(P.ce).convertSRGBToLinear();LAMPGLOW.opacity=THREE.MathUtils.smoothstep(-s,-0.08,0.12)*0.85;if(SIGIL.mat){SIGIL.mat.emissiveIntensity=0.12+night*1.5;SIGIL.halo.material.opacity=night*0.55}if(LAMPGLOW.pts)LAMPGLOW.pts.visible=LAMPGLOW.opacity>0.01;
+  clouds.mat.color.copy(P.cl).convertSRGBToLinear();clouds.mat.emissive.copy(P.ce).convertSRGBToLinear();LAMPGLOW.opacity=THREE.MathUtils.smoothstep(-s,-0.08,0.12)*0.85;if(LAMPGLOW.pts)LAMPGLOW.pts.visible=LAMPGLOW.opacity>0.01;
   if(performance.now()-DAY.bake>15000){DAY.bake=performance.now();SKYB=skyB(P,sd);bakeSky()}
   const hm=Math.floor(DAY.tod*24*60),hh=Math.floor(hm/60),mm=hm%60,txt=(s>-0.03?'☀ ':'☾ ')+((hh+11)%12+1)+':'+String(mm).padStart(2,'0')+(hh<12?' am':' pm');if(txt!==dayClock){dayClock=txt;$('#clock').textContent=txt}}
 /* ---------- state ---------- */
@@ -3976,24 +4072,28 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   e([0,0.31,0],[0.25,0.27,0.235],B,0.05);e([0,0.2,0.02],[0.235,0.17,0.22],B,0.08);
   e([0,0.71,0.02],[0.275,0.245,0.255],B,0.12);e([0,0.635,0.19],[0.105,0.075,0.08],B,0.06);
   // in the arms-down pose the pet's left arm is a separate piece on a shoulder pivot, so it can wave or pet things
-  const SPLIT=!K.claws&&!['up2','wide','hold','lick','front','reach'].some(t=>(variant||'').includes(t)),ARMU=[],ARMF=[];
+  const V_=variant||'',BUSY=/knight|clown|mime|busy|skates/.test(V_),SPLIT=!K.claws&&!BUSY&&!['up2','wide','hold','lick','reach','aim'].some(t=>V_.includes(t)),ARMU=[],ARMF=[];let AJ=null;
+  // a free arm is two pieces, upper arm and forearm with the paw, jointed at the shoulder and elbow
+  const splitArm=(A,Bp,ra,rb,Q,qr)=>{const Mm=[(A[0]+Bp[0])/2,(A[1]+Bp[1])/2,(A[2]+Bp[2])/2],rm=(ra+rb)/2;ARMU.push({t:'c',a:A,b:Mm,ra,rb:rm,col:B,k:0.03},{t:'e',c:A,r:[ra+0.004,ra+0.004,ra+0.004],col:B,k:0.03});
+    ARMF.push({t:'c',a:Mm,b:Bp,ra:rm,rb,col:B,k:0.03},{t:'e',c:Mm,r:[rm,rm,rm],col:B,k:0.02},{t:'e',c:Q,r:qr,col:B,k:0.02});AJ={a:A,m:Mm,q:Q}};
   [-1,1].forEach(s=>{e([s*0.15,0.645,0.12],[0.11,0.09,0.1],B,0.06);
     const V=variant||'';if(V.includes('up2')){cap([s*0.17,0.43,0.05],[s*0.25,0.68,0.07],0.066,0.05,B,0.05);e([s*0.26,0.72,0.08],[0.055,0.055,0.055],B,0.02)}
     else if(V.includes('wide')){cap([s*0.17,0.43,0.05],[s*0.37,0.5,0.05],0.066,0.05,B,0.05);e([s*0.41,0.52,0.05],[0.055,0.055,0.055],B,0.02)}
     else if(V.includes('hold')){cap([s*0.17,0.43,0.05],[s*0.11,0.44,0.24],0.066,0.05,B,0.05);e([s*0.1,0.44,0.272],[0.05,0.05,0.048],B,0.02)}
     else if(V.includes('lick')&&s>0){cap([s*0.17,0.43,0.05],[s*0.08,0.5,0.24],0.066,0.05,B,0.05);e([s*0.065,0.51,0.27],[0.05,0.05,0.048],B,0.02)}
-    else if(V.includes('front')){cap([s*0.17,0.43,0.05],[s*0.16,0.42,0.23],0.066,0.05,B,0.05);e([s*0.155,0.42,0.265],[0.055,0.052,0.05],B,0.02)}
+    else if(V.includes('aim')){if(s>0){cap([0.17,0.43,0.05],[0.38,0.49,0.18],0.066,0.05,B,0.05);e([0.42,0.5,0.2],[0.05,0.05,0.048],B,0.02)}else{cap([-0.17,0.43,0.05],[-0.06,0.49,0.23],0.066,0.05,B,0.05);e([-0.02,0.5,0.27],[0.05,0.05,0.048],B,0.02)}}
+    else if(V.includes('front')){if(SPLIT&&s>0)splitArm([0.17,0.43,0.05],[0.16,0.42,0.23],0.066,0.05,[0.155,0.42,0.265],[0.055,0.052,0.05]);else{cap([s*0.17,0.43,0.05],[s*0.16,0.42,0.23],0.066,0.05,B,0.05);e([s*0.155,0.42,0.265],[0.055,0.052,0.05],B,0.02)}}
     else if(V.includes('reach')&&s>0){cap([s*0.17,0.43,0.05],[s*0.29,0.66,0.1],0.066,0.05,B,0.05);e([s*0.31,0.71,0.11],[0.056,0.056,0.056],B,0.02)}
-    else if(!K.claws){if(SPLIT&&s>0){ARMU.push({t:'c',a:[0.17,0.43,0.05],b:[0.21,0.35,0.09],ra:0.068,rb:0.059,col:B,k:0.03},{t:'e',c:[0.17,0.43,0.05],r:[0.072,0.072,0.072],col:B,k:0.03});ARMF.push({t:'c',a:[0.21,0.35,0.09],b:[0.25,0.27,0.13],ra:0.059,rb:0.05,col:B,k:0.03},{t:'e',c:[0.21,0.35,0.09],r:[0.06,0.06,0.06],col:B,k:0.02},{t:'e',c:[0.255,0.255,0.145],r:[0.055,0.05,0.06],col:B,k:0.02})}
+    else if(!K.claws){if(SPLIT&&s>0)splitArm([0.17,0.43,0.05],[0.25,0.27,0.13],0.068,0.05,[0.255,0.255,0.145],[0.055,0.05,0.06])
       else sh.push({t:'c',a:[s*0.17,0.43,0.05],b:[s*0.25,0.27,0.13],ra:0.068,rb:0.05,col:B,k:0.05},{t:'e',c:[s*0.255,0.255,0.145],r:[0.055,0.05,0.06],col:B,k:0.02})}
     else{cap([s*0.17,0.43,0.05],[s*0.29,0.38,0.11],0.06,0.05,B,0.05);e([s*0.31,0.4,0.13],[0.1,0.08,0.1],B,0.03);cap([s*0.29,0.45,0.17],[s*0.32,0.56,0.24],0.045,0.014,B,0.02);cap([s*0.33,0.39,0.2],[s*0.36,0.44,0.28],0.035,0.012,B,0.02)}
     e([s*0.135,0.15,0.04],[0.105,0.115,0.12],B,0.05);e([s*0.125,0.045,0.1],[0.075,0.045,0.115],B,0.04)});
   // where each arm and paw ended up, so clothes can be painted on the sleeves and stop at the paws
   const V0=variant||'',PAW=[],ARM=[];[-1,1].forEach(s=>{const a=[s*0.17,0.43,0.05];let b,q;
     if(V0.includes('up2')){b=[s*0.25,0.68,0.07];q=[s*0.26,0.72,0.08]}else if(V0.includes('wide')){b=[s*0.37,0.5,0.05];q=[s*0.41,0.52,0.05]}else if(V0.includes('hold')){b=[s*0.11,0.44,0.24];q=[s*0.1,0.44,0.272]}else if(V0.includes('lick')&&s>0){b=[s*0.08,0.5,0.24];q=[s*0.065,0.51,0.27]}
-    else if(V0.includes('front')){b=[s*0.16,0.42,0.23];q=[s*0.155,0.42,0.265]}else if(V0.includes('reach')&&s>0){b=[s*0.29,0.66,0.1];q=[s*0.31,0.71,0.11]}else if(!K.claws){b=[s*0.25,0.27,0.13];q=[s*0.255,0.255,0.145]}else{b=[s*0.29,0.38,0.11];q=[s*0.31,0.4,0.13]}
+    else if(V0.includes('aim')){b=s>0?[0.38,0.49,0.18]:[-0.06,0.49,0.23];q=s>0?[0.42,0.5,0.2]:[-0.02,0.5,0.27]}else if(V0.includes('front')){b=[s*0.16,0.42,0.23];q=[s*0.155,0.42,0.265]}else if(V0.includes('reach')&&s>0){b=[s*0.29,0.66,0.1];q=[s*0.31,0.71,0.11]}else if(!K.claws){b=[s*0.25,0.27,0.13];q=[s*0.255,0.255,0.145]}else{b=[s*0.29,0.38,0.11];q=[s*0.31,0.4,0.13]}
     ARM.push([a,b]);PAW.push(q)});
-  const OUT=['farmer','fisher','beekeeper','shop','skates','mayor'].find(t=>V0.includes(t))||(knight?'knight':undefined),HAT=OUT&&OUT!=='skates',SHADES=V0.includes('shades'),TC=parseInt((V0.match(/#([0-9a-f]{6})/)||[0,'d8202a'])[1],16);
+  const OUT=['farmer','fisher','beekeeper','shop','skates','mayor','princess','maid','archer','lifeguard'].find(t=>V0.includes(t))||(knight?'knight':undefined),HAT=OUT&&OUT!=='skates',SHADES=V0.includes('shades'),TC=parseInt((V0.match(/#([0-9a-f]{6})/)||[0,'d8202a'])[1],16);
   if(K.ear==='round'&&OUT!=='mayor')[-1,1].forEach(s=>e([s*0.185,0.91,-0.01],[0.085,0.085,0.045],E,0.04,[0,0,-s*0.3]));
   else if(K.ear==='point'&&OUT!=='mayor')[-1,1].forEach(s=>cap([s*0.12,0.86,-0.01],[s*0.21,1.08,-0.03],0.075,0.014,E,0.04));
   else if(K.ear==='long')[-1,1].forEach(s=>e([s*0.11,1.05,-0.03],[0.05,0.19,0.03],E,0.04,[0.15,0,-s*0.15]));
@@ -4023,6 +4123,13 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     if(OUT==='knight'){const ST=0xc4ccd6;if(paw){set(ST);if((y*60)%1<0.25)set(0x8a929c);return}
       if(arm){set(0x9aa3ad);if((Math.floor((x+2)/0.011)+Math.floor((y+2)/0.009)+Math.floor((z+2)/0.011))%2)mixC(c,0x5a626c,0.55);return}
       if(foot){set(ST);if(((z+1)*40)%1<0.18||y<0.012)set(0x6b7480);return}if(body&&y<0.2&&ax>0.035){set(ST);if(((y+1)*26)%1<0.14)set(0x7a828c);if(Math.abs(ax-0.135)<0.006&&z>0.1)set(0xe2e8ee);return}return}
+    if(OUT==='princess'){if(paw)return;if(foot){set(0xf08cb4);return}if(arm){const near=ARM.some(([a,b])=>Math.hypot(x-a[0],y-a[1],z-a[2])<0.085);set(near?0xfff4f8:0xf4a6c8);if(!near&&ARM.some(([a,b])=>Math.hypot(x-b[0],y-b[1],z-b[2])<0.04))set(0xffffff);return}
+      set(0xf4a6c8);if(Math.abs(y-0.36)<0.012)set(0xe8b923);if(y>0.43&&z>0.05)set(0xfff4f8);if(z>0.15&&ax<0.012&&y>0.37&&y<0.43)set(0xe8b923);return}
+    if(OUT==='maid'){if(paw)return;if(foot){set(0x1d1d1d);return}if(arm){set(ARM.some(([a,b])=>Math.hypot(x-b[0],y-b[1],z-b[2])<0.045)?0xffffff:0x22252b);return}
+      set(0x22252b);if(z>0.08&&ax<0.12&&y>0.3&&y<0.45)set(0xffffff);if(y>0.445&&z>0.02)set(0xffffff);return}
+    if(OUT==='archer'){if(paw)return;if(foot){set(0x4a3220);return}if(arm){set(0x2f6a3a);if(ARM.some(([a,b])=>Math.hypot(x-b[0],y-b[1],z-b[2])<0.05))set(0x6b4a30);return}
+      if(y<0.17){set(0x6b5a40);return}set(0x2f6a3a);if(y>0.19&&y<0.235)set(z>0.18&&ax<0.025?0xd4a017:0x5a3a22);if(y>0.44&&z>0.1&&ax<0.06)set(0x3f7a48);return}
+    if(OUT==='lifeguard'){if(paw||arm)return;if(foot)return;set(0xd8202a);if(z>0.15&&((ax<0.012&&y>0.31&&y<0.43)||(Math.abs(y-0.37)<0.012&&ax<0.055)))set(0xffffff);if(y<0.2&&y>0.16)set(0xffffff);return}
     if(OUT==='mayor'){if(foot){set(0x1d1d1d);return}if(body&&y<0.2){set(0x55585e);if(((x+2)*70)%1<0.12)set(0x3a3d42);return}
       if(body&&z>0.06&&ax<0.02+0.22*(y-0.16)&&y>0.16){set(0xfaf8f2);if(ax<0.004&&((y*40)%1<0.3))set(0xd4a017);return}
       const sd=Math.abs((x+0.2)*0.3-(y-0.46)*(-0.4)+0)/0.5;if(body&&z>-0.05&&Math.abs((y-0.46)+(x+0.2)*0.83)<0.045){set(0xc0302a);if(Math.abs(Math.abs((y-0.46)+(x+0.2)*0.83)-0.04)<0.006)set(0xd4a017);return}
@@ -4042,7 +4149,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     if(mime&&y>0.12&&y<0.5&&z>-0.3)mixC(c,Math.floor((y-0.12)/0.055)%2?0xf8f6f0:0x232a33,0.92);
     if(OUT)outfit(c,x,y,z,fh)};
   // the sculpted body is shared by every variant that only differs in what is added on top (sunglasses, crowns, armour, held things)
-  const pose=V0.includes('up2')?'up2':V0.includes('wide')?'wide':V0.includes('hold')?'hold':V0.includes('lick')?'lick':V0.includes('front')?'front':V0.includes('reach')?'reach':'',
+  const pose=V0.includes('up2')?'up2':V0.includes('wide')?'wide':V0.includes('hold')?'hold':V0.includes('lick')?'lick':V0.includes('aim')?'aim':V0.includes('front')?'front':V0.includes('reach')?'reach':'',
     bkey=(K._id||(K._id=Object.keys(CRIT).find(k=>CRIT[k]===K)))+'|'+pose+'|'+(HAT?1:0)+(clown?'c':'')+(mime?'m':'')+'|'+(OUT||'')+(OUT==='farmer'||OUT==='shop'?TC:''),
     body=BODYG.get(bkey)||BODYG.set(bkey,sculpt(sh,{h:clown?0.0095:0.0108,blend:0.012,paint})).get(bkey);
   const x=partAdder(X),gl=partAdder(G),S=(r,w,h)=>new _G.Sph(r,w||24,h||16);
@@ -4096,8 +4203,8 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   if((variant||'').includes('king')){const GD=0xffc21a;gl(new _G.Cyl(0.155,0.165,0.085,32,1,true),GD,0,0.96,0.0);x(S(1,24,12),0xb0202a,0,0.98,0,0.14,0.07,0.14);
     for(let k=0;k<8;k++){const a=k/8*Math.PI*2;gl(new _G.Cone(0.028,0.07,8),GD,Math.sin(a)*0.155,1.035,Math.cos(a)*0.155);gl(S(0.014,10,8),GD,Math.sin(a)*0.155,1.075,Math.cos(a)*0.155);gl(S(0.016,10,8),k%2?0xd8202a:0x2a6ad8,Math.sin(a)*0.164,0.965,Math.cos(a)*0.164)}
     gl(S(0.025,12,10),GD,0,1.06,0);gl(new THREE.BoxGeometry(0.012,0.05,0.012),GD,0,1.1,0);gl(new THREE.BoxGeometry(0.035,0.012,0.012),GD,0,1.11,0);
-    x(S(1,20,12),0x4a2c1a,0,0.646,0.273,0.045,0.022,0.02);[-1,1].forEach(s=>{x(tube([[0,0.648,0.276],[s*0.04,0.64,0.278],[s*0.085,0.646,0.265],[s*0.115,0.668,0.24],[s*0.112,0.692,0.226],[s*0.095,0.698,0.226]],0.02,18),0x4a2c1a);x(S(0.018,10,8),0x4a2c1a,s*0.095,0.698,0.226)});x(new _G.Tor(0.235,0.045,10,32),0xf8f6f0,0,0.53,0.0,1,1,1,Math.PI/2,0,0);
-    for(let k=0;k<10;k++){const a=k/10*Math.PI*2;x(S(0.008,6,4),0x1d1d1d,Math.sin(a)*0.235,0.56,Math.cos(a)*0.235)}}
+    x(S(1,20,12),0x4a2c1a,0,0.646,0.273,0.045,0.022,0.02);[-1,1].forEach(s=>{x(tube([[0,0.648,0.276],[s*0.04,0.64,0.278],[s*0.085,0.646,0.265],[s*0.115,0.668,0.24],[s*0.112,0.692,0.226],[s*0.095,0.698,0.226]],0.02,18),0x4a2c1a);x(S(0.018,10,8),0x4a2c1a,s*0.095,0.698,0.226)});x(new _G.Tor(0.235,0.045,10,32,Math.PI*0.9),0xf8f6f0,0,0.53,0.0,1,1,1,Math.PI/2,0,Math.PI*1.05);
+    for(let k=0;k<8;k++){const a=Math.PI*(0.62+0.76*k/7);x(S(0.008,6,4),0x1d1d1d,Math.sin(a)*0.235,0.572,Math.cos(a)*0.235)}}
   // hats and the rest of each outfit: a fisherman's bucket hat with two fishing flies in its band, a farmer's straw hat
   // with a coloured band, a beekeeper's white hat with a dark mesh veil, a shopkeeper's cap with a peak and a bow tie,
   // and steel blades under the skating boots
@@ -4114,6 +4221,16 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     [-1,1].forEach(s=>gl(new _G.Cone(0.03,0.055,10),0x161616,s*0.028,0.478,0.222,1,0.8,1,0,0,s*Math.PI/2));gl(S(0.015,10,8),0x161616,0,0.478,0.226);
     for(let k=0;k<30;k++){const a=k/30*Math.PI*2,cz=Math.cos(a);gl(S(0.011,8,6),0xd4a017,Math.sin(a)*0.2,0.505-0.085*Math.max(0,cz)**2,0.02+cz*0.208)}
     gl(new _G.Cyl(0.045,0.045,0.012,24),0xd4a017,0,0.37,0.248,1,1,1,Math.PI/2,0,0);gl(S(0.018,12,8),0xc0302a,0,0.37,0.256,1,1,0.5)}
+  if(OUT==='princess'){const GD=0xffcf3a;gl(new _G.Tor(0.138,0.011,8,40),GD,0,0.925,0.02,1,1,1,Math.PI/2,0,0);for(let k=0;k<7;k++){const a=-0.9+k*0.3,cx=Math.sin(a)*0.138,cz=0.02+Math.cos(a)*0.138,hh=k===3?0.075:0.045+0.01*(k%2);
+      gl(new _G.Cone(0.012,hh,8),GD,cx,0.925+hh/2,cz);gl(S(0.009,8,6),k===3?0xff4f8a:0xffffff,cx,0.925+hh+0.006,cz)}gl(S(0.016,10,8),0xff4f8a,0,0.94,0.161);
+    for(let k=0;k<15;k++){const a=-1.25+k*(2.5/14);gl(S(0.012,8,6),0xfaf6ee,Math.sin(a)*0.195,0.49-0.03*Math.cos(a*0.9),0.02+Math.cos(a)*0.19)}}
+  if(OUT==='maid'){const hb=[];for(let k=0;k<=24;k++){const a=Math.PI*(0.18+0.64*k/24);hb.push([0.287*Math.cos(a),0.71+0.26*Math.sin(a),0.055])}x(tube(hb,0.018,48,6),0xffffff);
+    for(let k=0;k<11;k++){const a=Math.PI*(0.22+0.56*k/10);x(S(0.026,8,6),0xffffff,0.3*Math.cos(a),0.71+0.275*Math.sin(a),0.06)}}
+  if(OUT==='archer'){x(lathe([[0,0.22],[0.04,0.2],[0.12,0.12],[0.2,0.03],[0.215,0.0],[0.2,-0.012],[0,-0.012]],32),0x2f6a3a,0,0.875,0.0,1.05,1,1.15,-0.28,0,0);
+    x(leafShape(0.32,0.05),0xc0302a,0.1,0.97,-0.04,1,1,1,0.3,0.4,-0.6);x(new _G.Cyl(0.06,0.055,0.42,14),0x6b4226,-0.1,0.42,-0.3,1,1,1,0.35,0,0.3);
+    for(let k=0;k<3;k++){x(new _G.Cyl(0.006,0.006,0.12,6),0x8a6a3a,-0.15+k*0.025,0.67,-0.23,1,1,1,0.35,0,0.3);x(new THREE.BoxGeometry(0.004,0.06,0.03),[0xd8202a,0xffffff,0xd8202a][k],-0.15+k*0.025,0.72,-0.21,1,1,1,0.35,0,0.3)}}
+  if(OUT==='lifeguard'){x(new _G.Cyl(0.205,0.205,0.04,32,1,true),0xffffff,0,0.89,0.02);x(new _G.Cir(0.15,24,Math.PI,Math.PI),0xffffff,0,0.885,0.2,1.2,1,1,-Math.PI/2+0.1,0,0);
+    x(tube([[-0.12,0.48,0.12],[-0.06,0.43,0.2],[0,0.4,0.235],[0.06,0.43,0.2],[0.12,0.48,0.12]],0.005,12),0x1d1d1d);gl(new _G.Cyl(0.014,0.014,0.05,10),0xc9ced4,0,0.39,0.25,1,1,1,0,0,Math.PI/2)}
   if(OUT==='skates')[-1,1].forEach(s=>{gl(new THREE.BoxGeometry(0.01,0.03,0.29),0xd8dde3,s*0.125,-0.022,0.1);gl(tube([[s*0.125,-0.026,0.24],[s*0.125,-0.018,0.265],[s*0.125,0.0,0.27]],0.005,8),0xd8dde3);[0.0,0.19].forEach(zz=>gl(new THREE.BoxGeometry(0.02,0.022,0.035),0xa0a6ad,s*0.125,-0.004,zz))});
   if(SHADES){[-1,1].forEach(s=>{gl(S(1,24,16),0x101418,s*0.105,0.765,0.3,0.08,0.062,0.014,0,s*0.3,0);x(tube([[s*0.18,0.775,0.272],[s*0.24,0.77,0.15],[s*0.277,0.765,0.05]],0.007,10),0x1d1d1d)});x(tube([[-0.035,0.79,0.31],[0,0.8,0.315],[0.035,0.79,0.31]],0.007,10),0x1d1d1d)}
   // a lavender crown: a woven ring of three twisted green and straw-coloured stems, with sprigs of lavender tucked in all
@@ -4137,21 +4254,36 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   if(V0.includes('icecream')){x(new _G.Cone(0.045,0.13,16),0xd9a35a,0.05,0.505,0.3,1,1,1,Math.PI,0,0);for(let k=0;k<4;k++)x(new _G.Tor(0.012+k*0.009,0.002,4,16),0xb07a3a,0.05,0.475+k*0.02,0.3,1,1,1,Math.PI/2,0,0);
     gl(S(0.05,20,14),0xffb3c7,0.05,0.6,0.31);[[0.03,0.64,0.33,0xffd23f],[0.08,0.62,0.33,0x7ab8ff],[0.05,0.645,0.28,0x7cc35a],[0.02,0.6,0.355,0xffffff],[0.085,0.58,0.34,0xff6b57]].forEach(([a,b,cc,col])=>x(new THREE.BoxGeometry(0.004,0.004,0.014),col,a,b,cc,1,1,1,a*30,b*20,0))}
   let armU=null,armF=null;if(ARMU.length){const ku=bkey+'|armU',kf=bkey+'|armF';armU=BODYG.get(ku);armF=BODYG.get(kf);
-    if(!armU){armU=sculpt(ARMU,{h:0.0108,blend:0.012,paint});armU.translate(-0.17,-0.43,-0.05);BODYG.set(ku,armU)}if(!armF){armF=sculpt(ARMF,{h:0.0108,blend:0.012,paint});armF.translate(-0.21,-0.35,-0.09);BODYG.set(kf,armF)}}
-  return{body,armU,armF,crown:CROWNG,extra:X.length?partsGeo(X):null,gloss:G.length?partsGeo(G):null,eyes:Y.length?partsGeo(Y):null,hi:H.length?partsGeo(H):null,veil:VL.length?partsGeo(VL):null}}
+    if(!armU){armU=sculpt(ARMU,{h:0.0108,blend:0.012,paint});armU.translate(-AJ.a[0],-AJ.a[1],-AJ.a[2]);BODYG.set(ku,armU)}if(!armF){armF=sculpt(ARMF,{h:0.0108,blend:0.012,paint});armF.translate(-AJ.m[0],-AJ.m[1],-AJ.m[2]);BODYG.set(kf,armF)}}
+  return{body,armU,armF,aj:AJ,smile:!SHADES&&K.ear!=='stalk',crown:CROWNG,extra:X.length?partsGeo(X):null,gloss:G.length?partsGeo(G):null,eyes:Y.length?partsGeo(Y):null,hi:H.length?partsGeo(H):null,veil:VL.length?partsGeo(VL):null}}
 function critterMesh(kind,variant){const key=kind+(variant||''),P=CRITG[key]||(CRITG[key]=critterParts(CRIT[kind],variant)),m=new THREE.Mesh(P.body,critMat);m.castShadow=true;
   const EY=[];[[P.extra,partMat],[P.gloss,glossMat],[P.eyes,eyeMat],[P.hi,hiMat],[P.veil,veilMat]].forEach(([g,mt])=>{if(g){const c=new THREE.Mesh(g,mt);c.castShadow=mt!==hiMat;m.add(c);if(g===P.eyes||g===P.hi)EY.push(c)}});
-  const V=variant||'';if(P.armU){const ag=new THREE.Group();ag.position.set(0.17,0.43,0.05);m.add(ag);const am=new THREE.Mesh(P.armU,critMat);am.castShadow=true;ag.add(am);
-    const fg=new THREE.Group();fg.position.set(0.04,-0.08,0.04);ag.add(fg);const fm=new THREE.Mesh(P.armF,critMat);fm.castShadow=true;fg.add(fm);m.userData.arm=ag;m.userData.fore=fg;
-    if(P.eyes){const sm=new THREE.Mesh(SMILEG(),eyeMat);sm.visible=false;m.add(sm);m.userData.smile=sm;m.userData.eyes=EY}WAVERS.push(m)}
+  const V=variant||'';if(P.armU){const J=P.aj,ag=new THREE.Group();ag.position.set(...J.a);m.add(ag);const am=new THREE.Mesh(P.armU,critMat);am.castShadow=true;ag.add(am);
+    const fg=new THREE.Group();fg.position.set(J.m[0]-J.a[0],J.m[1]-J.a[1],J.m[2]-J.a[2]);ag.add(fg);const fm=new THREE.Mesh(P.armF,critMat);fm.castShadow=true;fg.add(fm);m.userData.arm=ag;m.userData.fore=fg;
+    m.userData.wru=new THREE.Vector3(J.m[0]-J.a[0],J.m[1]-J.a[1],J.m[2]-J.a[2]).normalize();m.userData.wrf=new THREE.Vector3(J.q[0]-J.m[0],J.q[1]-J.m[1],J.q[2]-J.m[2]).normalize();WAVERS.push(m)}
+  if(P.eyes&&P.smile){const sm=new THREE.Mesh(SMILEG(),eyeMat);sm.visible=false;m.add(sm);m.userData.smile=sm;m.userData.eyes=EY;SMILERS.push(m)}
   if(P.crown){const c=new THREE.Mesh(P.crown,crownMat);c.castShadow=true;m.add(c)}
-  if(V.includes('king')){m.userData.noWave=true;kingCape(m)}
+  if(V.includes('king'))kingCape(m)
   if(V.includes('pinwheel'))pinwheel(m);
   return m}
 // the lavender crown's sprigs nod in the breeze like the lavender in the fields
 const crownMat=(()=>{const m=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.6,side:THREE.DoubleSide});m.customProgramCacheKey=()=>'crownsway';
   m.onBeforeCompile=sh=>{sh.uniforms.uTime=U_TIME;sh.vertexShader='attribute float aW;\nuniform float uTime;\n'+sh.vertexShader.replace('#include <begin_vertex>',`#include <begin_vertex>
     transformed.x+=aW*0.024*(sin(uTime*1.6+position.x*9.0+position.z*7.0)+0.45*sin(uTime*3.3+position.y*40.0));transformed.z+=aW*0.02*cos(uTime*1.25+position.z*8.0+position.x*3.0);`)};return m})();
+// a long skirt, made on a lathe so it flares from the waist to the floor, with its pattern painted on (the princess's
+// gown carries the castle sigil at the front); it stands clear of the legs and feet all round
+function drawSigil(c,x,y,sx,sy){c.save();c.translate(x,y);c.scale(sx,sy);const sh=()=>{c.beginPath();c.moveTo(-62,-58);c.lineTo(62,-58);c.lineTo(62,4);c.quadraticCurveTo(60,48,0,70);c.quadraticCurveTo(-60,48,-62,4);c.closePath()};
+  c.save();sh();c.clip();[['#3d7cc9',-62,-58],['#e04a3a',0,-58],['#2f9d6a',-62,6],['#8a5ad6',0,6]].forEach(([f,x,y])=>{c.fillStyle=f;c.fillRect(x,y,62,64)});c.restore();
+  c.lineWidth=8;c.strokeStyle='#ffcf3a';sh();c.stroke();c.lineWidth=2.5;c.strokeStyle='#8a6a10';sh();c.stroke();
+  c.fillStyle='#ffcf3a';c.beginPath();for(let k=0;k<10;k++){const a=-Math.PI/2+k*Math.PI/5,r=k%2?14:33;c.lineTo(Math.cos(a)*r,6+Math.sin(a)*r)}c.closePath();c.fill();c.strokeStyle='#8a6a10';c.lineWidth=2;c.stroke();
+  c.beginPath();c.moveTo(-32,-62);c.lineTo(-24,-84);c.lineTo(-12,-70);c.lineTo(0,-90);c.lineTo(12,-70);c.lineTo(24,-84);c.lineTo(32,-62);c.closePath();c.fillStyle='#ffcf3a';c.fill();c.stroke();c.restore()}
+const GOWNTEX={};
+function skirt(m,kind){const P=kind==='princess',prof=P?[[0.262,0.35],[0.272,0.32],[0.3,0.25],[0.35,0.16],[0.41,0.07],[0.445,0.0]]:[[0.262,0.35],[0.27,0.32],[0.295,0.25],[0.33,0.17],[0.37,0.1],[0.39,0.07]];
+  const tex=GOWNTEX[kind]||(GOWNTEX[kind]=canvasTex(512,256,c=>{if(P){const g=c.createLinearGradient(0,0,0,256);g.addColorStop(0,'#ee86b0');g.addColorStop(1,'#f8bfd6');c.fillStyle=g;c.fillRect(0,0,512,256);
+      for(let x=0;x<512;x+=24){c.fillStyle='rgba(255,255,255,0.10)';c.fillRect(x,0,10,256)}c.fillStyle='#ffcf3a';c.fillRect(0,4,512,12);for(let x=0;x<512;x+=22){c.fillStyle='#fff4f8';c.beginPath();c.arc(x+11,30,11,0,Math.PI);c.fill()}
+      c.fillStyle='#ffcf3a';c.fillRect(0,244,512,8);drawSigil(c,256,118,0.36,1.0)}
+    else{c.fillStyle='#22252b';c.fillRect(0,0,512,256);c.fillStyle='#ffffff';c.fillRect(196,0,120,256);for(let x=196;x<316;x+=12){c.beginPath();c.arc(x+6,6,6,0,Math.PI);c.fill()}c.fillStyle='#f0f0f0';c.fillRect(0,0,512,8)}}));
+  const g=new THREE.LatheGeometry(V2(prof),48,Math.PI,Math.PI*2),sk=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:tex,roughness:0.6,side:THREE.DoubleSide}));sk.castShadow=true;m.add(sk);return sk}
 // the king's cape is real cloth: it hangs from the shoulders, swings out behind as he walks and ripples gently
 const capeTex=canvasTex(512,256,c=>{const g=c.createLinearGradient(0,0,0,256);g.addColorStop(0,'#b81f2c');g.addColorStop(1,'#8a1420');c.fillStyle=g;c.fillRect(0,0,512,256);
   for(let x=0;x<512;x+=6){c.fillStyle=`rgba(255,255,255,${0.03+0.03*Math.sin(x*0.13)})`;c.fillRect(x,0,3,256)}
@@ -4178,24 +4310,27 @@ function pinwheel(m){const g=new THREE.Group();g.position.set(0.32,0.71,0.11);m.
   for(let k=0;k<4;k++){const s=new THREE.Shape();s.moveTo(0,0);s.lineTo(0.13,0);s.quadraticCurveTo(0.12,0.08,0.02,0.11);s.closePath();const bg=new THREE.ShapeGeometry(s,6),pp=bg.attributes.position;for(let i=0;i<pp.count;i++)pp.setZ(i,-0.05*pp.getX(i)*pp.getY(i)/0.013*0.1);bg.computeVertexNormals();
     const bl=new THREE.Mesh(bg,dbl(C[k],{roughness:0.6}));bl.rotation.z=k*Math.PI/2;bl.castShadow=true;w.add(bl)}
   w.add(new THREE.Mesh(new _G.Sph(0.018,10,8),M(0xffd23f)));PINW.push(w)}
-const PINW=[],WAVERS=[],IDQ=new THREE.Quaternion(),WREST=new THREE.Vector3(0.085,-0.175,0.095).normalize();
+const PINW=[],WAVERS=[],SMILERS=[],happy=m=>{m.userData.sa=true;return m},IDQ=new THREE.Quaternion(),WREST=new THREE.Vector3(0.085,-0.175,0.095).normalize();
 anims.push((t,dt)=>{for(const w of PINW)w.rotation.z-=dt*1.4});
 // happy closed eyes: a little upturned arc over each eye, lying on the face (every pet's head is the same shape there)
 const SMILEG=(()=>{let g=null;return()=>{if(g)return g;const P=[],a=partAdder(P);[-1,1].forEach(s=>{const pts=[];for(let k=0;k<=12;k++){const an=Math.PI*(0.12+0.76*k/12),x=s*0.105+0.048*Math.cos(an),y=0.733+0.034*Math.sin(an);
     pts.push([x,y,0.02+0.255*Math.sqrt(Math.max(0,1-(x/0.275)**2-((y-0.71)/0.245)**2))+0.012])}a(tube(pts,0.0095,24,8),0x17110d);[0,12].forEach(k=>a(new _G.Sph(0.0095,8,6),0x17110d,...pts[k]))});return g=partsGeo(P)}})();
-// pets with a free paw wave at you when you come close: they turn to look at you, close their eyes in a smile, lift
-// the arm out in front with the elbow bent and wave the paw from side to side in front of their face
-const WRU=new THREE.Vector3(0.04,-0.08,0.04).normalize(),WRF=new THREE.Vector3(0.045,-0.095,0.055).normalize(),WWU=new THREE.Vector3(0.35,0.45,0.82).normalize();
-function waveUpdate(t,dt){const wp=waveUpdate.v||(waveUpdate.v=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Vector3(),new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion()]),[p,d,F,qU,qF,qi]=wp;
-  for(const m of WAVERS){const u=m.userData,arm=u.arm,fore=u.fore;if(u.noWave){if(u.smile&&u.smile.visible){u.smile.visible=false;u.eyes.forEach(e=>e.visible=true)}continue}if(!m.visible){u.wv=0;continue}
-    if(u.wv==null){u.wv=0;u.cd=Math.random()*3;u.ph=Math.random()*6}u.cd-=dt;
-    if(u.wv<=0){if(u.cd<=0){m.getWorldPosition(p);const dx=camera.position.x-p.x,dz=camera.position.z-p.z,d2=dx*dx+dz*dz;if(d2<20&&d2>0.4){m.getWorldDirection(d);if((d.x*dx+d.z*dz)/Math.sqrt(d2)>0.3){u.wv=2.8;u.cd=8}}}
+// pets with a free paw wave at you when you come close: they stop, turn to look at you, close their eyes in a smile, lift
+// the arm out in front with the elbow bent and wave the paw from side to side in front of their face. pets having fun
+// smile all the time, and a pet beside you on a bench smiles when it turns to look at you
+const WWU=new THREE.Vector3(0.35,0.45,0.82).normalize();
+function waveUpdate(t,dt){const wp=waveUpdate.v||(waveUpdate.v=[new THREE.Vector3(),new THREE.Vector3(),new THREE.Quaternion(),new THREE.Quaternion(),new THREE.Quaternion()]),[p,F,qU,qF,qi]=wp;
+  for(const m of WAVERS){const u=m.userData,arm=u.arm,fore=u.fore;
+    if(!(u.cd>-1e9)){u.wv=0;u.cd=Math.random()*2;u.ph=Math.random()*6}   // set up every pet's timer first, even one that starts out of sight
+    if(u.noWave||!m.visible){u.wv=0;u.sw=false;if(arm.quaternion.w<0.99999)arm.quaternion.slerp(IDQ,Math.min(1,dt*6));if(fore.quaternion.w<0.99999)fore.quaternion.slerp(IDQ,Math.min(1,dt*6));continue}
+    u.cd-=dt;
+    if(u.wv<=0){u.sw=false;if(u.cd<=0&&mode!=='sit'){m.getWorldPosition(p);const dx=camera.position.x-p.x,dz=camera.position.z-p.z,d2=dx*dx+dz*dz;if(d2<20&&d2>0.3){u.wv=3.0;u.cd=10}}
       if(arm.quaternion.w<0.99999)arm.quaternion.slerp(IDQ,Math.min(1,dt*6));if(fore.quaternion.w<0.99999)fore.quaternion.slerp(IDQ,Math.min(1,dt*6));continue}
-    u.wv-=dt;const e=Math.max(0,Math.min(1,(2.8-u.wv)/0.4,u.wv/0.4)),k=e*e*(3-2*e),th=0.38*Math.sin(t*8.5+u.ph);
-    qU.setFromUnitVectors(WRU,WWU);F.set(-0.05*Math.cos(th)-0.6*Math.sin(th),-0.05*Math.sin(th)+0.6*Math.cos(th),0.8).normalize();qi.copy(qU).invert();F.applyQuaternion(qi);qF.setFromUnitVectors(WRF,F);
-    arm.quaternion.copy(IDQ).slerp(qU,k);fore.quaternion.copy(IDQ).slerp(qF,k);
-    if(u.smile){const sm=k>0.5;if(u.smile.visible!==sm){u.smile.visible=sm;u.eyes.forEach(e=>e.visible=!sm)}}
-    if(m.parent===scene){const dx=camera.position.x-m.position.x,dz=camera.position.z-m.position.z;let df=Math.atan2(dx,dz)-m.rotation.y;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;m.rotation.y+=df*k}}}
+    u.wv-=dt;const e=Math.max(0,Math.min(1,(3.0-u.wv-0.25)/0.4,u.wv/0.4)),k=e*e*(3-2*e),th=0.38*Math.sin(t*8.5+u.ph);
+    qU.setFromUnitVectors(u.wru,WWU);F.set(-0.05*Math.cos(th)-0.6*Math.sin(th),-0.05*Math.sin(th)+0.6*Math.cos(th),0.8).normalize();qi.copy(qU).invert();F.applyQuaternion(qi);qF.setFromUnitVectors(u.wrf,F);
+    arm.quaternion.copy(IDQ).slerp(qU,k);fore.quaternion.copy(IDQ).slerp(qF,k);u.sw=k>0.4;
+    if(m.parent===scene){const dx=camera.position.x-m.position.x,dz=camera.position.z-m.position.z;let df=Math.atan2(dx,dz)-m.rotation.y;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;m.rotation.y+=df*Math.min(1,dt*7)}}
+  for(const m of SMILERS){const u=m.userData,want=!!(u.sa||u.sw||u.sl||(u.sfn&&u.sfn()));if(u.smile.visible!==want){u.smile.visible=want;u.eyes.forEach(e=>e.visible=!want)}}}
 // soft fur: fine strands in the texture and bump, with a velvety sheen at the edges
 // pets: a soft, smooth, gently mottled skin (the old fur texture and bump looked spotty up close)
 const BODYG=new Map();const critMat=triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.6,sheen:new THREE.Color(0.3,0.28,0.26)}),softTex,2.2,0,true),CRITG={};
@@ -4225,7 +4360,7 @@ function critters(kind,n,zTop,zBot,sc,scarf,variant){const a={x0:-AW+1.5,x1:AW-1
 [[['sprout',4],['puffle',3]],[['embertail',3],['hopbun',2,0,undefined,'farmer #3d7cc9'],['sprout',2,0,undefined,'farmer #2f9d6a']],[['splashy',5],['sprout',2]],[],[['hopbun',4,0,undefined,'reach pinwheel'],['embertail',2,0,undefined,'reach pinwheel']],[['pincher',4,0,undefined,'shades'],['splashy',3,0,undefined,'shades']],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown']],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]],[['sprout',3],['hopbun',2],['petalpip',2]]]
   .forEach((list,o)=>{const r=ROOMS.findIndex(q=>q.orig===o);list.forEach(([k,n,zt,zb,v])=>critters(k,n,z0s[r]+(zt||0),z0s[r]+(zb!=null?zb:-AREA),1,r===SNOWR,v))});   // the castle's field pets wear clown make-up
 // pets having a swim at Number Bond Beach, each in a stripy rubber ring, paddling slow loops in the sea
-function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=critterMesh(kind);m.userData.noWave=true;m.position.y=-0.36;g.add(m);
+function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=happy(critterMesh(kind));m.userData.noWave=true;m.position.y=-0.36;g.add(m);
   const ring=new THREE.Mesh(new _G.Tor(0.34,0.11,14,36),new THREE.MeshStandardMaterial({map:stripeFlat(col,6),roughness:0.35}));ring.rotation.x=Math.PI/2;ring.position.y=0.07;ring.castShadow=true;g.add(ring);
   RIPPLERS.push({o:g.position});const sp=0.12+RS()*0.06;
   anims.push((t,dt)=>{const a=t*sp+ph,x=cx+Math.cos(a)*rx,z=cz+Math.sin(a)*rz;g.position.set(x,Math.sin(t*1.8+ph)*0.03,z);g.rotation.y=Math.atan2(-Math.sin(a)*rx,Math.cos(a)*rz);
@@ -4234,19 +4369,19 @@ function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g)
   .forEach(([k,x,z,rx,rz,ph,c])=>swimmer(k,x,zb+z,rx,rz,ph,c))}
 // a pet flying the kite in Adding Garden: it stands by the picnic blanket holding the string up in one paw
 {const ax=-19,az=z0s[RI('adding')]-49,g=new THREE.Group();g.position.set(ax+1.5,0,az+0.6);g.rotation.y=Math.atan2(2.5,-5.6);scene.add(g);
- const sc=1.25,m=critterMesh('hopbun','reach');m.scale.setScalar(sc);g.add(m);
+ const sc=1.25,m=happy(critterMesh('hopbun','reach'));m.scale.setScalar(sc);g.add(m);
  const paw=new THREE.Object3D();paw.position.set(0.31,0.73,0.11);m.add(paw);KITE.a.hand=paw;colCirc(g.position.x,g.position.z,0.45);
  anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.4))*0.05;g.rotation.z=Math.sin(t*1.3)*0.05})}
 // a second pet flies the blue kite on the other side of the blanket (its string heads away from the first pet)
 {const ax=-19,az=z0s[RI('adding')]-49,g=new THREE.Group();g.position.set(ax-1.9,0,az+0.9);g.rotation.y=Math.atan2(-2.6,-6.9);scene.add(g);
- const sc=1.15,m=critterMesh('puffle','reach');m.scale.setScalar(sc);g.add(m);
+ const sc=1.15,m=happy(critterMesh('puffle','reach'));m.scale.setScalar(sc);g.add(m);
  const paw=new THREE.Object3D();paw.position.set(0.31,0.73,0.11);m.add(paw);KITE.b.hand=paw;colCirc(g.position.x,g.position.z,0.45);
  anims.push(t=>{m.position.y=Math.abs(Math.sin(t*2.1+1))*0.05;g.rotation.z=Math.sin(t*1.1+2)*0.05})}
 Object.keys(CRIT).forEach(k=>critters(k,1,zF0,zF0-FIN,1.15));
 // a little circus on the castle field: a card-trick pet, a juggler with bowling pins and a mime, each on a striped ring mat
 {const z0=z0s[RI('castle')],ringTex=canvasTex(256,256,c=>{for(let i=0;i<16;i++){c.fillStyle=i%2?'#fffaf0':'#d8352a';c.beginPath();c.moveTo(128,128);c.arc(128,128,126,i/16*Math.PI*2,(i+1)/16*Math.PI*2);c.fill()}c.fillStyle='#ffd23f';c.beginPath();c.arc(128,128,40,0,7);c.fill()});
  const mat=x=>flat(new THREE.CircleGeometry(1.3,48),new THREE.MeshStandardMaterial({map:ringTex,roughness:0.85}),x[0],0.025,x[1]);
- const perf=(kind,v,x,z,ry)=>{const m=critterMesh(kind,v);m.scale.setScalar(1.05);m.position.set(x,0,z);m.rotation.y=ry;scene.add(m);mat([x,z]);colCirc(x,z,0.45);reserve(x,z,1.6);return m};
+ const perf=(kind,v,x,z,ry)=>{const m=happy(critterMesh(kind,v));m.scale.setScalar(1.05);m.position.set(x,0,z);m.rotation.y=ry;scene.add(m);mat([x,z]);colCirc(x,z,0.45);reserve(x,z,1.6);return m};
  // card tricks: a fan of cards in one paw, and a card that jumps up, flips over and drops back
  {const m=perf('puffle','clown front',-9,z0-12,0.5),cardTex=canvasTex(64,96,c=>{c.fillStyle='#fffaf0';rr(c,1,1,62,94,8);c.fill();c.strokeStyle='#1d3340';c.lineWidth=2;c.stroke();c.fillStyle='#d8352a';c.font=`800 30px ${FD}`;c.textAlign='center';c.fillText('7',32,40);c.font='34px serif';c.fillText('♥',32,80)}),
     back=canvasTex(64,96,c=>{c.fillStyle='#3d7cc9';rr(c,1,1,62,94,8);c.fill();c.strokeStyle='#fffaf0';c.lineWidth=4;rr(c,7,7,50,82,6);c.stroke()}),cg=new THREE.PlaneGeometry(0.15,0.22),cm=[new THREE.MeshStandardMaterial({map:cardTex,side:THREE.FrontSide,roughness:0.5}),new THREE.MeshStandardMaterial({map:back,side:THREE.FrontSide,roughness:0.5})];
@@ -4277,15 +4412,19 @@ function skateTrail(m,y){const N=320,pos=new Float32Array(N*6),at=new Float32Arr
   const L=new THREE.LineSegments(g,trailMat);L.frustumCulled=false;L.renderOrder=2;scene.add(L);let i=0,acc=0;const prev=[new THREE.Vector3(),new THREE.Vector3()],has=[false,false],v=new THREE.Vector3();
   return(t,dt)=>{acc+=dt;if(acc<0.05)return;acc=0;m.updateMatrixWorld();for(let f=0;f<2;f++){v.set(f?0.125:-0.125,0,0.1);m.localToWorld(v);if(has[f]){const k=i%N;pos[k*6]=prev[f].x;pos[k*6+1]=y;pos[k*6+2]=prev[f].z;pos[k*6+3]=v.x;pos[k*6+4]=y;pos[k*6+5]=v.z;at[k*2]=at[k*2+1]=t;i++}prev[f].copy(v);has[f]=true}
     g.attributes.position.needsUpdate=true;g.attributes.aT.needsUpdate=true}}
-// skaters spaced evenly round an oval on the ice, all going the same way at the same pace, so they never bump into each
-// other; each weaves a little in and out of the oval
-function skaters(cx,cz,rx,rz,list,sp){list.forEach(([k,v,ph,sc,scarf],j)=>{const m=critterMesh(k,v+' skates');m.scale.setScalar(sc||0.85);scene.add(m);if(scarf)addScarf(m);const tr=skateTrail(m,0.031);let h0=null;
-  anims.push((t,dt)=>{if(!near2(m,70))return;const a=t*sp+ph,wob=1+0.07*Math.sin(t*0.9+j*2.1),x=cx+Math.cos(a)*rx*wob,z=cz+Math.sin(a)*rz*wob;
-    const h=Math.atan2(-Math.sin(a)*rx,Math.cos(a)*rz)+Math.sin(t*2.2+j)*0.12;let dh=h0==null?0:h-h0;while(dh>Math.PI)dh-=Math.PI*2;while(dh<-Math.PI)dh+=Math.PI*2;h0=h;
-    m.position.set(x,0.028+0.037*(sc||0.85),z);m.rotation.order='YXZ';m.rotation.set(0.12,h,(dt>0?Math.max(-0.3,Math.min(0.3,dh/dt*0.35)):0)+Math.sin(t*2.2+j)*0.08);tr(t,dt)})})}
-if(FROST.pond){const [px0,pz0,rx,rz]=FROST.pond;skaters(px0,pz0,rx*0.6,rz*0.55,[['frostbun','wide',0,0.85,1],['puffle','front',Math.PI,0.82,1]],0.42)}
-if(FROST.rink){const [rx0,rz0,rx,rz]=FROST.rink;skaters(rx0,rz0,rx*0.62,rz*0.58,[['frostbun','wide',0,0.85,1],['hopbun','front',2.094,0.85,1],['puffle','wide',4.189,0.82,1]],0.3)}
-if(FROST.fire){const [fx,fz]=FROST.fire;[[fx-1.7,fz],[fx,fz-1.8]].forEach(([x,z],i)=>{const m=critterMesh(i?'frostbun':'puffle','front');m.scale.setScalar(0.8);m.position.set(x,0.4,z);scene.add(m);addScarf(m);   // sitting on the log seats, paws out to the fire
+// each skater has its own line on the ice and keeps to it: one glides round a steady circle, one swoops round a wavy
+// one, and one spins on the spot like an ice dancer, slowly at first, then fast with its arms out, and back again. their
+// paths never cross, and every skater smiles
+function skater(kind,v,sc,scarf,path,trail){const m=happy(critterMesh(kind,v+' skates'));m.scale.setScalar(sc);scene.add(m);if(scarf)addScarf(m);const tr=trail?skateTrail(m,0.031):null;let h0=null;
+  anims.push((t,dt)=>{if(!near2(m,70))return;const q=path(t,dt);let dh=h0==null?0:q.h-h0;while(dh>Math.PI)dh-=Math.PI*2;while(dh<-Math.PI)dh+=Math.PI*2;h0=q.h;
+    m.position.set(q.x,0.028+0.037*sc,q.z);m.rotation.order='YXZ';m.rotation.set(q.tilt!=null?q.tilt:0.12,q.h,q.roll!=null?q.roll:(dt>0?Math.max(-0.3,Math.min(0.3,dh/dt*0.35)):0));if(tr)tr(t,dt)})}
+const circlePath=(cx,cz,r,w,ph,amp,lobes)=>t=>{const at=a=>{const rr=r+(amp||0)*Math.sin(a*(lobes||5));return[cx+Math.cos(a)*rr,cz+Math.sin(a)*rr]},a=t*w+ph,[x,z]=at(a),[x2,z2]=at(a+0.01*Math.sign(w));return{x,z,h:Math.atan2(x2-x,z2-z)}};
+const spinPath=(cx,cz)=>{let ang=0;return(t,dt)=>{const c=t%10,fast=Math.max(0,Math.min(1,(c-2)/1.2))*Math.max(0,Math.min(1,(8.5-c)/1.2)),sp=1.0+9*fast*fast;ang+=sp*(dt||0);
+  const r=0.35*(1-fast);return{x:cx+Math.cos(t*0.8)*r,z:cz+Math.sin(t*0.8)*r,h:ang,tilt:0.04,roll:Math.sin(t*1.7)*0.04*(1-fast)}}};
+if(FROST.pond){const [px0,pz0,rx,rz]=FROST.pond;skater('frostbun','wide',0.85,1,circlePath(px0,pz0,Math.min(rx,rz)*0.68,0.4,0),1);skater('puffle','wide',0.82,1,spinPath(px0,pz0),1)}
+if(FROST.rink){const [rx0,rz0,rx,rz]=FROST.rink;skater('frostbun','wide',0.85,1,circlePath(rx0-4.6,rz0,2.5,0.38,0),1);skater('hopbun','front',0.85,1,circlePath(rx0+4.6,rz0,2.25,-0.33,1.3,0.42,5),1);
+  skater('puffle','wide',0.82,1,spinPath(rx0,rz0+2.4),1)}
+if(FROST.fire){const [fx,fz]=FROST.fire;[[fx-1.7,fz],[fx,fz-1.8]].forEach(([x,z],i)=>{const m=happy(critterMesh(i?'frostbun':'puffle','front'));m.scale.setScalar(0.8);m.position.set(x,0.4,z);scene.add(m);addScarf(m);   // sitting on the log seats, paws out to the fire
     m.lookAt(fx,0.4,fz);const ph=i*2;anims.push(t=>{m.position.y=0.4+Math.abs(Math.sin(t*1.3+ph))*0.01})})}
 // a polar bear cub pottering about inside the big igloo: round and fluffy, with small round ears, a black nose and
 // shiny eyes. it toddles to a spot, sniffs about or sits for a moment, and toddles on, keeping to the quiet side of
@@ -4318,9 +4457,9 @@ if(FROST.fire){const [fx,fz]=FROST.fire;[[fx-1.7,fz],[fx,fz-1.8]].forEach(([x,z]
      if(S.ph==='go'){const df=turnTo(Q,Math.atan2(S.qx-Q.x,S.qz-Q.z),3,dt),d=Math.hypot(S.qx-Q.x,S.qz-Q.z);C.o.rotation.z*=0.8;
        if(d>0.03){if(Math.abs(df)<0.5){const s2=Math.min(d,dt*Q.sp);Q.x+=Math.sin(Q.h)*s2;Q.z+=Math.cos(Q.h)*s2;Q.w+=dt*9}Q.o.position.y=Math.abs(Math.sin(Q.w))*0.03;Q.o.rotation.z=Math.sin(Q.w)*0.07}
        else{Q.x=S.qx;Q.z=S.qz;S.ph='turn';Q.o.position.y=0;Q.o.rotation.z=0}if(S.tm>9){S=null;cool=4}}
-     else if(S.ph==='turn'){if(Math.abs(turnTo(Q,S.hp,2.5,dt))<0.02){Q.h=S.hp;S.ph='pet';S.tm=0;pet.userData.noWave=true}}
+     else if(S.ph==='turn'){if(Math.abs(turnTo(Q,S.hp,2.5,dt))<0.02){Q.h=S.hp;S.ph='pet';S.tm=0;pet.userData.noWave=true;pet.userData.sa=true}}
      else{const e=Math.max(0,Math.min(1,S.tm/0.5,(4.6-S.tm)/0.5)),k=e*e*(3-2*e);av.set(0.212,0.056+0.012*Math.sin(S.tm*10),0.059+0.045*Math.sin(S.tm*5)).normalize();aq.setFromUnitVectors(WREST,av);arm.quaternion.copy(IDQ).slerp(aq,k);
-       C.o.rotation.z=Math.sin(S.tm*4)*0.04*k;C.o.rotation.x=-0.06*k;if(S.tm>4.6){S=null;cool=10+Math.random()*8;C.tm=1.5;C.o.rotation.x=0;pet.userData.noWave=false;arm.quaternion.copy(IDQ)}}}
+       C.o.rotation.z=Math.sin(S.tm*4)*0.04*k;C.o.rotation.x=-0.06*k;if(S.tm>4.6){S=null;cool=10+Math.random()*8;C.tm=1.5;C.o.rotation.x=0;pet.userData.noWave=false;pet.userData.sa=false;arm.quaternion.copy(IDQ)}}}
    if(!S)for(const a of A)if(!a.close)roam(a,a===C?Q:C,dt);
    for(const a of A){a.o.position.x=a.x;a.o.position.z=a.z;a.o.rotation.y=a.h}})}
 /* ---------- fireworks over the sea beyond Finish Meadow ----------
@@ -4369,7 +4508,7 @@ function fishGeo(kind){if(FISHG[kind])return FISHG[kind];const B={trout:0x7a7a48
       if(Math.abs(z+0.2)<0.04||Math.abs(y)>0.045)mixC(c,BL,0.25)}});return FISHG[kind]=g}
 function fishMesh(kind,sc){const m=new THREE.Mesh(fishGeo(kind),fishMat);m.scale.setScalar(sc||1);m.castShadow=true;scene.add(m);return m}
 const FISH_OBST=[];
-function fishSplash(x,z,big){ripple(x,0.072,z,big?1.2:0.7,1.4);if(!AMB.ready||muted)return;const d=Math.hypot(x-camera.position.x,z-camera.position.z);if(d>30)return;SHOT.splash(shotOut(0.05*(1-d/30),0),AC.currentTime)}
+function fishSplash(x,z,big){ripple(x,0.072,z,big?1.2:0.7,1.4);if(!AMB.ready||muted)return;const d=Math.hypot(x-camera.position.x,z-camera.position.z);if(!(d<30))return;SHOT.splash(shotOut(0.05*(1-d/30),0),AC.currentTime)}
 // river fish: brown trout swimming up and down just under the surface; now and then one leaps clear of the water in a
 // short arc (only well away from the bridge, travelling away from it, so a leap can never reach it)
 function riverFish(c,hw,n){for(let i=0;i<n;i++){const m=fishMesh('trout',1.4+RS()*0.6);let x=(RS()<0.5?-1:1)*(6+RS()*(AW-9)),z=c+(RS()-0.5)*(hw*2-1.6),dir=RS()<0.5?1:-1,sp=0.5+RS()*0.6,jt=4+RS()*10,jump=null,ph=RS()*6;
@@ -4405,7 +4544,7 @@ function pondFish(cx,cz,rx,rz,n){for(let i=0;i<n;i++){const m=fishMesh(i%3?'koi'
  const tip=new THREE.Object3D();tip.position.y=RL;rod.add(tip);
  const bob=new THREE.Group();scene.add(bob);[[0xd8202a,0],[0xffffff,Math.PI/2]].forEach(([c,a])=>bob.add(new THREE.Mesh(new _G.Sph(0.032,14,8,0,Math.PI*2,a,Math.PI/2),M(c))));{const st=new THREE.Mesh(new _G.Cyl(0.004,0.004,0.05,6),M(0xd8202a));st.position.y=0.045;bob.add(st)}
  const lineG=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3()]),line=new THREE.Line(lineG,new THREE.LineBasicMaterial({color:0xf4f4f4,transparent:true,opacity:0.75}));line.frustumCulled=false;scene.add(line);
- const caught=fishMesh('trout',0.9);caught.visible=false;caught.rotation.order='YXZ';
+ const caught=fishMesh('trout',0.9);caught.visible=false;m.userData.sfn=()=>caught.visible;caught.rotation.order='YXZ';
  const rx_=Math.cos(ry),rz_=-Math.sin(ry),bx=px0+rx_*0.75,bz=pz0+rz_*0.75;
  mesh(lathe([[0,0],[0.15,0],[0.17,0.02],[0.19,0.3],[0.2,0.31],[0.185,0.31],[0.175,0.03],[0,0.03]],28),new THREE.MeshStandardMaterial({color:lin(0xa9b1b9),metalness:0.7,roughness:0.35}),bx,0.3,bz);
  [0.08,0.2].forEach(y=>{const r=new THREE.Mesh(new _G.Tor(0.172+y*0.07,0.006,6,28),new THREE.MeshStandardMaterial({color:lin(0x8e969e),metalness:0.7,roughness:0.4}));r.rotation.x=Math.PI/2;r.position.set(bx,0.3+y,bz);scene.add(r)});
@@ -4458,14 +4597,14 @@ const near2=(m,r)=>{const dx=m.position.x-camera.position.x,dz=m.position.z-came
 // two pets sitting on the café chairs by the market's 7th puzzle, face to face across the little table
 {const zm=z0s[RI('match')],cf=CAFES.find(q=>Math.abs(q.x+19)<0.1&&Math.abs(q.z-(zm-62))<0.1);
  if(cf)[[0,'starbit'],[Math.PI,'puffle']].forEach(([a,k],j)=>{const lx=Math.sin(a)*0.69,lz=Math.cos(a)*0.69,wx=cf.x+lx*Math.cos(cf.ry)+lz*Math.sin(cf.ry),wz=cf.z-lx*Math.sin(cf.ry)+lz*Math.cos(cf.ry),ry=cf.ry+a+Math.PI;
-   const m=critterMesh(k);m.scale.setScalar(0.75);m.position.set(wx,0.48,wz);m.rotation.y=ry;scene.add(m);anims.push(t=>{if(!near2(m,50))return;m.rotation.z=Math.sin(t*1.1+j*2)*0.04;m.rotation.y=ry+Math.sin(t*0.6+j*3)*0.25})})}
+   const m=happy(critterMesh(k));m.scale.setScalar(0.75);m.position.set(wx,0.48,wz);m.rotation.y=ry;scene.add(m);anims.push(t=>{if(!near2(m,50))return;m.rotation.z=Math.sin(t*1.1+j*2)*0.04;m.rotation.y=ry+Math.sin(t*0.6+j*3)*0.25})})}
 // Sunflower Lane: two beekeepers in white suits, gloves and veiled hats walk slowly round the three hives, now and
 // then stopping to turn and look the hives over. they follow the same loop half a lap apart, so they never meet
 {const si=CONN.findIndex(c=>c.name==='Sunflower Lane');if(si>=0){const gz=z0s[si]-AREA,L=[[2.0,gz-6.0],[3.5,gz-6.0],[3.5,gz-10.8],[2.0,gz-10.8]],seg=[],P=[0];
   for(let k=0;k<4;k++){const a=L[k],b=L[(k+1)%4],l=Math.hypot(b[0]-a[0],b[1]-a[1]);seg.push([a,b,l]);P.push(P[k]+l)}const per=P[4];
   const at=s=>{s=((s%per)+per)%per;for(let k=0;k<4;k++)if(s<=P[k+1]){const [a,b,l]=seg[k],u=(s-P[k])/l;return[a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,Math.atan2(b[0]-a[0],b[1]-a[1])]}return[L[0][0],L[0][1],0]};
   [['sprout',0],['hopbun',per/2]].forEach(([k,off],j)=>{const m=critterMesh(k,'beekeeper front');m.scale.setScalar(0.82);scene.add(m);let h=0,hop=0;
-   anims.push((t,dt)=>{if(!near2(m,60))return;const s=0.28*t+0.6*Math.sin(t*0.4)+off,v=0.28+0.24*Math.cos(t*0.4),[x,z,dirn]=at(s);
+   anims.push((t,dt)=>{if(!near2(m,60)||m.userData.wv>0)return;const s=0.28*t+0.6*Math.sin(t*0.4)+off,v=0.28+0.24*Math.cos(t*0.4),[x,z,dirn]=at(s);
      const slow=1-Math.min(1,v/0.2),want=slow>0.3?Math.atan2(2.8-x,(z<gz-8.4?Math.max(gz-9.8,z):Math.min(gz-7,z))-z+0.0001):dirn;let df=want-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=df*Math.min(1,dt*3);
      hop+=dt*v*16;m.position.set(x,heightAt(x,z)+Math.abs(Math.sin(hop))*0.08*Math.min(1,v/0.2),z);m.rotation.y=h;m.rotation.z=Math.sin(hop)*0.05*Math.min(1,v/0.2)})})}}
 // Stepping Stone Brook: a pet on the bank by the bridge skipping stones. it winds up and flicks a flat pebble that
@@ -4507,7 +4646,7 @@ function skimboard(c1,c2){const L=1.2,W=0.5,s=new THREE.Shape();s.moveTo(0,-L/2)
   const m=new THREE.Mesh(g,[new THREE.MeshStandardMaterial({map:tex,roughness:0.35}),new THREE.MeshStandardMaterial({color:0xf6f6f2,roughness:0.4})]);m.castShadow=true;return m}
 {const zb=z0s[RI('beach')];
  [['starbit',25.0,-11,5,'#3d7cc9','#3ad6c0',0],['splashy',24.3,-42,3.3,'#ff6b57','#ffd23f',2]].forEach(([k,x0,zc,A,c1,c2,ph])=>{const g=new THREE.Group();scene.add(g);const bd=skimboard(c1,c2);g.add(bd);
-   const m=critterMesh(k,'wide shades');m.scale.setScalar(0.78);m.position.y=0.024;m.rotation.y=-Math.PI/2;g.add(m);RIPPLERS.push({o:g.position});let lastV=0;
+   const m=happy(critterMesh(k,'wide'));m.scale.setScalar(0.78);m.position.y=0.024;m.rotation.y=-Math.PI/2;g.add(m);RIPPLERS.push({o:g.position});let lastV=0;
    anims.push((t,dt)=>{if(!near2(g,90))return;const w=0.25,a=t*w+ph,z=zb+zc+A*Math.sin(a),v=A*w*Math.cos(a),x=x0+0.6*Math.sin(t*0.37+ph);
      const h=seaH(x,z),hz=(seaH(x,z+0.5)-seaH(x,z-0.5)),hx=(seaH(x+0.3,z)-seaH(x-0.3,z))/0.6;g.position.set(x,h-0.004,z);g.rotation.set(-Math.atan(hz),0,Math.atan(hx));
      const acc=dt>0?(v-lastV)/dt:0;lastV=v;m.rotation.x=Math.max(-0.2,Math.min(0.2,acc*0.25))+Math.sin(t*2.3+ph)*0.04;m.position.y=0.024+Math.abs(Math.sin(t*1.7+ph))*0.01})});
@@ -4534,7 +4673,7 @@ function skimboard(c1,c2){const L=1.2,W=0.5,s=new THREE.Shape();s.moveTo(0,-L/2)
   const gm=new THREE.Mesh(partsGeo(G),new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.2,clearcoat:1,clearcoatRoughness:0.08}));gm.castShadow=true;ride.add(gm);
   const mm=new THREE.Mesh(partsGeo(Mt),new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.8}));mm.castShadow=true;ride.add(mm);
   const vs=new THREE.Mesh(new THREE.CylinderGeometry(0.36,0.36,0.16,24,1,true,-0.55,1.1),new THREE.MeshStandardMaterial({color:0x2a3a48,transparent:true,opacity:0.55,roughness:0.05,side:THREE.DoubleSide}));vs.position.set(0,0.66,-0.06);vs.rotation.x=-0.35;ride.add(vs)}
- const rider=critterMesh('puffle','front shades');rider.scale.setScalar(0.8);rider.position.set(0,0.62,-0.35);ride.add(rider);
+ const rider=happy(critterMesh('puffle','front busy'));rider.scale.setScalar(0.8);rider.position.set(0,0.62,-0.35);ride.add(rider);
  const N=48,sp=new Float32Array(N*3).fill(-999),sv=new Float32Array(N*3),sl=new Float32Array(N),spg=new THREE.BufferGeometry();spg.setAttribute('position',new THREE.BufferAttribute(sp,3));
  const spray=new THREE.Points(spg,new THREE.PointsMaterial({color:0xffffff,size:0.13,transparent:true,opacity:0.7,depthWrite:false}));spray.frustumCulled=false;scene.add(spray);
  let h0=null,wk=0,si=0;const cxj=31,czj=zb-34,rxj=4,rzj=20,nz=new THREE.Vector3();
@@ -4550,9 +4689,9 @@ function skimboard(c1,c2){const L=1.2,W=0.5,s=new THREE.Shape();s.moveTo(0,-L/2)
 // over at you
 KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMesh(cocoa?'frostbun':'starbit','shop front '+(cocoa?'#d8352a':'#ff6b9a'));sh.scale.setScalar(0.95);sh.position.set(sx,0.3,sz);sh.rotation.y=Math.PI/2;scene.add(sh);
   const look=lookAbout(sh,Math.PI/2,j*2,12);anims.push((t,dt)=>{if(!near2(sh,45))return;look(t,dt);const c=(t+j*3)%7;sh.rotation.x=c<1.6?0.16*Math.sin(c/1.6*Math.PI):0;sh.position.y=0.3+Math.abs(Math.sin(t*1.7))*0.006});
-  const [qx,qz]=k.pet,pm=critterMesh(cocoa?'puffle':'sprout',cocoa?'hold cocoa':'lick icecream shades');pm.scale.setScalar(0.8);pm.position.set(qx,0.48,qz);pm.rotation.y=Math.PI/2;scene.add(pm);if(cocoa)addScarf(pm);
+  const [qx,qz]=k.pet,pm=happy(critterMesh(cocoa?'puffle':'sprout',cocoa?'hold cocoa':'lick icecream shades'));pm.scale.setScalar(0.8);pm.position.set(qx,0.48,qz);pm.rotation.y=Math.PI/2;scene.add(pm);if(cocoa)addScarf(pm);
   let lk=0,tm=3;anims.push((t,dt)=>{if(!near2(pm,45))return;const mine=mode==='sit'&&k.seats.includes(sitB);tm-=dt;if(tm<0){lk=mine&&!lk&&Math.random()<0.75?1:0;tm=lk?2.5+Math.random()*2.5:2+Math.random()*4}if(!mine)lk=0;
-    let want=Math.PI/2+Math.sin(t*0.4+j)*0.15;if(lk){let d=Math.atan2(camera.position.x-pm.position.x,camera.position.z-pm.position.z)-Math.PI/2;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;want=Math.PI/2+Math.max(-1.3,Math.min(1.3,d))}
+    pm.userData.sl=lk===1;let want=Math.PI/2+Math.sin(t*0.4+j)*0.15;if(lk){let d=Math.atan2(camera.position.x-pm.position.x,camera.position.z-pm.position.z)-Math.PI/2;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;want=Math.PI/2+Math.max(-1.3,Math.min(1.3,d))}
     let df=want-pm.rotation.y;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;pm.rotation.y+=df*Math.min(1,dt*3);pm.rotation.z=Math.sin(t*1.1+j)*0.03});
   if(cocoa){const N=6,sg=new THREE.BufferGeometry(),sp=new Float32Array(N*3);sg.setAttribute('position',new THREE.BufferAttribute(sp,3));const st=new THREE.Points(sg,new THREE.PointsMaterial({color:0xffffff,size:0.05,transparent:true,opacity:0.35,depthWrite:false}));st.frustumCulled=false;scene.add(st);
     const top=new THREE.Vector3();anims.push(t=>{if(!near2(pm,30)){st.visible=false;return}st.visible=true;top.set(0,0.5,0.3);pm.localToWorld(top);for(let n=0;n<N;n++){const u=(t*0.5+n/N)%1;sp[n*3]=top.x+Math.sin(t*2+n)*0.02*u;sp[n*3+1]=top.y+u*0.3;sp[n*3+2]=top.z+Math.cos(t*1.7+n)*0.02*u}sg.attributes.position.needsUpdate=true})}});
@@ -4565,16 +4704,87 @@ KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMes
 {const zm=z0s[RI('match')];critter('puffle',0.5,zm-26.4,{x0:-3.4,x1:3.4,z0:zm-22.4,z1:zm-30.2},1,false,'mayor')}
 // the king and one of his guards stroll round the well in the castle courtyard
 {const zc=z0s[RI('castle')],a={x0:10.2,x1:17.8,z0:zc-54.2,z1:zc-61.8};critter('puffle',11.4,zc-55.6,a,1,false,'king',true);critter('drakelet',16.6,zc-60.4,a,1,false,'knight front',true)}
+// Snowflake Hollow: two pets having a snowball fight between the cocoa stall and the 7th puzzle, one by the snowball stack
+// at the igloo's back door and one a little way south of the stall. each takes a turn: it bends to scoop up snow, winds up
+// and throws, and the snowball arcs over and lands just short of the other with a puff of snow (it never hits anyone),
+// and the other hops back laughing. both smile the whole time
+{const zs=z0s[RI('snow')],A=[-5.2,zs-51.2],Bq=[-13.6,zs-51.8];
+ const mk=(k,p,q)=>{const m=happy(critterMesh(k));m.userData.noWave=true;m.scale.setScalar(0.85);addScarf(m);m.position.set(p[0],0,p[1]);m.rotation.y=Math.atan2(q[0]-p[0],q[1]-p[1]);scene.add(m);colCirc(p[0],p[1],0.35);return m};
+ const P=[mk('frostbun',A,Bq),mk('puffle',Bq,A)],ball=new THREE.Mesh(new _G.Sph(0.065,14,10),matSnowBall);ball.castShadow=true;ball.visible=false;scene.add(ball);
+ const N=24,pp=new Float32Array(N*3).fill(-999),pv=new Float32Array(N*3),pg=new THREE.BufferGeometry();pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+ const puff=new THREE.Points(pg,new THREE.PointsMaterial({color:0xffffff,size:0.06,transparent:true,opacity:0.9,depthWrite:false}));puff.frustumCulled=false;scene.add(puff);let pl=0;
+ const qa=new THREE.Quaternion(),qb=new THREE.Quaternion(),qi=new THREE.Quaternion(),v=new THREE.Vector3(),from=new THREE.Vector3(),to=new THREE.Vector3(),paw=new THREE.Vector3();let lastC=-1;
+ const pose=(m,U,Fv,k)=>{const u=m.userData;qa.setFromUnitVectors(u.wru,v.set(...U).normalize());qi.copy(qa).invert();v.set(...Fv).normalize().applyQuaternion(qi);qb.setFromUnitVectors(u.wrf,v);u.arm.quaternion.copy(IDQ).slerp(qa,k);u.fore.quaternion.copy(IDQ).slerp(qb,k)};
+ anims.push((t,dt)=>{if(!near2(P[0],50)){ball.visible=puff.visible=false;return}puff.visible=pl>0;const C=Math.floor(t/3.4),T=t%3.4,i=C%2,th=P[i],tg=P[1-i];
+   if(C!==lastC){lastC=C;tg.rotation.x=0;P.forEach(m=>{m.position.y=0})}
+   const sm=(a,b,x)=>{const q=Math.max(0,Math.min(1,(x-a)/(b-a)));return q*q*(3-2*q)};
+   th.rotation.x=0.4*sm(0,0.35,T)*(1-sm(0.55,0.8,T));
+   if(T<0.8)pose(th,[0.1,-0.6,0.8],[0,-0.5,0.85],sm(0,0.35,T)*(1-sm(0.6,0.8,T)));
+   else if(T<1.3)pose(th,[0.25,0.75,-0.6],[0.05,0.95,-0.3],sm(0.8,1.25,T));
+   else if(T<1.5){const k=sm(1.3,1.42,T);qa.set(0,0,0,1);pose(th,[0.25+(0.2-0.25)*k,0.75+(0.55-0.75)*k,-0.6+(0.78+0.6)*k],[0.05,0.95-0.6*k,-0.3+1.24*k],1)}
+   else pose(th,[0.2,0.55,0.78],[0.05,0.35,0.94],1-sm(1.6,2.4,T));
+   const u=th.userData;if(T>0.55&&T<1.42){ball.visible=true;paw.copy(u.wrf).multiplyScalar(0.06);u.fore.localToWorld(paw);ball.position.copy(paw)}
+   else if(T>=1.42&&T<2.35){if(!ball.userData.fly){ball.userData.fly=1;from.copy(ball.position);v.set(tg.position.x-th.position.x,0,tg.position.z-th.position.z).normalize();to.set(tg.position.x-v.x*1.05,0.06,tg.position.z-v.z*1.05)}
+     const f=(T-1.42)/0.93;ball.position.lerpVectors(from,to,f);ball.position.y=from.y+(to.y-from.y)*f+Math.sin(Math.PI*f)*1.3;ball.visible=true}
+   else if(ball.userData.fly){ball.userData.fly=0;ball.visible=false;pl=0.7;for(let n=0;n<N;n++){pp[n*3]=to.x;pp[n*3+1]=0.08;pp[n*3+2]=to.z;const a=Math.random()*6.28,s2=0.6+Math.random()*1.2;pv[n*3]=Math.cos(a)*s2*0.7;pv[n*3+1]=0.8+Math.random()*1.4;pv[n*3+2]=Math.sin(a)*s2*0.7}}
+   if(T>2.35&&T<2.9){const k=Math.sin(Math.PI*(T-2.35)/0.55);tg.position.y=0.12*k;tg.rotation.x=-0.15*k}
+   if(pl>0){pl-=dt;for(let n=0;n<N;n++){pv[n*3+1]-=6*dt;pp[n*3]+=pv[n*3]*dt;pp[n*3+1]=Math.max(0.02,pp[n*3+1]+pv[n*3+1]*dt);pp[n*3+2]+=pv[n*3+2]*dt}pg.attributes.position.needsUpdate=true;puff.material.opacity=Math.max(0,pl/0.7)}})}
+// Place Value Castle: an archer in a green tunic and feathered cap shooting at the targets on the tournament field. it
+// stands side-on with the bow held out towards the target and the string drawn back to its chin; it looses, the arrow
+// flies to the target and sticks there for a while, and it nocks the next one
+{const zc=z0s[RI('castle')],ax=-16.4,az=zc-21,m=critterMesh('hopbun','archer aim busy');m.scale.setScalar(0.95);m.position.set(ax,0,az);m.rotation.y=Math.PI;scene.add(m);colCirc(ax,az,0.4);
+ const W=0x7a4a2c,bp=[];for(let k=0;k<=16;k++){const y=0.5+(k/16-0.5)*0.78,q=(y-0.5)/0.39;bp.push([0.42-0.13*q*q,y,0.2])}
+ const bow=new THREE.Mesh(tube(bp,0.011,32,6),M(W));bow.castShadow=true;m.add(bow);const grip=new THREE.Mesh(new _G.Cyl(0.016,0.016,0.1,8),M(0x3a2414));grip.position.set(0.42,0.5,0.2);m.add(grip);
+ const tipT=new THREE.Vector3(0.29,0.89,0.2),tipB=new THREE.Vector3(0.29,0.11,0.2),nock=new THREE.Vector3(),sg=new THREE.BufferGeometry().setFromPoints([tipT,new THREE.Vector3(),tipB]);const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf0e8d8}));m.add(str);
+ const mkArrow=()=>{const g=new THREE.Group();const sh=new THREE.Mesh(new _G.Cyl(0.006,0.006,0.62,6),M(0x9a7a4a));sh.rotation.z=Math.PI/2;sh.position.x=0.31;g.add(sh);const hd=new THREE.Mesh(new _G.Cone(0.016,0.05,8),M(0xb8bec4));hd.rotation.z=-Math.PI/2;hd.position.x=0.64;g.add(hd);
+   [0,2.09,4.19].forEach(a=>{const f=new THREE.Mesh(new THREE.PlaneGeometry(0.08,0.025),dbl(a?0xffffff:0xd8202a));f.position.set(0.04,Math.cos(a)*0.014,Math.sin(a)*0.014);f.rotation.x=a;g.add(f)});return g};
+ const held=mkArrow();m.add(held);const fly=mkArrow();fly.scale.setScalar(0.95);fly.visible=false;scene.add(fly);
+ const tgt=new THREE.Vector3(-23.76,1.36,az),start=new THREE.Vector3(),aim=new THREE.Vector3(),P3=sg.attributes.position;let lastT=0,hit=new THREE.Vector3();
+ anims.push((t,dt)=>{if(!near2(m,60))return;const T=t%4.2,draw=Math.min(1,Math.max(0,(T-0.3)/1.1)),e=draw*draw*(3-2*draw);
+   const nx=T<1.9?0.29-0.31*e:0.29;nock.set(nx,0.5,0.24);P3.setXYZ(1,nock.x,nock.y,nock.z);P3.needsUpdate=true;held.visible=T<1.9;held.position.copy(nock);
+   if(lastT<1.9&&T>=1.9){start.set(0.6,0.5,0.22);m.localToWorld(start);hit.set(tgt.x+0.01,tgt.y+(Math.random()-0.5)*0.35,tgt.z+(Math.random()-0.5)*0.35);fly.visible=true}
+   if(T>=1.9&&T<2.25){const f=(T-1.9)/0.35;fly.position.lerpVectors(start,hit,f);fly.position.y+=Math.sin(Math.PI*f)*0.25;aim.set(hit.x-start.x,(hit.y-start.y)+Math.cos(Math.PI*f)*0.25*Math.PI/0.35*0.35,hit.z-start.z).normalize();fly.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),aim)}
+   else if(T>=2.25){fly.position.copy(hit).addScaledVector(aim,-0.45)}else fly.visible=false;
+   m.rotation.z=T>=1.9&&T<2.1?-0.03:0;lastT=T})}
+// Place Value Castle: a princess in a pink gown with the castle sigil, a tiara and pearls, gazing out over the sea from the
+// east side of the courtyard, with her maid (black dress, white apron and frilled headband) keeping close by. both turn
+// and wave when you come up to them
+{const zc=z0s[RI('castle')],px0=Math.min(35.2,coastX(1,zc-56)-3.4),pz0=zc-56,face=Math.PI/2;
+ const pr=critterMesh('petalpip','princess front');pr.scale.setScalar(0.95);pr.position.set(px0,heightAt(px0,pz0),pz0);pr.rotation.y=face;scene.add(pr);skirt(pr,'princess');colCirc(px0,pz0,0.5);
+ const lp=lookAbout(pr,face,1.3,14);anims.push((t,dt)=>{if(!near2(pr,50))return;lp(t,dt)});
+ const md=critterMesh('hopbun','maid front');md.scale.setScalar(0.88);scene.add(md);skirt(md,'maid');const mc={t:'circ',x:px0-1.4,z:pz0+0.5,r:0.4,on:true,dyn:true};colliders.push(mc);
+ const spots=[[-1.4,0.6],[-1.2,-0.9],[-0.2,1.5],[-0.3,-1.5]].map(([a,b])=>[px0+a,pz0+b]);let si=0,x=spots[0][0],z=spots[0][1],h=0,tm=4,walk=false,w=0;
+ anims.push((t,dt)=>{if(!near2(md,50))return;const u=md.userData,turn=(goal,sp)=>{let df=goal-h;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;h+=Math.max(-dt*sp,Math.min(dt*sp,df));return df};
+   if(u.wv>0){h=md.rotation.y;md.position.y=heightAt(x,z);return}
+   if(!walk){tm-=dt;turn(Math.atan2(px0-x,pz0-z),2);md.position.y=heightAt(x,z);if(tm<0){si=(si+1+Math.floor(Math.random()*2))%spots.length;walk=true}}
+   else{const [tx,tz]=spots[si],dx=tx-x,dz=tz-z,d=Math.hypot(dx,dz),df=turn(Math.atan2(dx,dz),3);if(Math.abs(df)<0.5){const s2=Math.min(d,dt*0.5);x+=Math.sin(h)*s2;z+=Math.cos(h)*s2;w+=dt*9}
+     md.position.y=heightAt(x,z)+Math.abs(Math.sin(w))*0.05;if(d<0.05){walk=false;tm=3+Math.random()*4}}
+   md.position.x=x;md.position.z=z;md.rotation.y=h;mc.x=x;mc.z=z})}
+// Number Bond Beach: a lifeguard on a wooden lookout tower by the water, in a red suit with a white cross, a white visor,
+// sunglasses and a whistle, keeping an eye on the swimmers (it waves down at you when you come by). the tower has a
+// red-and-white parasol, a flag, a ladder and a rescue float leaning on a leg
+{const zb=z0s[RI('beach')],tx=9.4,tz=zb-29.2,H=1.65,WD=0xb98a5a,WH=0xf6f6f2;
+ [-1,1].forEach(a=>[-1,1].forEach(b=>rod([tx+a*0.78,0,tz+b*0.78],[tx+a*0.62,H,tz+b*0.62],0.06,WH)));[0.55,1.1].forEach(y=>{rod([tx-0.72,y,tz-0.72],[tx-0.72,y,tz+0.72],0.03,WH);rod([tx+0.72,y,tz-0.72],[tx+0.72,y,tz+0.72],0.03,WH)});
+ blk(1.5,0.1,1.5,tx,H,tz,WD);for(let k=0;k<6;k++)blk(1.52,0.01,0.02,tx,H+0.055,tz-0.62+k*0.25,0x8a5a3b,scene,true);
+ [[0.72,0],[0,0.72],[0,-0.72]].forEach(([a,b])=>{const along=a===0;for(let q=-2;q<=2;q++)blk(0.05,0.55,0.05,tx+(along?q*0.34:a),H+0.32,tz+(along?b:q*0.34),WH);blk(along?1.45:0.06,0.06,along?0.06:1.45,tx+a,H+0.6,tz+b,WH)});
+ [-0.3,0.3].forEach(b=>rod([tx-1.3,0,tz+b],[tx-0.72,H,tz+b],0.035,WD));for(let k=1;k<6;k++){const f=k/6;rod([tx-1.3+0.58*f,H*f,tz-0.3],[tx-1.3+0.58*f,H*f,tz+0.3],0.025,WD)}
+ mesh(new _G.Cyl(0.03,0.03,2.4,10),WH,tx+0.5,H+1.2,tz+0.5);mesh(lathe([[1.0,2.05],[0.75,2.22],[0.4,2.34],[0,2.4]],40,16),new THREE.MeshStandardMaterial({map:parasolTex('#d8202a','#fffaf0'),side:THREE.DoubleSide,roughness:0.85}),tx+0.5,H,tz+0.5);
+ mesh(new _G.Cyl(0.02,0.02,1.6,8),WH,tx-0.6,H+0.8,tz-0.6);mesh(withW(triFlag(0.55,0.17,0.17,-0.17,-0.17,8,3),px=>px/0.55),clothPatch(dbl(0xd8202a),0.05),tx-0.6,H+1.45,tz-0.6);
+ {const sg=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.3),new THREE.MeshBasicMaterial({map:signTex(['LIFEGUARD'],512,128),toneMapped:false}));sg.position.set(tx-0.72,H-0.28,tz);sg.rotation.y=-Math.PI/2;scene.add(sg);blk(0.04,0.34,1.26,tx-0.7,H-0.28,tz,0xb98a5a)}
+ {const f=mesh(new _G.Cyl(0.12,0.12,0.75,16),0xd8202a,tx+0.95,0.42,tz-0.55);f.rotation.z=0.35;[0.3,-0.3].forEach(o=>{const c=mesh(new _G.Sph(0.12,14,10),0xd8202a,tx+0.95+Math.sin(0.35)*o*-1.2,0.42+Math.cos(0.35)*o*1.2,tz-0.55);c.scale.y=0.6})}
+ colBox(tx-0.85,tx+0.85,tz-0.85,tz+0.85);colBox(tx-1.4,tx-0.85,tz-0.4,tz+0.4);
+ const lg=critterMesh('splashy','lifeguard shades');lg.scale.setScalar(0.92);lg.position.set(tx+0.1,H+0.05,tz-0.1);lg.rotation.y=Math.PI/2;scene.add(lg);
+ const lk=lookAbout(lg,Math.PI/2,0.7,22);anims.push((t,dt)=>{if(!near2(lg,60))return;lk(t,dt)})}
 // playground in Adding Garden: pets on the swings, the roundabout, both ends of the seesaw and the spring rider
-{const ride=(parent,kind,v,x,y,z,ry,sc)=>{const m=critterMesh(kind,v);m.scale.setScalar(sc||0.8);m.position.set(x,y,z);m.rotation.y=ry||0;parent.add(m);return m};
+{const ride=(parent,kind,v,x,y,z,ry,sc)=>{const m=happy(critterMesh(kind,v));m.scale.setScalar(sc||0.8);m.position.set(x,y,z);m.rotation.y=ry||0;parent.add(m);return m};
  if(PLAY.swings[0])ride(PLAY.swings[0],'puffle','up2',0,-1.8,0.02,Math.PI,0.82);
  if(PLAY.rg){const m=ride(PLAY.rg,'embertail','reach',0.78,0.34,0,Math.PI,0.8);anims.push(t=>{m.position.y=0.34+Math.abs(Math.sin(t*3))*0.02})}
- if(PLAY.seesaw){ride(PLAY.seesaw,'hopbun','front',-1.35,0.07,0,Math.PI/2,0.78);ride(PLAY.seesaw,'splashy','front',1.35,0.07,0,-Math.PI/2,0.78)}
- const hr=PLAY.riders.find(q=>q.kind==='horse');if(hr)ride(hr.r,'sprout','front',0,0.31,-0.08,0,0.72)}
+ if(PLAY.seesaw){ride(PLAY.seesaw,'hopbun','front busy',-1.35,0.07,0,Math.PI/2,0.78);ride(PLAY.seesaw,'splashy','front busy',1.35,0.07,0,-Math.PI/2,0.78)}
+ const hr=PLAY.riders.find(q=>q.kind==='horse');if(hr)ride(hr.r,'sprout','front busy',0,0.31,-0.08,0,0.72)}
 // a pet holding the end of the red maypole ribbon in its raised paw, skipping round the pole as the ribbons turn.
 // it rides in the ribbons' turning frame, placed so its paw sits exactly on the ribbon's end
 if(MAYPOLE.top){const T=MAYPOLE.top,sc=1.1,a=0.7,rE=0.42+2.43,E=[Math.cos(a)*rE,-(MAYPOLE.H-0.3)+0.79,Math.sin(a)*rE],ry=Math.atan2(Math.sin(a),-Math.cos(a));
-  const m=critterMesh('sprout','reach');m.scale.setScalar(sc);T.add(m);m.rotation.y=ry;
+  const m=happy(critterMesh('sprout','reach'));m.scale.setScalar(sc);T.add(m);m.rotation.y=ry;
   const pxl=0.31*sc,pyl=0.71*sc,pzl=0.11*sc,ox=pxl*Math.cos(ry)+pzl*Math.sin(ry),oz=-pxl*Math.sin(ry)+pzl*Math.cos(ry);m.position.set(E[0]-ox,E[1]-pyl,E[2]-oz);
   const col={t:'circ',x:0,z:0,r:0.35,on:true,dyn:true},wp=new THREE.Vector3();colliders.push(col);
   anims.push(t=>{m.rotation.z=Math.sin(t*6)*0.05;m.getWorldPosition(wp);col.x=wp.x;col.z=wp.z})}
@@ -4582,7 +4792,7 @@ if(MAYPOLE.top){const T=MAYPOLE.top,sc=1.1,a=0.7,rE=0.42+2.43,E=[Math.cos(a)*rE,
 // while you sit on the same bench, now and then it turns to look at you for a few seconds
 const otterC=z0s[CONN.findIndex(c=>c.name==='Otter Stream')]-AREA-GAP/2,inOtterStream=b=>Math.abs(b.z-otterC)<GAP/2;
 function benchBuddy(b,obj,ry,ph,turn){let look=0,tm=2+RS()*3;
-  return(t,dt)=>{const mine=mode==='sit'&&sitB===b;tm-=dt;if(tm<0){look=mine&&!look&&RS()<0.75?1:0;tm=look?2.5+RS()*2.5:2+RS()*4}if(!mine)look=0;
+  return(t,dt)=>{const mine=mode==='sit'&&sitB===b;tm-=dt;if(tm<0){look=mine&&!look&&RS()<0.75?1:0;tm=look?2.5+RS()*2.5:2+RS()*4}if(!mine)look=0;obj.userData.sl=look===1;
     let want=ry+Math.sin(t*0.4+ph)*0.25;if(look){let d=Math.atan2(camera.position.x-obj.position.x,camera.position.z-obj.position.z)-ry;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;want=ry+Math.max(-turn,Math.min(turn,d))}
     let df=want-obj.rotation.y;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;obj.rotation.y+=df*Math.min(1,dt*3)}}
 // in Lavender Path the bench pet wears a crown of lavender, and three little butterflies flutter round its head (always
@@ -4712,7 +4922,7 @@ anims.push((t,dt)=>{const np=nextPanel(),pts=np?ROOMS[np.room].legPts[np.ri]:nul
 const AMB={ready:false};
 const LOOPDEF={fire:{r:13,v:0.04},fountain:{r:20,v:0.05},river:{r:24,v:0.05},water:{r:16,v:0.022},sea:{r:45,v:0.06},bees:{r:9,v:0.02}};
 const SHOTDEF={cluck:{r:22,v:0.05,e:[3,8]},quack:{r:26,v:0.05,e:[5,14]},baa:{r:30,v:0.055,e:[7,18]},tweet:{r:32,v:0.03,e:[2.5,7]},gull:{r:48,v:0.035,e:[5,12]},
-  creak:{r:28,v:0.03,e:[2.6,3.4]},swing:{r:18,v:0.016,e:[1.7,1.8]},bell:{r:70,v:0.05,e:[45,70]},crackle:{r:13,v:0.05,e:[0.07,0.5]},splash:{r:15,v:0.02,e:[1.5,4]},squeak:{r:14,v:0.035,e:[6,16]}};
+  creak:{r:28,v:0.03,e:[2.6,3.4]},swing:{r:18,v:0.016,e:[1.7,1.8]},bell:{r:70,v:0.05,e:[45,70]},splash:{r:15,v:0.02,e:[1.5,4]},squeak:{r:14,v:0.035,e:[6,16]}};
 function srcPos(s,x,z){if(s.fn)return s.fn(x,z);if(s.o)return[s.o.x,s.o.z];if(s.box)return[Math.max(s.minX,Math.min(s.maxX,x)),Math.max(s.minZ,Math.min(s.maxZ,z))];
   if(s.rx){const dx=(x-s.x)/s.rx,dz=(z-s.z)/s.rz,q=Math.hypot(dx,dz);if(q<=1)return[x,z];return[s.x+dx/q*s.rx,s.z+dz/q*s.rz]}return[s.x,s.z]}
 function ambInit(){if(AMB.ready||!AC||!AC.createBiquadFilter)return;AMB.ready=true;
@@ -4723,11 +4933,17 @@ function ambInit(){if(AMB.ready||!AC||!AC.createBiquadFilter)return;AMB.ready=tr
     filters.forEach(([type,f,q,gain])=>{const b=AC.createBiquadFilter();b.type=type;b.frequency.value=f;if(q)b.Q.value=q;if(gain)b.gain.value=gain;n.connect(b);n=b});
     const c=chan();n.connect(c.g);src.start();AMB[name]=c};
   noiseLoop('fountain',[['highpass',700],['peaking',2600,1,6]]);noiseLoop('river',[['bandpass',650,0.6]]);noiseLoop('water',[['lowpass',420]]);noiseLoop('sea',[['lowpass',520]]);
-  noiseLoop('fire',[['lowpass',420],['peaking',160,0.9,5],['highpass',45]]);
+  // fire: a soft rushing roar that breathes in slow gusts, with the faint flutter of flames, and no crackles or pops
+  {const sr=AC.sampleRate,L=sr*6,fb=AC.createBuffer(1,L,sr),d=fb.getChannelData(0),R=mulberry32(17);let b=0,l=0,mx=0;const k=Math.exp(-2*Math.PI*520/sr);
+   for(let n=0;n<L;n++){b=b*0.995+(R()*2-1)*0.06;l=l*k+b*(1-k);const u=n/L*Math.PI*2,g=0.75+0.18*Math.sin(u*2+0.4)+0.1*Math.sin(u*5+1.3)+0.05*Math.sin(u*3*7);d[n]=l*g;mx=Math.max(mx,Math.abs(d[n]))}
+   const X=Math.floor(sr*0.5);for(let n=0;n<X;n++){const f=n/X;d[n]=d[n]*f+d[L-X+n]*(1-f)}for(let n=0;n<L;n++)d[n]/=mx;
+   const src=AC.createBufferSource();src.buffer=fb;src.loop=true;src.loopEnd=(L-X)/sr;const hp=AC.createBiquadFilter();hp.type='highpass';hp.frequency.value=55;const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;
+   const c=chan();src.connect(hp);hp.connect(lp);lp.connect(c.g);src.start();AMB.fire=c}
   noiseLoop('wind',[['lowpass',260]]);AMB.wind.g.gain.value=0.008;
+  [['wood',2.6],['metal',2.4],['slide',2.0],['lift',3.4],['bridge',4.5]].forEach(([k,D],i)=>setTimeout(()=>gsBuf(k,D),1500+i*700));   // gate sounds are made ahead of time
   {const c=chan(),f=AC.createBiquadFilter();f.type='lowpass';f.frequency.value=650;[208,221,415].forEach((fr,i)=>{const o=AC.createOscillator();o.type='sawtooth';o.frequency.value=fr;const og=AC.createGain();og.gain.value=i===2?0.25:1;o.connect(og);og.connect(f);o.start()});f.connect(c.g);AMB.bees=c}
 }
-function shotOut(v,pan,t0){const g=AC.createGain();g.gain.value=v;if(AC.createStereoPanner){const p=AC.createStereoPanner();p.pan.value=pan*0.8;g.connect(p);p.connect(AMB.out)}else g.connect(AMB.out);return g}
+function shotOut(v,pan,t0){if(!isFinite(v))v=0;if(!isFinite(pan))pan=0;const g=AC.createGain();g.gain.value=v;if(AC.createStereoPanner){const p=AC.createStereoPanner();p.pan.value=pan*0.8;g.connect(p);p.connect(AMB.out)}else g.connect(AMB.out);return g}
 function env(g,t,a,hold,rel,peak){g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak||1,t+a);g.gain.setValueAtTime(peak||1,t+a+hold);g.gain.exponentialRampToValueAtTime(0.0001,t+a+hold+rel)}
 function blip(out,type,f0,f1,t,dur,filt,vib){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);
   if(vib){const l=AC.createOscillator(),lg=AC.createGain();l.frequency.value=vib[0];lg.gain.value=vib[1];l.connect(lg);lg.connect(o.frequency);l.start(t);l.stop(t+dur+0.05)}
@@ -4749,9 +4965,6 @@ const SHOT={
   creak:(o,t)=>{blip(o,'sawtooth',62+Math.random()*10,78,t,0.55,['bandpass',380,7]);hiss(o,t,0.9,'lowpass',420,1,0.6)},
   swing:(o,t)=>blip(o,'sawtooth',150,190,t,0.3,['bandpass',950,9]),
   bell:(o,t)=>{for(let i=0;i<2;i++)[[523,1],[1046,0.45],[1568,0.22]].forEach(([f,a])=>{const q=AC.createOscillator(),g=AC.createGain();q.frequency.value=f;q.connect(g);g.connect(o);g.gain.setValueAtTime(0.0001,t+i*1.6);g.gain.exponentialRampToValueAtTime(a,t+i*1.6+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+i*1.6+2.6);q.start(t+i*1.6);q.stop(t+i*1.6+2.7)})},
-  // fire: little clusters of sharp wood ticks at random pitches, and now and then a log pops with a soft thump
-  crackle:(o,t)=>{const n=1+Math.floor(Math.random()*5);for(let i=0;i<n;i++)hiss(o,t+Math.random()*0.2,0.004+Math.random()*0.014,'bandpass',1600+Math.random()*4400,0.8+Math.random()*1.6,0.35+Math.random()*0.9);
-    if(Math.random()<0.12){hiss(o,t+0.04,0.06,'lowpass',1100,0.7,1);blip(o,'sine',150,55,t+0.04,0.09)}},
   splash:(o,t)=>hiss(o,t,0.35,'bandpass',1700,1.2,1),
   squeak:(o,t)=>{blip(o,'sine',900,1500,t,0.12,null,[30,60]);blip(o,'sine',1100,1300,t+0.16,0.1)}};
 // gate sounds, made to match how long each gate takes to open. wooden gates and doors: the latch lifts with a click and a
@@ -4768,20 +4981,62 @@ function clank(o,t,f,vol,dec){[[1,1],[2.41,0.55],[3.9,0.35],[5.6,0.2]].forEach((
 function squeak(o,t,dur,f0,f1,vol){const os=AC.createOscillator(),g=AC.createGain(),v=AC.createOscillator(),vg=AC.createGain();os.type='triangle';os.frequency.setValueAtTime(f0,t);os.frequency.linearRampToValueAtTime(f1,t+dur);
   v.frequency.value=7;vg.gain.value=f0*0.03;v.connect(vg);vg.connect(os.frequency);g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(vol,t+0.05);g.gain.linearRampToValueAtTime(0.0001,t+dur);
   const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=(f0+f1)/2;bp.Q.value=2;os.connect(bp);bp.connect(g);g.connect(o);os.start(t);os.stop(t+dur+0.05);v.start(t);v.stop(t+dur+0.05)}
-// a steady filtered noise that eases in, holds for the whole movement and eases out at the end
-function hum(out,t,dur,type,f,q,peak){const s=AC.createBufferSource();s.buffer=AMB.noise;s.loop=true;const b=AC.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q||1;const g=AC.createGain();
-  g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(peak,t+Math.min(0.3,dur*0.25));g.gain.setValueAtTime(peak,t+Math.max(0.3,dur-0.3));g.gain.linearRampToValueAtTime(0.0001,t+dur);s.connect(b);b.connect(g);g.connect(out);s.start(t,Math.random()*1.5);s.stop(t+dur+0.05)}
-function gateSound(kind,x,z,D){if(!AMB.ready||muted)return;const dx=(x||0)-camera.position.x,dz=(z||0)-camera.position.z,d=Math.hypot(dx,dz),vol=0.95*Math.pow(Math.max(0,1-d/55),1.5);if(vol<0.02)return;
-  const ry=camera.rotation.y,pan=d<1?0:(dx*Math.cos(ry)-dz*Math.sin(ry))/d,t=AC.currentTime+0.02,o=shotOut(vol,pan);
-  if(kind==='wood'){hiss(o,t,0.03,'bandpass',2600,3,0.45);ping(o,190,t,0.12,0.3);creak(o,t+0.12,D*0.5,165,235,0.13);creak(o,t+D*0.6,D*0.28,230,195,0.08);hum(o,t+0.1,D-0.1,'lowpass',450,0.7,0.07);
-    ping(o,105,t+D,0.22,0.35);hiss(o,t+D,0.06,'bandpass',700,1,0.25)}
-  else if(kind==='metal'){clank(o,t,620,0.18,0.5);squeak(o,t+0.15,0.38,780,980,0.06);squeak(o,t+D*0.55,0.3,900,760,0.04);for(let k=0;k<6;k++)ping(o,1800+Math.random()*1600,t+0.3+Math.random()*(D-0.5),0.12,0.035);
-    hum(o,t+0.1,D-0.1,'lowpass',500,0.7,0.05);clank(o,t+D,380,0.22,0.8)}
-  else if(kind==='slide'){clank(o,t,1400,0.06,0.15);hum(o,t+0.05,D-0.05,'lowpass',260,0.8,0.16);hum(o,t+0.05,D-0.05,'bandpass',1300,2,0.03);ping(o,160,t+D,0.16,0.3);ping(o,2600,t+D,0.35,0.03)}
-  else if(kind==='lift'){clank(o,t,520,0.16,0.4);for(let u=0.12;u<D;u+=0.11)ping(o,1700+Math.random()*500,t+u,0.04,0.07);hum(o,t,D,'lowpass',140,0.8,0.18);clank(o,t+D,330,0.22,0.9)}
-  else if(kind==='bridge'){clank(o,t,480,0.15,0.4);for(let u=0.15;u<D;u+=0.17)ping(o,1500+Math.random()*500,t+u,0.05,0.06);creak(o,t+0.3,D*0.7,110,150,0.08);hum(o,t,D,'lowpass',160,0.8,0.16);
-    ping(o,68,t+D,0.45,0.6);hiss(o,t+D,0.25,'lowpass',320,0.7,0.35)}}
-function ping(o,f,t,dec,vol){const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.value=f;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+dec);os.connect(g);g.connect(o);os.start(t);os.stop(t+dec+0.05)}
+// gate sounds are modelled on how real gates sound, and rendered once into a buffer for each kind: wood and iron are
+// banks of resonators (the ringing modes of a plank or an iron bar) struck by short bursts of noise. a hinge creak is
+// stick-slip friction: a ragged train of tiny slips, faster as the gate swings faster, ringing the wood. a latch is a
+// small iron clack, a gate settling is a dull wooden knock, a portcullis is a pawl ratcheting over its gear, and the
+// drawbridge's chains are many small iron rattles before a deep thud as it lands. the moving sounds follow the gate's
+// eased speed (slow, faster, slow), and the whole thing lasts exactly as long as the gate takes to open
+const GSND={};
+function gsBuf(kind,D){const key=kind+'|'+D;if(GSND[key])return GSND[key];const sr=AC.sampleRate,N=Math.ceil((D+1.4)*sr),mix=new Float32Array(N),R=mulberry32(kind.length*131+Math.round(D*10));
+  const nz=()=>R()*2-1,vel=u=>u<=0||u>=1?0:6*u*(1-u)/1.5;
+  const bank=modes=>modes.map(([f,dec,amp])=>{const r=Math.exp(-1/(dec*sr)),w=2*Math.PI*f/sr;return{a1:2*r*Math.cos(w),a2:-r*r,g:amp*Math.sin(w),y1:0,y2:0}});
+  const ring=(B,x)=>{let o=0;for(const m of B){const y=m.a1*m.y1+m.a2*m.y2+x*m.g;m.y2=m.y1;m.y1=y;o+=y}return o};
+  // render one part from an excitation function exc(n) through a resonator bank, normalise it to a peak and add it in
+  const part=(modes,exc,from,to,peak,lp)=>{const B=bank(modes),a=Math.max(0,Math.floor(from*sr)),b=Math.min(N,Math.ceil(to*sr)),tmp=new Float32Array(b-a);let m=0,l=0;const k=lp?Math.exp(-2*Math.PI*lp/sr):0;
+    for(let n=a;n<b;n++){let v=ring(B,exc(n));if(lp){l=l*k+v*(1-k);v=l}tmp[n-a]=v;m=Math.max(m,Math.abs(v))}if(m>0)for(let n=a;n<b;n++)mix[n]+=tmp[n-a]*peak/m};
+  const burst=(t0,len,amp)=>{const n0=Math.floor(t0*sr),L=Math.max(1,Math.floor(len*sr));return n=>n>=n0&&n<n0+L*4?nz()*amp*Math.exp(-(n-n0)/L):0};
+  const sum=(...fs)=>n=>{let v=0;for(const f of fs)v+=f(n);return v};
+  // stick-slip: slips at a rate that follows rate(u) and strength amp(u), u running 0..1 over [t0,t1]
+  const slips=(t0,t1,rate,amp,jit)=>{const ev=new Map();let t=t0;while(t<t1){const u=(t-t0)/(t1-t0),r=Math.max(4,rate(u));ev.set(Math.floor(t*sr),amp(u)*(0.6+0.8*R()));t+=(1+(R()-0.5)*2*jit)/r}
+    return n=>{const a=ev.get(n);return a?a:0}};
+  const noiseBed=(t0,t1,fc,shape,peak)=>{const a=Math.floor(t0*sr),b=Math.min(N,Math.floor(t1*sr)),k=Math.exp(-2*Math.PI*fc/sr);let l=0,l2=0,m=0;const tmp=new Float32Array(b-a);
+    for(let n=a;n<b;n++){l=l*k+nz()*(1-k);l2=l2*k+l*(1-k);const v=l2*shape((n-a)/(b-a));tmp[n-a]=v;m=Math.max(m,Math.abs(v))}if(m>0)for(let n=a;n<b;n++)mix[n]+=tmp[n-a]*peak/m};
+  const WOOD=[[230,0.045,1],[395,0.04,0.85],[660,0.034,0.7],[1010,0.028,0.5],[1530,0.022,0.35],[2240,0.016,0.22]],KNOCK=[[88,0.11,1],[146,0.09,0.75],[238,0.07,0.55],[372,0.05,0.35],[590,0.035,0.2]],
+    LATCH=[[1320,0.035,1],[2610,0.028,0.6],[3880,0.022,0.4],[5150,0.016,0.25]],IRON=[[520,0.38,1],[1290,0.3,0.7],[2230,0.24,0.5],[3410,0.18,0.35],[4760,0.13,0.22]],
+    IRONBIG=[[300,0.7,1],[790,0.55,0.7],[1420,0.42,0.5],[2330,0.32,0.38],[3460,0.22,0.26]],LINK=[[2050,0.022,1],[3240,0.017,0.6],[4630,0.013,0.4]],TIMBER=[[112,0.065,1],[196,0.055,0.8],[330,0.045,0.6],[548,0.035,0.4],[860,0.025,0.25]],
+    THUD=[[46,0.26,1],[72,0.21,0.8],[114,0.16,0.6],[184,0.11,0.4],[300,0.07,0.25]];
+  if(kind==='wood'){const c0=0.22,c1=D-0.12;
+    part(LATCH,burst(0.0,0.0006,1),0,0.4,0.32);part(KNOCK,burst(0.012,0.0012,1),0,0.6,0.38);
+    part(WOOD,slips(c0,c1,u=>16+34*vel(u)+6*Math.sin(u*9),u=>Math.min(1,u*8)*Math.min(1,(1-u)*5)*(0.35+0.65*vel(u)),0.35),c0,c1+0.3,0.2,5200);
+    noiseBed(0.15,D,260,u=>Math.sin(Math.PI*u)*vel(u),0.05);
+    part(KNOCK,burst(D,0.0025,1),D-0.01,D+1.0,0.55);part(LATCH,burst(D+0.05,0.0005,1),D,D+0.6,0.14)}
+  else if(kind==='metal'){
+    part(IRON,burst(0.0,0.0008,1),0,1.6,0.42,7000);part(LATCH,burst(0.004,0.0004,1),0,0.4,0.2);
+    [[0.18,0.62],[D*0.55,D*0.82]].forEach(([a,b],q)=>part([[1820+q*240,0.05,1],[3010,0.04,0.45]],slips(a,b,u=>420+120*Math.sin(u*Math.PI)+40*Math.sin(u*31),u=>Math.sin(Math.PI*u)*(0.5+0.5*R()),0.06),a,b+0.2,0.05,6000));
+    for(let k=0;k<5;k++){const t=0.4+R()*(D-0.8);part(LINK,burst(t,0.0003,1),t,t+0.25,0.05+R()*0.04)}
+    noiseBed(0.15,D,300,u=>Math.sin(Math.PI*u),0.035);
+    part(IRONBIG,burst(D,0.0012,1),D-0.01,D+1.4,0.5,6500);part(IRON,burst(D+0.09,0.0006,1),D,D+1.2,0.16,6000)}
+  else if(kind==='slide'){
+    part(LATCH,burst(0,0.0004,1),0,0.3,0.14);
+    noiseBed(0.05,D,140,u=>vel(u)*(0.75+0.25*Math.sin(u*D*2*Math.PI*(4+5*vel(u)))),0.2);noiseBed(0.05,D,900,u=>vel(u),0.035);
+    part([[105,0.08,1],[178,0.06,0.5],[320,0.04,0.3]],burst(D,0.003,1),D-0.01,D+0.6,0.32);part([[2780,0.45,1],[4120,0.32,0.55],[5600,0.2,0.3]],burst(D+0.01,0.0002,1),D,D+1.2,0.035)}
+  else if(kind==='lift'){
+    part(IRONBIG,burst(0,0.001,1),0,1.4,0.38,6000);
+    {let t=0.18;while(t<D-0.05){const v=Math.max(0.15,vel((t-0.1)/(D-0.1)));part(LINK,burst(t,0.0003,1),t,t+0.12,0.12+0.06*R());t+=0.085/v}}
+    noiseBed(0.1,D,120,u=>vel(u),0.16);for(let k=0;k<10;k++){const t=0.3+R()*(D-0.6);part(LINK,burst(t,0.0002,1),t,t+0.15,0.04)}
+    part(IRONBIG,burst(D,0.0015,1),D-0.01,D+1.4,0.5,5000);part(KNOCK,burst(D,0.003,1),D-0.01,D+0.8,0.3)}
+  else if(kind==='bridge'){
+    part(IRON,burst(0,0.0008,1),0,1.2,0.32,6000);
+    {let t=0.2;while(t<D-0.1){const u=(t-0.15)/(D-0.15),v=vel(u);part(LINK,burst(t,0.00025,1),t,t+0.1,(0.05+0.09*v)*(0.6+0.8*R()));t+=1/(14+46*v)*(0.6+0.8*R())}}
+    part(TIMBER,slips(0.4,D-0.2,u=>11+16*vel(u),u=>Math.min(1,u*6)*Math.min(1,(1-u)*6)*(0.4+0.6*vel(u)),0.4),0.4,D,0.14,3000);
+    noiseBed(0.1,D,110,u=>vel(u),0.14);
+    part(THUD,burst(D,0.004,1),D-0.01,D+1.4,0.75,1600);for(let k=0;k<6;k++){const t=D+0.04+k*0.05+R()*0.04;part(KNOCK,burst(t,0.0015,1),t,t+0.4,0.12*(1-k/7))}}
+  // two soft early reflections give it the body of an outdoor space, then fade the very end
+  const out=new Float32Array(N),d1=Math.floor(0.027*sr),d2=Math.floor(0.046*sr);let pk=0;for(let n=0;n<N;n++){out[n]=mix[n]+(n>=d1?mix[n-d1]*0.16:0)+(n>=d2?mix[n-d2]*0.09:0);pk=Math.max(pk,Math.abs(out[n]))}
+  const buf=AC.createBuffer(1,N,sr),ch=buf.getChannelData(0),sc=pk>0.95?0.95/pk:1;for(let n=0;n<N;n++)ch[n]=out[n]*sc*Math.min(1,(N-n)/(0.2*sr));return GSND[key]=buf}
+function gateSound(kind,x,z,D){if(!AMB.ready||muted)return;const dx=(x||0)-camera.position.x,dz=(z||0)-camera.position.z,d=Math.hypot(dx,dz),vol=1.1*Math.pow(Math.max(0,1-d/55),1.5);if(vol<0.02)return;
+  const ry=camera.rotation.y,pan=d<1?0:(dx*Math.cos(ry)-dz*Math.sin(ry))/d,src=AC.createBufferSource();src.buffer=gsBuf(kind,D);src.connect(shotOut(vol,pan));src.start(AC.currentTime+0.02)}
 function ambUpdate(dt,ts){if(!AMB.ready)return;
   const cx=camera.position.x,cz=camera.position.z,ry=camera.rotation.y,cr=Math.cos(ry),sr=Math.sin(ry),now=AC.currentTime;
   const panOf=(ax,az)=>{const dx=ax-cx,dz=az-cz,d=Math.hypot(dx,dz);return d<0.6?0:(dx*cr-dz*sr)/d};
@@ -4792,7 +5047,7 @@ function ambUpdate(dt,ts){if(!AMB.ready)return;
     if(muted)continue;const [ax,az]=srcPos(s,cx,cz),d=Math.hypot(ax-cx,az-cz);if(d>=D.r)continue;const v=D.v*Math.pow(1-d/D.r,2);if(v<0.002)continue;
     SHOT[s.k](shotOut(v,panOf(ax,az)),now+0.02)}
   for(const k in LOOPDEF){const c=AMB[k],b=best[k],D=LOOPDEF[k];let v=0,pn=0;if(b&&b.d<D.r){v=D.v*Math.pow(1-b.d/D.r,2);pn=panOf(b.ax,b.az)}
-    if(k==='sea')v*=0.6+0.4*Math.sin(ts*0.45)*Math.sin(ts*0.45);if(k==='river')v*=0.85+0.15*Math.sin(ts*1.7);if(k==='fire')v*=0.6+0.4*(0.5+0.5*Math.sin(ts*1.9)*Math.sin(ts*0.83+2)+0.15*Math.sin(ts*5.3));
+    if(k==='sea')v*=0.6+0.4*Math.sin(ts*0.45)*Math.sin(ts*0.45);if(k==='river')v*=0.85+0.15*Math.sin(ts*1.7);if(k==='fire')v*=0.85+0.15*Math.sin(ts*0.7)*Math.sin(ts*0.31+2);
     c.g.gain.setTargetAtTime(v,now,0.25);if(c.p)c.p.pan.setTargetAtTime(pn*0.7,now,0.25)}
   AMB.wind.g.gain.setTargetAtTime(0.008+0.035*snowAmt(cz),now,0.8);
   AMB.out.gain.setTargetAtTime(muted?0:1,now,0.05)}
