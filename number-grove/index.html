@@ -1663,7 +1663,11 @@ function noticeBoard(x,z,ry){const g=sgroup(x,0,z,ry);[-0.9,0.9].forEach(a=>mesh
   const m=new THREE.Mesh(new THREE.PlaneGeometry(1.86,1.16),new THREE.MeshBasicMaterial({toneMapped:false,map:canvasTex(512,320,c=>{c.fillStyle='#b88a5a';c.fillRect(0,0,512,320);const notes=[['#fffaf0','Village Fair!','3 × 4 = 12 stalls',20,20,-0.04],['#ffe37a','Lost cat','Answers to "Seven"',270,26,0.05],['#bfe3ff','Bake sale','2 cakes × 5p = ?',30,170,0.03],['#ffd0e0','Times table club','Every Friday!',275,172,-0.05]];
     notes.forEach(([bg,a,b,x0,y0,r])=>{c.save();c.translate(x0+110,y0+65);c.rotate(r);c.fillStyle='rgba(0,0,0,0.2)';c.fillRect(-104,-56,216,128);c.fillStyle=bg;c.fillRect(-110,-62,216,128);c.fillStyle='#d8352a';c.beginPath();c.arc(-2,-52,7,0,7);c.fill();c.fillStyle='#1d3340';c.textAlign='center';fitFont(c,a,800,30,FD,186);c.fillText(a,-2,-10);fitFont(c,b,700,21,FB,192);c.fillText(b,-2,30);c.restore()})})}));
   m.position.set(0,1.55,0.035);g.add(m);const rf=blk(2.25,0.07,0.42,0,2.27,0.06,0x7a4a2c,g);rf.rotation.x=0.25;colCirc(x,z,0.9);reserve(x,z,1.6)}
-function bunting(x1,z1,x2,z2,y,sag){const n=Math.max(4,Math.round(Math.hypot(x2-x1,z2-z1)/0.6)),ang=Math.atan2(x2-x1,z2-z1)-Math.PI/2,pts=[];
+// a string of bunting from end to end. poles=[a,b] puts a painted pole with a brass knob at an end that has nothing else
+// to tie to (a wall, a house or a post); the string is knotted round the top of each pole
+function bunting(x1,z1,x2,z2,y,sag,poles){(poles||[]).forEach((on,k)=>{if(!on)return;const x=k?x2:x1,z=k?z2:z1;mesh(new THREE.CylinderGeometry(0.05,0.065,y+0.15,12),0xfffaf0,x,(y+0.15)/2,z);
+    mesh(new THREE.SphereGeometry(0.09,12,10),matBrass,x,y+0.2,z);mesh(new THREE.TorusGeometry(0.06,0.014,6,14),0xfffaf0,x,y,z).rotation.x=Math.PI/2;colCirc(x,z,0.1)});
+  const n=Math.max(4,Math.round(Math.hypot(x2-x1,z2-z1)/0.6)),ang=Math.atan2(x2-x1,z2-z1)-Math.PI/2,pts=[];
   for(let i=0;i<=n;i++){const t=i/n;pts.push([x1+(x2-x1)*t,y-Math.sin(t*Math.PI)*sag,z1+(z2-z1)*t])}mesh(tube(pts,0.01,n*3),0xfffaf0,0,0,0);
   for(let i=0;i<n;i++){const t=(i+0.5)/n,f=mesh(flagGeo,flagMats[i%4],x1+(x2-x1)*t,y-Math.sin(t*Math.PI)*sag,z1+(z2-z1)*t,scene,true);f.rotation.y=ang}}
 
@@ -1852,7 +1856,7 @@ function buildArea3(z0){
   lamp(-2.8,z0-5);lamp(2.8,z0-5);lamp(-2.8,z0-19.6);lamp(13,z0-21);lamp(9,z0-34);
   bench(8.35,z0-36,'e');bench(2.9,z0-12.5,'w');
   // bunting across the market street
-  [-12.5,-5.5].forEach(z=>{for(let i=0;i<12;i++){const x=-6+i*1.1,y=3.1-Math.sin(i/11*Math.PI)*0.5;mesh(flagGeo,flagMats[i%4],x,y,z0+z,scene,true)}for(let i=0;i<11;i++){const xa=-6+i*1.1,xb=xa+1.1,ya=3.1-Math.sin(i/11*Math.PI)*0.5+0.02,yb=3.1-Math.sin((i+1)/11*Math.PI)*0.5+0.02,s=blk(Math.hypot(1.1,yb-ya),0.015,0.015,(xa+xb)/2,(ya+yb)/2,z0+z,0xfffaf0,scene,true);s.rotation.z=Math.atan2(yb-ya,1.1)}});
+  [-12.5,-5.5].forEach(z=>bunting(-6.6,z0+z,6.6,z0+z,3.1,0.5,[1,1]));
   annex3(z0);
 }
 
@@ -2030,7 +2034,7 @@ function annex1(z0){const c=z0-56;
   house(-19,z0-63.5,7,6,'e',0xdfe6f7,0xb5683a,-1.5);house(19,z0-64,7,6,'w',0xfbe7b2,0x6d4a8f,0);
   cafeSet(-8.5,z0-60,'#ff9ecf');cafeSet(-6.5,z0-65,'#ffd23f');
   cart(10,z0-46.6,0.3);washingLine(-25,z0-55.5,-25,z0-59.5);
-  bunting(-14.95,z0-49,14.95,z0-49,3.1,0.5);bunting(-15.45,z0-61.5,15.45,z0-61.5,3.1,0.5);
+  bunting(-14.95,z0-50.5,14.95,z0-50.5,3.1,0.5);bunting(-15.45,z0-61.5,15.45,z0-61.5,3.1,0.5);
   bench(-4.8,c,'e');bench(4.8,c,'w');
   lamp(-2.4,z0-45.5);lamp(2.4,z0-66);lamp(-10,z0-53);lamp(10,z0-58.5);
   chickenFlock(4,{x0:-12,x1:-5,z0:z0-44.8,z1:z0-47.5});birds(0,c,4);
@@ -2047,7 +2051,7 @@ function annex3(z0){
   paths([[[0,z0-43.5],[0,z0-67.5]]],4);
   stall(-7,z0-49.5,'e',0xffd23f,'apple');stall(-7,z0-60.5,'e',0xff9ecf,'grape');stall(7,z0-53,'w',0x7cc35a,'orange');stall(7,z0-63,'w',0xff6b57,'banana');
   flat(new THREE.RingGeometry(3.5,5,64),PATHC,-18,0.021,z0-50);walkRing(-18,z0-50,3.5,5);fountain(-18,z0-50);
-  bunting(-6,z0-46.5,6,z0-46.5,3.1,0.5);bunting(-6,z0-57,6,z0-57,3.1,0.5);
+  bunting(-6,z0-46.5,6,z0-46.5,3.1,0.5,[1,1]);bunting(-6,z0-57,6,z0-57,3.1,0.5,[1,1]);
   cafeSet(-23,z0-58,'#3d7cc9');cafeSet(-19,z0-62,'#d8352a');cafeSet(-24,z0-64.5,'#2f9d6a');
   cart(19,z0-49,0.4);[[20,z0-56],[20.8,z0-56.7],[21.4,z0-55.8]].forEach(([x,z])=>barrel(x,z));
   bench(-17.5,z0-44.4,'n');lamp(-2.8,z0-46);lamp(2.8,z0-66);lamp(-12.5,z0-55);lamp(12.5,z0-58.5);
@@ -3169,7 +3173,7 @@ function buildFinish(z0){
   fountain(0,z0-25.5);
   // bunting gateway, lamps and benches facing the trophy
   [-3,3].forEach(x=>{mesh(new THREE.CylinderGeometry(0.07,0.09,3.6,16),0xfffaf0,x,1.8,z0-2);mesh(new THREE.SphereGeometry(0.14,16,12),goldMat,x,3.65,z0-2);colCirc(x,z0-2,0.15)});bunting(-3,z0-2,3,z0-2,3.4,0.35);
-  bunting(-12,z0-1.5,-3,z0-2,3.4,0.6);bunting(3,z0-2,12,z0-1.5,3.4,0.6);
+  bunting(-12,z0-1.5,-3,z0-2,3.4,0.6,[1,0]);bunting(3,z0-2,12,z0-1.5,3.4,0.6,[0,1]);
   lamp(2.4,z0-6.5);lamp(-2.4,z0-6.5);lamp(2.4,z0-11);lamp(-2.4,z0-11);
   bench(-7.5,tz+3.5,'e');bench(7.5,tz+3.5,'w');bench(-6,z0-27.5,'s');bench(6,z0-27.5,'s');
   for(const [x,z] of [[-10.8,z0-5],[8,z0-4],[-12,tz+8],[12,tz+8],[-13,z0-26],[13,z0-26]])flowerBed(x,z,1.5);
@@ -3328,7 +3332,7 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
   else if(th==='match'){   // market gate: crate-slat leaves in stall colours under a striped awning, with bunting and fruit crates
     const cs=[0xffd23f,0xff9ecf,0x7cc35a,0xff6b57];leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x8a5a3b);for(let j=0;j<8;j++)blk(L-0.12,0.18,0.05,dx(L/2),0.42+j*0.24,0,cs[(j+(sd>0?2:0))%4],h);hinges(h,dx);ring(h,dx)}));
     for(let k=0;k<10;k++){const a=sb(0.52,0.06,1.2,-2.34+k*0.52,3.3,face*0.95,k%2?0xffffff:0xd8352a);a.rotation.x=face*0.35}
-    for(let k=0;k<12;k++){const f=st(new _G.Cone(0.1,0.2,3),cs[k%4],-2.2+k*0.4,2.98,face*1.5);f.rotation.x=Math.PI}
+    st(tube([[-2.6,3.09,0],[2.6,3.09,0]],0.012,8,6),0xfffaf0,0,0,face*1.5);for(let k=0;k<12;k++){const f=st(new _G.Cone(0.1,0.2,3),cs[k%4],-2.2+k*0.4,2.98,face*1.5);f.rotation.x=Math.PI}
     [-1,1].forEach(s=>{sb(0.7,0.45,0.5,s*2.75,0.23,face*0.8,0xb98a5a);for(let k=0;k<6;k++)st(S(0.09,12,10),cs[(k+(s>0?1:2))%4],s*2.75-0.22+(k%3)*0.22,0.52,face*0.8-0.1+Math.floor(k/3)*0.2)})}
   else if(th==='beach'){   // beach hut gate: blue and white planks, a life ring, surfboards and shells
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{for(let j=0;j<9;j++)blk(L-0.04,0.22,0.05,dx(L/2),0.3+j*0.235,0,j%2?0xffffff:0x3d9ad8,h);frame(h,dx,0xf6f1e6);hinges(h,dx);
@@ -3341,7 +3345,7 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
       mesh(new THREE.ExtrudeGeometry(sh,{depth:0.04,bevelEnabled:false}),0xffd23f,dx(L/2),1.35,0.03,h);hinges(h,dx,0xb8860b)}));
     st(lathe([[0.16,0],[0.16,0.08],[0.05,0.12],[0.04,0.35],[0.22,0.5],[0.26,0.85],[0,0.85]],32),0xffc21a,0,5.75,0);
     [-1,1].forEach(s=>st(new _G.Tor(0.12,0.025,8,20,Math.PI),0xffc21a,s*0.25,6.35,0).rotation.z=s*Math.PI/2);
-    for(let k=0;k<12;k++){const f=st(new _G.Cone(0.12,0.24,3),[0xd8352a,0xffd23f,0x3d7cc9,0x4fb04f][k%4],-2.2+k*0.4,3.35,face*0.62);f.rotation.x=Math.PI}}
+    st(tube([[-2.3,3.48,0],[0,3.43,0],[2.3,3.48,0]],0.012,24,6),0xfffaf0,0,0,face*0.63);for(let k=0;k<12;k++){const x=-2.2+k*0.4,f=st(new _G.Cone(0.12,0.24,3),[0xd8352a,0xffd23f,0x3d7cc9,0x4fb04f][k%4],x,3.33-0.05*(1-(x/2.3)**2),face*0.63);f.rotation.x=Math.PI}}
   else{   // river and brook gates: painted wave boards with a fish, a kingfisher or an otter, or pebbles for the stepping stones
     const C={willow:[0x4f8fb0,0x5fa0c0],kingfisher:[0x1f8aa8,0x2a9bb8],otter:[0x8a6a48,0x9a7a56],stones:[0x9a8a74,0xa89a84]}[th]||[0x4f8fb0,0x5fa0c0];
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0x5a3a26);boards(h,dx,8,C[0],C[1],t=>H-0.4+0.18*Math.sin(t*Math.PI*3+sd));hinges(h,dx);ring(h,dx);
@@ -4281,7 +4285,7 @@ const GOWNTEX={};
 function skirt(m,kind){const P=kind==='princess',prof=P?[[0.262,0.35],[0.272,0.32],[0.3,0.25],[0.35,0.16],[0.41,0.07],[0.445,0.0]]:[[0.262,0.35],[0.27,0.32],[0.295,0.25],[0.33,0.17],[0.37,0.1],[0.39,0.07]];
   const tex=GOWNTEX[kind]||(GOWNTEX[kind]=canvasTex(512,256,c=>{if(P){const g=c.createLinearGradient(0,0,0,256);g.addColorStop(0,'#ee86b0');g.addColorStop(1,'#f8bfd6');c.fillStyle=g;c.fillRect(0,0,512,256);
       for(let x=0;x<512;x+=24){c.fillStyle='rgba(255,255,255,0.10)';c.fillRect(x,0,10,256)}c.fillStyle='#ffcf3a';c.fillRect(0,4,512,12);for(let x=0;x<512;x+=22){c.fillStyle='#fff4f8';c.beginPath();c.arc(x+11,30,11,0,Math.PI);c.fill()}
-      c.fillStyle='#ffcf3a';c.fillRect(0,244,512,8);drawSigil(c,256,118,0.36,1.0)}
+      c.fillStyle='#ffcf3a';c.fillRect(0,244,512,8);drawSigil(c,256,128,0.36,-1.0)}
     else{c.fillStyle='#22252b';c.fillRect(0,0,512,256);c.fillStyle='#ffffff';c.fillRect(196,0,120,256);for(let x=196;x<316;x+=12){c.beginPath();c.arc(x+6,6,6,0,Math.PI);c.fill()}c.fillStyle='#f0f0f0';c.fillRect(0,0,512,8)}}));
   const g=new THREE.LatheGeometry(V2(prof),48,Math.PI,Math.PI*2),sk=new THREE.Mesh(g,new THREE.MeshStandardMaterial({map:tex,roughness:0.6,side:THREE.DoubleSide}));sk.castShadow=true;m.add(sk);return sk}
 // the king's cape is real cloth: it hangs from the shoulders, swings out behind as he walks and ripples gently
@@ -4762,17 +4766,17 @@ KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMes
    md.position.x=x;md.position.z=z;md.rotation.y=h;mc.x=x;mc.z=z})}
 // Number Bond Beach: a lifeguard on a wooden lookout tower by the water, in a red suit with a white cross, a white visor,
 // sunglasses and a whistle, keeping an eye on the swimmers (it waves down at you when you come by). the tower has a
-// red-and-white parasol, a flag, a ladder and a rescue float leaning on a leg
+// red-and-white parasol, a flag, a ladder up the side (so it never crosses the sign) and a rescue float leaning on a leg
 {const zb=z0s[RI('beach')],tx=9.4,tz=zb-29.2,H=1.65,WD=0xb98a5a,WH=0xf6f6f2;
  [-1,1].forEach(a=>[-1,1].forEach(b=>rod([tx+a*0.78,0,tz+b*0.78],[tx+a*0.62,H,tz+b*0.62],0.06,WH)));[0.55,1.1].forEach(y=>{rod([tx-0.72,y,tz-0.72],[tx-0.72,y,tz+0.72],0.03,WH);rod([tx+0.72,y,tz-0.72],[tx+0.72,y,tz+0.72],0.03,WH)});
  blk(1.5,0.1,1.5,tx,H,tz,WD);for(let k=0;k<6;k++)blk(1.52,0.01,0.02,tx,H+0.055,tz-0.62+k*0.25,0x8a5a3b,scene,true);
- [[0.72,0],[0,0.72],[0,-0.72]].forEach(([a,b])=>{const along=a===0;for(let q=-2;q<=2;q++)blk(0.05,0.55,0.05,tx+(along?q*0.34:a),H+0.32,tz+(along?b:q*0.34),WH);blk(along?1.45:0.06,0.06,along?0.06:1.45,tx+a,H+0.6,tz+b,WH)});
- [-0.3,0.3].forEach(b=>rod([tx-1.3,0,tz+b],[tx-0.72,H,tz+b],0.035,WD));for(let k=1;k<6;k++){const f=k/6;rod([tx-1.3+0.58*f,H*f,tz-0.3],[tx-1.3+0.58*f,H*f,tz+0.3],0.025,WD)}
+ [[0.72,0],[-0.72,0],[0,-0.72]].forEach(([a,b])=>{const along=a===0;for(let q=-2;q<=2;q++)blk(0.05,0.55,0.05,tx+(along?q*0.34:a),H+0.32,tz+(along?b:q*0.34),WH);blk(along?1.45:0.06,0.06,along?0.06:1.45,tx+a,H+0.6,tz+b,WH)});
+ [-0.3,0.3].forEach(a=>rod([tx+a,0,tz+1.3],[tx+a,H,tz+0.72],0.035,WD));for(let k=1;k<6;k++){const f=k/6;rod([tx-0.3,H*f,tz+1.3-0.58*f],[tx+0.3,H*f,tz+1.3-0.58*f],0.025,WD)}
  mesh(new _G.Cyl(0.03,0.03,2.4,10),WH,tx+0.5,H+1.2,tz+0.5);mesh(lathe([[1.0,2.05],[0.75,2.22],[0.4,2.34],[0,2.4]],40,16),new THREE.MeshStandardMaterial({map:parasolTex('#d8202a','#fffaf0'),side:THREE.DoubleSide,roughness:0.85}),tx+0.5,H,tz+0.5);
- mesh(new _G.Cyl(0.02,0.02,1.6,8),WH,tx-0.6,H+0.8,tz-0.6);mesh(withW(triFlag(0.55,0.17,0.17,-0.17,-0.17,8,3),px=>px/0.55),clothPatch(dbl(0xd8202a),0.05),tx-0.6,H+1.45,tz-0.6);
- {const sg=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.3),new THREE.MeshBasicMaterial({map:signTex(['LIFEGUARD'],512,128),toneMapped:false}));sg.position.set(tx-0.72,H-0.28,tz);sg.rotation.y=-Math.PI/2;scene.add(sg);blk(0.04,0.34,1.26,tx-0.7,H-0.28,tz,0xb98a5a)}
+ mesh(new _G.Cyl(0.02,0.02,1.6,8),WH,tx-0.6,H+0.8,tz-0.6);mesh(withW(triFlag(0.55,0.17,0.17,-0.17,-0.17,8,3),px=>px/0.55),clothPatch(dbl(0xd8202a),0.05),tx-0.58,H+1.38,tz-0.6);
+ {const sg=new THREE.Mesh(new THREE.PlaneGeometry(1.2,0.3),new THREE.MeshBasicMaterial({map:signTex(['LIFEGUARD'],512,128),toneMapped:false}));sg.position.set(tx-0.745,H-0.28,tz);sg.rotation.y=-Math.PI/2;scene.add(sg);blk(0.04,0.36,1.28,tx-0.7,H-0.28,tz,0xb98a5a)}
  {const f=mesh(new _G.Cyl(0.12,0.12,0.75,16),0xd8202a,tx+0.95,0.42,tz-0.55);f.rotation.z=0.35;[0.3,-0.3].forEach(o=>{const c=mesh(new _G.Sph(0.12,14,10),0xd8202a,tx+0.95+Math.sin(0.35)*o*-1.2,0.42+Math.cos(0.35)*o*1.2,tz-0.55);c.scale.y=0.6})}
- colBox(tx-0.85,tx+0.85,tz-0.85,tz+0.85);colBox(tx-1.4,tx-0.85,tz-0.4,tz+0.4);
+ colBox(tx-0.85,tx+0.85,tz-0.85,tz+0.85);colBox(tx-0.4,tx+0.4,tz+0.85,tz+1.4);
  const lg=critterMesh('splashy','lifeguard shades');lg.scale.setScalar(0.92);lg.position.set(tx+0.1,H+0.05,tz-0.1);lg.rotation.y=Math.PI/2;scene.add(lg);
  const lk=lookAbout(lg,Math.PI/2,0.7,22);anims.push((t,dt)=>{if(!near2(lg,60))return;lk(t,dt)})}
 // playground in Adding Garden: pets on the swings, the roundabout, both ends of the seesaw and the spring rider
