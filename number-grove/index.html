@@ -186,6 +186,125 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
   </div>
 </div>
 
+<!-- progression data: the areas, every puzzle (with what it needs and what it opens) and the doors. the game reads this at
+     load; moving a puzzle to another area or changing what it needs is an edit here only. legacyId links an entry to the
+     generated panel ("<place number>-<index>", the id old saves used); the panel's generator settings live in ROOMS -->
+<script type="application/json" id="pm-progression">
+{"version":8,
+ "progression":{"startGatePuzzleId":"start_4","endgameThreshold":6,"bonusRequiresAllAreas":true},
+ "areas":[
+  {"id":"start","displayName":"Welcome Garden","theme":"Drawing a line, power, stars and clouds","openerPuzzleIds":["start_1"],"finalePuzzleIds":["start_4"],"completionRule":"all_finales","rewardTargetId":"welcome_gate","shortcutDoorIds":[],"start":true},
+  {"id":"castle","displayName":"Place Value Castle","theme":"Ordering numbers","openerPuzzleIds":["castle_1","castle_2"],"finalePuzzleIds":["castle_8"],"completionRule":"all_finales","rewardTargetId":"beacon_castle","shortcutDoorIds":["shortcut_castle"]},
+  {"id":"windmill","displayName":"Windmill Hill","theme":"Counting in steps","openerPuzzleIds":["windmill_1","windmill_2"],"finalePuzzleIds":["windmill_8"],"completionRule":"all_finales","rewardTargetId":"beacon_windmill","shortcutDoorIds":["shortcut_windmill"]},
+  {"id":"adding","displayName":"Adding Garden","theme":"Adding up","openerPuzzleIds":["adding_1","adding_2"],"finalePuzzleIds":["adding_8"],"completionRule":"all_finales","rewardTargetId":"beacon_adding","shortcutDoorIds":["shortcut_adding"]},
+  {"id":"times","displayName":"Times Table Village","theme":"Times tables","openerPuzzleIds":["times_1","times_2"],"finalePuzzleIds":["times_8"],"completionRule":"all_finales","rewardTargetId":"beacon_times","shortcutDoorIds":["shortcut_times"]},
+  {"id":"oddeven","displayName":"Odd and Even Pond","theme":"Odd and even numbers","openerPuzzleIds":["oddeven_1","oddeven_2"],"finalePuzzleIds":["oddeven_8"],"completionRule":"all_finales","rewardTargetId":"beacon_oddeven","shortcutDoorIds":["shortcut_oddeven"]},
+  {"id":"snow","displayName":"Snowflake Hollow","theme":"Taking away","openerPuzzleIds":["snow_1","snow_2"],"finalePuzzleIds":["snow_8"],"completionRule":"all_finales","rewardTargetId":"beacon_snow","shortcutDoorIds":["shortcut_snow"]},
+  {"id":"glass","displayName":"Glasshouse Gardens","theme":"Doubles and halves","openerPuzzleIds":["glass_1","glass_2"],"finalePuzzleIds":["glass_8"],"completionRule":"all_finales","rewardTargetId":"beacon_glass","shortcutDoorIds":["shortcut_glass"]},
+  {"id":"match","displayName":"Match Maker Market","theme":"Adding, taking away, times","openerPuzzleIds":["match_1","match_2"],"finalePuzzleIds":["match_8"],"completionRule":"all_finales","rewardTargetId":"beacon_match","shortcutDoorIds":["shortcut_match"]},
+  {"id":"beach","displayName":"Number Bond Beach","theme":"Number bonds","openerPuzzleIds":["beach_1","beach_2"],"finalePuzzleIds":["beach_8"],"completionRule":"all_finales","rewardTargetId":"beacon_beach","shortcutDoorIds":["shortcut_beach"]},
+  {"id":"summit","displayName":"Summit Garden","theme":"Advanced challenges","openerPuzzleIds":["summit_1","summit_2"],"finalePuzzleIds":["summit_5"],"completionRule":"all_finales","rewardTargetId":"beacon_summit","shortcutDoorIds":[],"bonus":true}
+ ],
+ "puzzles":[
+  {"id":"start_1","areaId":"start","legacyId":"9-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"start_2","areaId":"start","legacyId":"9-1","requires":{"all":["start_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"start_3","areaId":"start","legacyId":"9-2","requires":{"all":["start_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"start_4","areaId":"start","legacyId":"9-3","requires":{"all":["start_3"]},"optional":false,"advanced":false,"unlocks":["welcome_gate","ring_gates"]},
+  {"id":"castle_1","areaId":"castle","legacyId":"6-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"castle_2","areaId":"castle","legacyId":"6-1","requires":{"all":["castle_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"castle_3","areaId":"castle","legacyId":"6-2","requires":{"all":["castle_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"castle_4","areaId":"castle","legacyId":"6-3","requires":{"all":["castle_3"]},"optional":false,"advanced":false,"unlocks":["castle_drawbridge"]},
+  {"id":"castle_5","areaId":"castle","legacyId":"6-4","requires":{"all":["castle_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"castle_6","areaId":"castle","legacyId":"6-5","requires":{"all":["castle_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"castle_7","areaId":"castle","legacyId":"6-6","requires":{"all":["castle_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"castle_8","areaId":"castle","legacyId":"6-7","requires":{"all":["castle_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_1","areaId":"windmill","legacyId":"4-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_2","areaId":"windmill","legacyId":"4-1","requires":{"all":["windmill_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_3","areaId":"windmill","legacyId":"4-2","requires":{"all":["windmill_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_4","areaId":"windmill","legacyId":"4-3","requires":{"all":["windmill_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_5","areaId":"windmill","legacyId":"4-4","requires":{"all":["windmill_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_6","areaId":"windmill","legacyId":"4-5","requires":{"all":["windmill_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_7","areaId":"windmill","legacyId":"4-6","requires":{"all":["windmill_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"windmill_8","areaId":"windmill","legacyId":"4-7","requires":{"all":["windmill_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_1","areaId":"adding","legacyId":"0-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_2","areaId":"adding","legacyId":"0-1","requires":{"all":["adding_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_3","areaId":"adding","legacyId":"0-2","requires":{"all":["adding_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_4","areaId":"adding","legacyId":"0-3","requires":{"all":["adding_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_5","areaId":"adding","legacyId":"0-4","requires":{"all":["adding_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_6","areaId":"adding","legacyId":"0-5","requires":{"all":["adding_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_7","areaId":"adding","legacyId":"0-6","requires":{"all":["adding_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"adding_8","areaId":"adding","legacyId":"0-7","requires":{"all":["adding_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_1","areaId":"times","legacyId":"1-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_2","areaId":"times","legacyId":"1-1","requires":{"all":["times_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_3","areaId":"times","legacyId":"1-2","requires":{"all":["times_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_4","areaId":"times","legacyId":"1-3","requires":{"all":["times_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_5","areaId":"times","legacyId":"1-4","requires":{"all":["times_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_6","areaId":"times","legacyId":"1-5","requires":{"all":["times_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_7","areaId":"times","legacyId":"1-6","requires":{"all":["times_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"times_8","areaId":"times","legacyId":"1-7","requires":{"all":["times_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_1","areaId":"oddeven","legacyId":"2-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_2","areaId":"oddeven","legacyId":"2-1","requires":{"all":["oddeven_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_3","areaId":"oddeven","legacyId":"2-2","requires":{"all":["oddeven_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_4","areaId":"oddeven","legacyId":"2-3","requires":{"all":["oddeven_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_5","areaId":"oddeven","legacyId":"2-4","requires":{"all":["oddeven_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_6","areaId":"oddeven","legacyId":"2-5","requires":{"all":["oddeven_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_7","areaId":"oddeven","legacyId":"2-6","requires":{"all":["oddeven_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"oddeven_8","areaId":"oddeven","legacyId":"2-7","requires":{"all":["oddeven_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_1","areaId":"snow","legacyId":"8-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_2","areaId":"snow","legacyId":"8-1","requires":{"all":["snow_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_3","areaId":"snow","legacyId":"8-2","requires":{"all":["snow_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_4","areaId":"snow","legacyId":"8-3","requires":{"all":["snow_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_5","areaId":"snow","legacyId":"8-4","requires":{"all":["snow_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_6","areaId":"snow","legacyId":"8-5","requires":{"all":["snow_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_7","areaId":"snow","legacyId":"8-6","requires":{"all":["snow_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"snow_8","areaId":"snow","legacyId":"8-7","requires":{"all":["snow_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_1","areaId":"glass","legacyId":"7-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_2","areaId":"glass","legacyId":"7-1","requires":{"all":["glass_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_3","areaId":"glass","legacyId":"7-2","requires":{"all":["glass_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_4","areaId":"glass","legacyId":"7-3","requires":{"all":["glass_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_5","areaId":"glass","legacyId":"7-4","requires":{"all":["glass_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_6","areaId":"glass","legacyId":"7-5","requires":{"all":["glass_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_7","areaId":"glass","legacyId":"7-6","requires":{"all":["glass_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"glass_8","areaId":"glass","legacyId":"7-7","requires":{"all":["glass_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_1","areaId":"match","legacyId":"3-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_2","areaId":"match","legacyId":"3-1","requires":{"all":["match_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_3","areaId":"match","legacyId":"3-2","requires":{"all":["match_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_4","areaId":"match","legacyId":"3-3","requires":{"all":["match_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_5","areaId":"match","legacyId":"3-4","requires":{"all":["match_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_6","areaId":"match","legacyId":"3-5","requires":{"all":["match_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_7","areaId":"match","legacyId":"3-6","requires":{"all":["match_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"match_8","areaId":"match","legacyId":"3-7","requires":{"all":["match_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_1","areaId":"beach","legacyId":"5-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_2","areaId":"beach","legacyId":"5-1","requires":{"all":["beach_1"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_3","areaId":"beach","legacyId":"5-2","requires":{"all":["beach_2"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_4","areaId":"beach","legacyId":"5-3","requires":{"all":["beach_3"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_5","areaId":"beach","legacyId":"5-4","requires":{"all":["beach_4"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_6","areaId":"beach","legacyId":"5-5","requires":{"all":["beach_5"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_7","areaId":"beach","legacyId":"5-6","requires":{"all":["beach_6"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"beach_8","areaId":"beach","legacyId":"5-7","requires":{"all":["beach_7"]},"optional":false,"advanced":false,"unlocks":[]},
+  {"id":"summit_1","areaId":"summit","legacyId":"10-0","requires":null,"optional":false,"advanced":true,"unlocks":[]},
+  {"id":"summit_2","areaId":"summit","legacyId":"10-1","requires":{"all":["summit_1"]},"optional":false,"advanced":true,"unlocks":[]},
+  {"id":"summit_3","areaId":"summit","legacyId":"10-2","requires":{"all":["summit_2"]},"optional":false,"advanced":true,"unlocks":[]},
+  {"id":"summit_4","areaId":"summit","legacyId":"10-3","requires":{"all":["summit_3"]},"optional":false,"advanced":true,"unlocks":[]},
+  {"id":"summit_5","areaId":"summit","legacyId":"10-4","requires":{"all":["summit_4"]},"optional":false,"advanced":true,"unlocks":[]}
+ ],
+ "doors":[
+  {"id":"welcome_gate","opensWhen":{"puzzle":"start_4"}},
+  {"id":"ring_gates","opensWhen":{"puzzle":"start_4"}},
+  {"id":"castle_drawbridge","opensWhen":{"puzzle":"castle_4"}},
+  {"id":"shortcut_castle","opensWhen":{"area":"castle"}},
+  {"id":"shortcut_windmill","opensWhen":{"area":"windmill"}},
+  {"id":"shortcut_adding","opensWhen":{"area":"adding"}},
+  {"id":"shortcut_times","opensWhen":{"area":"times"}},
+  {"id":"shortcut_oddeven","opensWhen":{"area":"oddeven"}},
+  {"id":"shortcut_snow","opensWhen":{"area":"snow"}},
+  {"id":"shortcut_glass","opensWhen":{"area":"glass"}},
+  {"id":"shortcut_match","opensWhen":{"area":"match"}},
+  {"id":"shortcut_beach","opensWhen":{"area":"beach"}},
+  {"id":"launch_gate","opensWhen":{"endgame":true}},
+  {"id":"summit_gate","opensWhen":{"bonus":true}}
+ ]}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
@@ -520,7 +639,16 @@ const CONN=(()=>{const fr=CONN0.find(c=>c.kind==='frost'),rest=CONN0.filter(c=>c
 const NR=ROOMS.length, z0s=ROOMS.map((_,r)=>-r*(AREA+GAP)), zF0=z0s[NR-1]-AREA, LEN=-zF0+FIN;
 
 const PANELS=[];
-ROOMS.forEach((room,r)=>{room.list=[];room.panels.forEach((def0,i)=>{
+// the Summit Garden on top of Meridian Hill: five optional, advanced challenges that open once every area is complete.
+// each takes one of the island's rules to its hardest (so it needs what the areas teach), on the biggest grid
+const SUMMIT={name:'Summit Garden',topic:'Advanced challenges',key:'summit',orig:10,
+  spots:[[-8.5,-6,'e'],[8.5,-11,'w'],[-8.5,-16,'e'],[8.5,-21,'w'],[0,-27.5,'s']],panels:[
+    {type:'rank',W:7,H:7,count:10,lo:100,hi:999,down:true,wind:0.6},
+    {type:'order',W:7,H:7,k:9,count:9,from:99,down:true,hide:true,wind:0.6},
+    {type:'sep',W:7,H:7,minRegions:6,fill:0.6,maxN:999,wind:0.62},
+    {type:'grp',W:7,H:7,ops:'+-x',vmin:12,vmax:60,minRegions:6,fill:0.6,minTiles:20,wind:0.6},
+    {type:'bond',W:7,H:7,target:100,minRegions:6,maxPer:3,minTiles:14,wind:0.6}]};
+function genPlace(room,r){room.list=[];room.panels.forEach((def0,i)=>{
   let p=null;
   // if a strict level can't be built, relax its extra rules a step at a time instead of failing
   for(let s=0;s<36&&!p;s++){
@@ -537,8 +665,93 @@ ROOMS.forEach((room,r)=>{room.list=[];room.panels.forEach((def0,i)=>{
   p.nub=nubDir(p.W,p.H,p.end);p.room=r;p.ri=i;p.index=PANELS.length;p.id=room.orig+'-'+i;
   p.path=[];p.pend=null;p.atEnd=false;p.solved=false;p.complete=false;p.flash=null;p.err=null;
   PANELS.push(p);room.list.push(p);
-})});
-const isPowered=p=>p.index===0||PANELS[p.index-1].solved;
+})}
+ROOMS.forEach(genPlace);genPlace(SUMMIT,NR);
+
+/* ---------- progression ----------
+   what opens when is data (the pm-progression block at the top of the page). one manager owns the state: a puzzle only
+   reports that it was solved; doors, gates, cables, beacons, markers, the owl and the menu listen for its events:
+   puzzleSolved, puzzleUnlocked, areaCompleted, doorOpened, endgameUnlocked, bonusUnlocked (and reset).
+   rules: the Welcome Garden runs in order and its last puzzle opens the Welcome Gate for good; from then on every area
+   is open and its first puzzle has power; inside an area a puzzle needs only what its entry lists (from its own area);
+   an area is complete when its finale is solved; 6 complete areas open the launch, all 9 open the Summit Garden.
+   nothing that has opened ever closes again */
+const PDATA=JSON.parse(document.getElementById('pm-progression').textContent);
+const AREA_OF_ROOM=ROOMS.map(r=>r.key==='intro'?'start':r.key);
+// the rules, written over any solved set so the validation test can play the game through on paper with them
+function progRules(solved){const P=new Map(PDATA.puzzles.map(q=>[q.id,q])),A=new Map(PDATA.areas.map(a=>[a.id,a])),G=PDATA.progression;
+  const main=PDATA.areas.filter(a=>!a.start&&!a.bonus);
+  const met=r=>!r||((!r.all||r.all.every(id=>solved.has(id)))&&(!r.any||r.any.some(id=>solved.has(id))));
+  const isComplete=id=>{const a=A.get(id);if(!a)return false;const f=a.finalePuzzleIds;return a.completionRule==='any_finale'?f.some(x=>solved.has(x)):f.every(x=>solved.has(x))};
+  const doneCount=()=>main.filter(a=>isComplete(a.id)).length,endgame=()=>doneCount()>=G.endgameThreshold;
+  const bonus=()=>G.bonusRequiresAllAreas?main.every(a=>isComplete(a.id)):endgame();
+  const startOpen=()=>solved.has(G.startGatePuzzleId);
+  const areaOpen=id=>{const a=A.get(id);return !!a&&(a.start?true:a.bonus?bonus():startOpen())};
+  const isUnlocked=id=>{const q=P.get(id);return !!q&&areaOpen(q.areaId)&&met(q.requires)};
+  const doorWants=d=>{const w=d.opensWhen||{};return w.puzzle?solved.has(w.puzzle):w.area?isComplete(w.area):w.endgame?endgame():w.bonus?bonus():false};
+  return{P,A,main,isComplete,doneCount,endgame,bonus,startOpen,areaOpen,isUnlocked,doorWants}}
+const PROG=(()=>{
+  const S={solved:new Set(),doors:new Set(),rocket:false,pos:null},R=progRules(S.solved),EV={},LEG=new Map(PDATA.puzzles.map(q=>[q.legacyId,q.id]));
+  const byPid=new Map();PANELS.forEach(p=>{p.pid=LEG.get(p.id);byPid.set(p.pid,p)});
+  const on=(e,f)=>{(EV[e]=EV[e]||[]).push(f)};
+  const emit=(e,...x)=>(EV[e]||[]).forEach(f=>{try{f(...x)}catch(err){console.error('Prime Meridian: a listener for '+e+' failed',err)}});
+  const snap=()=>({unl:new Set([...R.P.keys()].filter(R.isUnlocked)),done:new Set([...R.A.keys()].filter(R.isComplete)),eg:R.endgame(),bo:R.bonus()});
+  const openDoor=(id,quiet)=>{if(S.doors.has(id))return;S.doors.add(id);emit('doorOpened',id,quiet)};
+  // open what is now due and announce what is new since `before`
+  function settle(before,quiet){
+    S.solved.forEach(id=>(R.P.get(id).unlocks||[]).forEach(d=>openDoor(d,quiet)));
+    PDATA.doors.forEach(d=>{if(R.doorWants(d))openDoor(d.id,quiet)});
+    const now=snap();
+    now.unl.forEach(id=>{if(!before.unl.has(id))emit('puzzleUnlocked',id,quiet)});
+    now.done.forEach(id=>{if(!before.done.has(id))emit('areaCompleted',id,quiet)});
+    if(now.eg&&!before.eg)emit('endgameUnlocked',quiet);if(now.bo&&!before.bo)emit('bonusUnlocked',quiet)}
+  // saves: version 8 keeps solved puzzles, opened doors, the rocket and where you were standing. an old save from the
+  // linear version (number-grove-v7: a list of solved panels in the old naming) is converted on first load
+  const KEY='prime-meridian-save',OLD='number-grove-v7';
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({v:8,solved:[...S.solved],doors:[...S.doors],rocket:S.rocket,pos:S.pos}))}catch(e){}}
+  function readSave(){let d=null;try{d=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){}
+    if(d&&d.v===8)return d;
+    let old=null;try{old=JSON.parse(localStorage.getItem(OLD)||'null')}catch(e){}
+    if(Array.isArray(old)){let rk=false;try{rk=localStorage.getItem('number-grove-rocket')==='1'}catch(e){}
+      return{v:8,solved:old.map(x=>LEG.get(x)).filter(Boolean),doors:[],rocket:rk,pos:null,migratedFrom:7}}
+    return null}
+  function load(){const d=readSave();if(!d)return null;const before=snap();
+    (d.solved||[]).forEach(id=>{if(R.P.has(id))S.solved.add(id)});S.rocket=!!d.rocket;S.pos=Array.isArray(d.pos)?d.pos:null;
+    settle(before,true);(d.doors||[]).forEach(id=>openDoor(id,true));save();return d}
+  function puzzleSolved(id){if(!R.P.has(id)||S.solved.has(id)||!R.isUnlocked(id))return false;const before=snap();S.solved.add(id);
+    emit('puzzleSolved',id);settle(before,false);save();return true}
+  function reset(){S.solved.clear();S.doors.clear();S.rocket=false;S.pos=null;try{localStorage.removeItem(KEY);localStorage.removeItem(OLD);localStorage.removeItem('number-grove-rocket')}catch(e){}emit('reset');save()}
+  const status=id=>{const a=R.A.get(id);if(!a)return'unknown';const n=a.puzzles.filter(x=>S.solved.has(x)).length;return R.isComplete(id)?'complete':n?'in_progress':'not_started'};
+  PDATA.areas.forEach(a=>{a.puzzles=PDATA.puzzles.filter(q=>q.areaId===a.id).map(q=>q.id)});
+  return{S,R,on,emit,load,save,reset,puzzleSolved,status,panel:id=>byPid.get(id),isUnlocked:R.isUnlocked,isComplete:R.isComplete,areaOpen:R.areaOpen,
+    endgame:R.endgame,bonus:R.bonus,doneCount:R.doneCount,doorOpen:id=>S.doors.has(id),areas:()=>PDATA.areas,area:id=>R.A.get(id),
+    setPos(v){S.pos=v},setRocket(){S.rocket=true;save()},
+    state(){return{solved:[...S.solved],doors:[...S.doors],rocket:S.rocket,areas:PDATA.areas.map(a=>({id:a.id,status:status(a.id),solved:a.puzzles.filter(x=>S.solved.has(x)).length,of:a.puzzles.length})),
+      endgame:R.endgame(),bonus:R.bonus(),complete:R.doneCount()+' of '+R.main.length}}}})();
+const isPowered=p=>PROG.isUnlocked(p.pid);
+// the validation test: fails if a puzzle needs one from another area, a puzzle can't be reached, requirements loop,
+// too few areas are self-contained for the endgame threshold, or an id is duplicated or missing
+function validateProgression(){const err=[],D=PDATA,ids=new Set(),areaIds=new Set(D.areas.map(a=>a.id)),byId=new Map();
+  D.areas.forEach(a=>{if(byId.has('a:'+a.id))err.push('duplicate area id '+a.id);byId.set('a:'+a.id,a)});
+  D.puzzles.forEach(q=>{if(ids.has(q.id))err.push('duplicate puzzle id '+q.id);ids.add(q.id);byId.set(q.id,q);if(!areaIds.has(q.areaId))err.push(q.id+' is in an unknown area ('+q.areaId+')')});
+  const reqs=q=>q.requires?[...(q.requires.all||[]),...(q.requires.any||[])]:[];
+  D.puzzles.forEach(q=>reqs(q).forEach(x=>{const o=byId.get(x);if(!o)err.push(q.id+' needs a missing puzzle ('+x+')');else if(o.areaId!==q.areaId)err.push(q.id+' needs '+x+', which is in another area')}));
+  D.areas.forEach(a=>[...a.openerPuzzleIds,...a.finalePuzzleIds].forEach(x=>{if(!ids.has(x))err.push(a.id+' lists a missing puzzle ('+x+')')}));
+  const doorIds=new Set(D.doors.map(d=>d.id));D.puzzles.forEach(q=>(q.unlocks||[]).forEach(d=>{if(!doorIds.has(d))err.push(q.id+' opens an unknown door ('+d+')')}));
+  if(!ids.has(D.progression.startGatePuzzleId))err.push('the start gate puzzle is missing');
+  const leg=new Map();D.puzzles.forEach(q=>{if(leg.has(q.legacyId))err.push(q.id+' and '+leg.get(q.legacyId)+' point at the same panel');leg.set(q.legacyId,q.id)});
+  PANELS.forEach(p=>{if(!leg.has(p.id))err.push('panel '+p.id+' has no puzzle entry')});const pids=new Set(PANELS.map(p=>p.id));D.puzzles.forEach(q=>{if(!pids.has(q.legacyId))err.push(q.id+' has no panel ('+q.legacyId+')')});
+  const st=new Map(),dfs=id=>{if(st.get(id)===1){err.push('requirements form a loop through '+id);return}if(st.get(id))return;st.set(id,1);const q=byId.get(id);if(q)reqs(q).forEach(dfs);st.set(id,2)};ids.forEach(dfs);
+  // play the game through on paper: keep solving anything that is open until nothing more opens; everything must get solved
+  const sol=new Set(),R=progRules(sol);for(let go=true;go;){go=false;D.puzzles.forEach(q=>{if(!sol.has(q.id)&&R.isUnlocked(q.id)){sol.add(q.id);go=true}})}
+  D.puzzles.forEach(q=>{if(!sol.has(q.id))err.push(q.id+' can never be reached')});
+  if(!R.endgame())err.push('the endgame can never open');
+  // and each area on its own: with only the start area and that area solved, the area must complete
+  let self=0;R.main.forEach(a=>{const s2=new Set(D.puzzles.filter(q=>q.areaId==='start').map(q=>q.id)),R2=progRules(s2);
+    for(let go=true;go;){go=false;D.puzzles.forEach(q=>{if(q.areaId===a.id&&!s2.has(q.id)&&R2.isUnlocked(q.id)){s2.add(q.id);go=true}})}
+    if(R2.isComplete(a.id)&&D.puzzles.filter(q=>q.areaId===a.id&&!q.optional).every(q=>!q.advanced))self++;else err.push(a.id+' is not self-contained')});
+  if(self<D.progression.endgameThreshold)err.push('only '+self+' self-contained areas, fewer than the endgame threshold ('+D.progression.endgameThreshold+')');
+  return{ok:!err.length,errors:err,areas:D.areas.length,puzzles:D.puzzles.length,selfContained:self}}
 
 /* ---------- panel drawing ---------- */
 const TH={
@@ -3473,6 +3686,7 @@ ROOMS.forEach((room,r)=>{
 });
 // no tree may reach over or behind a panel: its leaves would poke through the board or crowd the view (run once the
 // panels are up and again after all the scattered trees are planted)
+SUMMIT.z0=zF0-72;SUMMIT.list.forEach((p,i)=>buildPanel(p,SUMMIT.spots[i],SUMMIT.z0));
 function clearTreesFromPanels(){const gone=new Set();PANELS.forEach(p=>{const fx=p.pos.x+p.normal.x*1.6,fz=p.pos.z+p.normal.z*1.6,bx=p.pos.x-p.normal.x*1.2,bz=p.pos.z-p.normal.z*1.2,py=p.pos.y+(PH+0.14)/2;
   TREES.forEach(T=>{if(gone.has(T))return;const d=Math.min(Math.hypot(T.x-p.pos.x,T.z-p.pos.z),Math.hypot(T.x-fx,T.z-fz),Math.hypot(T.x-bx,T.z-bz));if(d<T.r+1.1&&T.low<py+1.8)gone.add(T)})});
  gone.forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}const i=TREES.indexOf(T);if(i>=0)TREES.splice(i,1)})}
@@ -3991,7 +4205,7 @@ anims.push((t,dt)=>{const S=ROCKET;S.fm.uniforms.uT.value=t;
   if(S.state==='count'){if(Math.ceil(10-S.t)!==prevN)S.redraw();if(S.t>5)S.sb.rotation.z=-Math.min(0.32,(S.t-5)*0.08);   // the strongback tilts back
     if(S.t>=7.5&&!S.lit){S.lit=true;S.flame.visible=true;rocketSound()}
     if(S.lit){S.fm.uniforms.uI.value=Math.min(1,(S.t-7.5)/0.8);for(let i=0;i<3;i++)rocketPuff((Math.random()-0.5)*4,0.8,S.zp-3-Math.random()*6,true)}
-    if(S.t>=10){S.state='lift';S.t=0;S.redraw()}}
+    if(S.t>=10){S.state='lift';S.t=0;S.redraw();setTimeout(celebrate,5000)}}
   else if(S.state==='lift'){const a=2.2+S.t*0.55;S.vy+=a*dt;S.pitch=Math.min(0.55,Math.max(0,(S.t-6)*0.03));S.y+=S.vy*Math.cos(S.pitch)*dt;S.dz-=S.vy*Math.sin(S.pitch)*dt;
     S.g.position.set(0,S.M0+S.y,S.zp+S.dz);S.g.rotation.x=-S.pitch;S.fm.uniforms.uI.value=1;const sp=1+Math.min(2.5,S.y/120);S.flame.scale.set(sp,1+Math.min(1.5,S.y/150),sp);
     if(S.y<30)for(let i=0;i<3;i++)rocketPuff((Math.random()-0.5)*4,0.8,S.zp-3-Math.random()*6,true);
@@ -4001,8 +4215,8 @@ anims.push((t,dt)=>{const S=ROCKET;S.fm.uniforms.uT.value=t;
   else if(S.state==='gone'){S.glow.material.opacity=Math.max(0,0.9-S.t*0.25);S.glow.position.y+=dt*60;
   }});
 // the rocket goes up when you press the launch button, and only once (it stays gone until a new game)
-function launchRocket(){const S=ROCKET;if(S.state!=='idle'||S.done)return;S.done=true;S.go=true;try{localStorage.setItem('number-grove-rocket','1')}catch(e){}S.button.m.position.y=1.08;setTimeout(()=>S.button.m.position.y=1.11,300)}
-try{if(localStorage.getItem('number-grove-rocket')==='1'){const S=ROCKET;S.done=true;S.state='gone';S.t=99;S.g.visible=false;S.sb.rotation.z=-0.32;S.redraw()}}catch(e){}   // already launched on an earlier visit
+function launchRocket(){const S=ROCKET;if(S.state!=='idle'||S.done||!PROG.endgame())return;S.done=true;S.go=true;PROG.setRocket();S.button.m.position.y=1.08;setTimeout(()=>S.button.m.position.y=1.11,300)}
+function rocketGone(){const S=ROCKET;S.done=true;S.state='gone';S.t=99;S.g.visible=false;S.sb.rotation.z=-0.32;S.redraw()}   // already launched on an earlier visit (see restore progress)
 
 buildOwlHeights();
 (function mergeStatic(){
@@ -4817,7 +5031,9 @@ anims.push(waveUpdate);
 /* ---------- the guide owl and the cable glow ----------
    a friendly owl perches on top of the next panel to solve; when you solve it, the owl flies off in a gentle arc to
    the next one. a warm glow runs along the yellow cable from the last solved panel to the next panel */
-const nextPanel=()=>PANELS.find(p=>!p.solved)||null;
+const nextPanel=()=>{const P=placeAt(pz),here=P.k==='room'?AREA_OF_ROOM[P.r]:P.k==='gap'?AREA_OF_ROOM[P.r+1]:null;
+  if(here){const a=PROG.area(here),q=a.puzzles.map(id=>PROG.panel(id)).find(p=>p&&!p.solved&&isPowered(p));if(q)return q}
+  let best=null,bd=1e9;for(const p of PANELS){if(p.solved||!isPowered(p))continue;const d=Math.hypot(p.pos.x-px,p.pos.z-pz);if(d<bd){bd=d;best=p}}return best};
 // the guide owl, sculpted: an eagle-owl with a deep rounded body, streaked buff breast with fine bars, mottled brown back,
 // a big head with a pale facial disc (fine rings round each eye, a dark rim), pale brows and long ear tufts, glowing
 // orange eyes, a hooked dark beak, feathered legs with talons, and wings that fold against its flanks and open to fly
@@ -4884,7 +5100,7 @@ function perchFor(p,out){if(!p)return out.set(0,4.45,zF0-15);return out.set(p.po
 function hoot(){if(!AMB.ready||muted)return;const d=Math.hypot(OWL.g.position.x-camera.position.x,OWL.g.position.z-camera.position.z);if(d>30)return;const v=0.06*(1-d/30),t=AC.currentTime,o=shotOut(v,0,t);
   blip(o,'sine',430,390,t,0.32,['lowpass',900,1],[5,6]);blip(o,'sine',410,360,t+0.42,0.55,['lowpass',900,1],[5,6])}
 const _ov=new THREE.Vector3(),_ov2=new THREE.Vector3();
-anims.push((t,dt)=>{if(!BRIDGE.set)return;const down=ROOMS[RI('castle')].list[3].solved?1:0;if(BRIDGE.init===undefined){BRIDGE.init=1;BRIDGE.set(down);return}
+anims.push((t,dt)=>{if(!BRIDGE.set)return;const down=PROG.doorOpen('castle_drawbridge')?1:0;if(BRIDGE.init===undefined){BRIDGE.init=1;BRIDGE.set(down);return}
   if(BRIDGE.t!==down){if(BRIDGE.moving!==down){BRIDGE.moving=down;if(down)gateSound('bridge',0,z0s[RI('castle')]-40.4,4.5)}const E=u=>u*u*(3-2*u);if(BRIDGE.u==null||Math.abs(E(BRIDGE.u)-BRIDGE.t)>1e-4)BRIDGE.u=BRIDGE.t;
     BRIDGE.u=down?Math.min(1,BRIDGE.u+dt/4.5):Math.max(0,BRIDGE.u-dt/2);BRIDGE.set(E(BRIDGE.u));if(BRIDGE.u===down)BRIDGE.moving=null}});
 anims.push((t,dt)=>{const O=OWL,np=nextPanel();
@@ -4911,7 +5127,7 @@ anims.push((t,dt)=>{const O=OWL,np=nextPanel();
 const GLOW=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d'),gr=c.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,235,1)');gr.addColorStop(0.25,'rgba(255,225,110,0.85)');gr.addColorStop(1,'rgba(255,200,40,0)');c.fillStyle=gr;c.fillRect(0,0,64,64);
   const mat=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,fog:false});
   const pool=[];for(let i=0;i<48;i++){const s=new THREE.Sprite(mat);s.visible=false;s.renderOrder=2;scene.add(s);pool.push(s)}return{pool,pts:null,cum:null,len:0}})();
-anims.push((t,dt)=>{const np=nextPanel(),pts=np?ROOMS[np.room].legPts[np.ri]:null;   // leg i runs from the panel before (or the entrance) into panel i
+anims.push((t,dt)=>{const np=nextPanel(),pl=np?ROOMS[np.room]||SUMMIT:null,pts=pl&&pl.legPts?pl.legPts[np.ri]:null;   // leg i runs from the panel before (or the entrance) into panel i
   if(pts!==GLOW.pts){GLOW.pts=pts;GLOW.cum=[0];if(pts)for(let i=1;i<pts.length;i++)GLOW.cum.push(GLOW.cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));GLOW.len=pts?GLOW.cum[GLOW.cum.length-1]:0}
   const P=GLOW.pool;let used=0;
   if(pts&&GLOW.len>0.5&&started){const SP=9,n=Math.max(1,Math.min(12,Math.ceil(GLOW.len/SP))),head=(t*4.5)%(n*SP);
@@ -5111,14 +5327,13 @@ function musicStart(){if(MUSIC.started||!AC||!AC.createBiquadFilter)return;MUSIC
   musicVol()}
 
 /* ---------- save ---------- */
-const SAVE='number-grove-v7';
-function loadSave(){try{return JSON.parse(localStorage.getItem(SAVE)||'[]')}catch(e){return[]}}
-function save(){try{localStorage.setItem(SAVE,JSON.stringify(PANELS.filter(p=>p.solved).map(p=>p.id)))}catch(e){}}
+// (saving lives in the progression manager: PROG.save / PROG.load, version 8)
+function save(){PROG.save()}
 
 /* ---------- power, cables, gates ---------- */
 function refreshWorld(){
   PANELS.forEach(p=>{(p.cables||[]).forEach(m=>m.material=p.solved?matCableOn:matCableOff)});
-  ROOMS.forEach((room,r)=>{const on=r===0||ROOMS[r-1].list.every(p=>p.solved);entryCables[r].forEach(m=>m.material=on?matCableOn:matCableOff)});
+  ROOMS.forEach((room,r)=>{const on=PROG.areaOpen(AREA_OF_ROOM[r]);entryCables[r].forEach(m=>m.material=on?matCableOn:matCableOff)});
   PANELS.forEach(drawPanel);
 }
 function poseGate(g){const e=g.t*g.t*(3-2*g.t);if(g.kind==='lift')g.leaves[0].position.y=2.4*e;else if(g.kind==='slide'){g.leaves[0].position.x=-1.53-1.45*e;g.leaves[1].position.x=1.53+1.45*e}else{g.leaves[0].rotation.y=1.5*e;g.leaves[1].rotation.y=-1.5*e}}
@@ -5128,7 +5343,7 @@ function openGate(r,instant){openG(gates[r],instant)}
 // the next place's entrance opens once you are halfway along the walk from the last place's open exit
 function openEntr(r,instant){const g=ENTR[r];if(!g||g.open)return;openG(g,instant)}
 function closeGate(r){closeG(gates[r]);closeG(ENTR[r])}
-function roomDone(r){return ROOMS[r].list.every(p=>p.solved)}
+function roomDone(r){return PROG.isComplete(AREA_OF_ROOM[r])}
 
 function placeAt(z){if(z>0.6)return{k:'road'};if(z<zF0)return{k:'fin'};
   for(let r=0;r<NR;r++){if(z>z0s[r]-AREA)return{k:'room',r};if(r<NR-1&&z>z0s[r+1])return{k:'gap',r}}return{k:'fin'}}
@@ -5250,9 +5465,9 @@ function check(p){
   const res=validate(p,p.path);
   if(res.ok){
     p.solved=true;p.complete=true;p.flash=null;sfx.win();
-    save();refreshWorld();
-    if(roomDone(p.room)){openGate(p.room);sfx.gate();toast(PRAISE[p.index%PRAISE.length],'good')}
-    else toast(PRAISE[p.index%PRAISE.length]+' Follow the yellow cable to the next panel.','good');
+    PROG.puzzleSolved(p.pid);refreshWorld();
+    const ar=PROG.area(PROG.R.P.get(p.pid).areaId),last=ar.finalePuzzleIds.includes(p.pid);
+    toast(PRAISE[p.index%PRAISE.length]+(last?'':' Follow the yellow cable to the next panel.'),'good');
     updateHud();
     exitSolve();   // step back straight away
   }else{
@@ -5328,8 +5543,8 @@ $('#musicBtn').textContent=MUSIC.on?'Music on':'Music off';
 $('#musicBtn').addEventListener('click',()=>{MUSIC.on=!MUSIC.on;$('#musicBtn').textContent=MUSIC.on?'Music on':'Music off';try{localStorage.setItem('number-grove-music',MUSIC.on?'on':'off')}catch(e){}if(MUSIC.on)musicStart();musicVol()});
 // solve every puzzle at once and open every gate (handy for exploring or testing)
 function solveAll(){if(mode==='solve')exitSolve();
-  PANELS.forEach(p=>{p.solved=true;p.complete=true;p.flash=null;p.err=null;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}});
-  ROOMS.forEach((_,r)=>{openGate(r,true);openEntr(r,true)});save();refreshWorld();updateHud();sfx.gate();toast('Every puzzle is solved and every gate is open!','good')}
+  for(let go=true;go;){go=false;PANELS.forEach(p=>{if(!p.solved&&PROG.isUnlocked(p.pid)){markSolved(p);PROG.puzzleSolved(p.pid);go=true}})}
+  refreshWorld();updateHud();sfx.gate();toast('Every puzzle is solved and every gate is open!','good')}
 $('#solveAllBtn').addEventListener('click',()=>{solveAll();$('#help').hidden=true;if(mode==='walk')requestLock()});
 /* ---------- post-processing: the "game engine" look ----------
    the world is drawn into an off-screen HDR buffer, then: ambient occlusion (soft contact shadows in corners and under
@@ -5461,10 +5676,10 @@ $('#helpBtn').addEventListener('click',()=>{if(document.pointerLockElement)docum
 $('#helpClose').addEventListener('click',()=>{$('#help').hidden=true;if(mode==='walk')requestLock()});
 $('#doneClose').addEventListener('click',()=>{$('#done').hidden=true;requestLock()});
 function resetProgress(){
-  try{localStorage.removeItem(SAVE)}catch(e){}
+  PROG.reset();
   PANELS.forEach(p=>{p.solved=false;p.complete=false;p.path=[];p.pend=null;p.flash=null;p.atEnd=false});
   ROOMS.forEach((_,r)=>closeGate(r));OWL.fly=false;OWL.target=undefined;OWL.P.rotation.x=0;OWL.head.rotation.x=0;OWL.open.forEach(w=>w.sh.visible=false);OWL.wings.forEach(w=>w.visible=true);
-  try{localStorage.removeItem('number-grove-rocket')}catch(e){}rocketReset();
+  rocketReset();
   px=3.0;pz=ISL_N-0.8;ph=0;yaw=0;pitch=0;celebrated=false;refreshWorld();updateHud();
 }
 $('#helpReset').addEventListener('click',()=>{if(mode==='solve')exitSolve();resetProgress();$('#help').hidden=true;toast('Fresh start. Good luck!')});
@@ -5474,17 +5689,19 @@ $('#helpReset').addEventListener('click',()=>{if(mode==='solve')exitSolve();rese
 const MENU={open:true,t:0};
 const DIFF={castle:1,windmill:1,adding:2,times:2,oddeven:3,snow:3,glass:4,match:4,beach:5};
 function firstOpen(){let r=0;while(r<NR&&roomDone(r))r++;return r}
+const placeOpen=r=>PROG.areaOpen(AREA_OF_ROOM[r]);
+function goToPlace(r){px=0;pz=z0s[r]-2.5;ph=heightAt(px,pz);yaw=0;pitch=0}
 function menuPage(id){['pgPlaces','pgHow','pgSettings','pgNew'].forEach(k=>$('#'+k).hidden=k!==id);$('#mSub').hidden=!id;if(id==='pgPlaces')buildPlaces();if(id==='pgSettings')syncSettings();if(id==='pgHow')drawDemo()}
 document.querySelectorAll('.ptotal').forEach(e=>e.textContent=PANELS.length);document.querySelectorAll('.pplaces').forEach(e=>e.textContent=NR);
-function menuProgress(){const n=PANELS.filter(p=>p.solved).length,d=ROOMS.filter((_,r)=>roomDone(r)).length;
+function menuProgress(){const n=PANELS.filter(p=>p.solved).length,d=PROG.doneCount();
   $('#mPlayText').textContent=started?'Resume':n?'Continue':'Play';$('#mNew').hidden=!n;$('#mProg').hidden=!n;
-  $('#mProgN').textContent=n;$('#mProgP').textContent='· '+d+' of '+NR+' places';$('#mProgBar').style.width=(n/PANELS.length*100)+'%'}
-function buildPlaces(){const ol=$('#placeList'),fo=firstOpen();ol.textContent='';
-  ROOMS.forEach((room,r)=>{const n=room.list.filter(p=>p.solved).length,done=n===room.list.length,open=r<=fo,li=document.createElement('li');li.className=done?'done':!open?'locked':r===fo?'current':'';
-    const d=DIFF[room.key]||3;li.innerHTML=`<span class="pnum">${done?'✓':r+1}</span><div><b></b><span class="ptopic"></span><div class="pmeta"><span class="dots" title="Difficulty ${d} of 5">${'●'.repeat(d)}${'○'.repeat(5-d)}</span><div class="pbar"><i style="width:${n/8*100}%"></i></div><span class="pcount">${n}/8</span></div></div>`;
+  $('#mProgN').textContent=n;$('#mProgP').textContent='· '+d+' of '+PROG.R.main.length+' areas';$('#mProgBar').style.width=(n/PANELS.length*100)+'%'}
+function buildPlaces(){const ol=$('#placeList');ol.textContent='';
+  ROOMS.forEach((room,r)=>{const n=room.list.filter(p=>p.solved).length,N=room.list.length,done=n===N,open=placeOpen(r),cur=open&&!done&&n>0,li=document.createElement('li');li.className=done?'done':!open?'locked':cur?'current':'';
+    const d=DIFF[room.key]||3;li.innerHTML=`<span class="pnum">${done?'✓':r+1}</span><div><b></b><span class="ptopic"></span><div class="pmeta"><span class="dots" title="Difficulty ${d} of 5">${'●'.repeat(d)}${'○'.repeat(5-d)}</span><div class="pbar"><i style="width:${n/N*100}%"></i></div><span class="pcount">${n}/${N}</span></div></div>`;
     li.querySelector('b').textContent=room.name;li.querySelector('.ptopic').textContent=room.topic;
-    if(open){const b=document.createElement('button');b.type='button';b.className=r===fo?'sun':'ghost';b.textContent=r===fo?'Go':'Visit';b.setAttribute('aria-label',(r===fo?'Go to ':'Visit ')+room.name);
-      b.addEventListener('click',()=>{px=0;pz=z0s[r]-2.5;ph=heightAt(px,pz);yaw=0;pitch=0;play()});li.appendChild(b)}
+    if(open){const b=document.createElement('button');b.type='button';b.className=cur?'sun':'ghost';b.textContent=cur?'Go':'Visit';b.setAttribute('aria-label',(cur?'Go to ':'Visit ')+room.name);
+      b.addEventListener('click',()=>{goToPlace(r);play()});li.appendChild(b)}
     else{const s=document.createElement('span');s.className='plock';s.textContent='Locked';li.appendChild(s)}
     ol.appendChild(li)})}
 function syncSettings(){const t=(el,on,a,b)=>{el.textContent=on?a:b;el.className='tog '+(on?'on':'off')};t($('#sSound'),!muted,'On','Off');t($('#sMusic'),MUSIC.on,'On','Off');t($('#sFull'),!!document.fullscreenElement,'On','Off');
@@ -5514,12 +5731,28 @@ function audioWake(){try{AC=AC||new (window.AudioContext||window.webkitAudioCont
 audioWake();['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,audioWake,{once:true,passive:true}));
 
 /* ---------- restore progress ---------- */
+function markSolved(p){p.solved=true;p.complete=true;p.flash=null;p.err=null;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}}
+// the world follows the manager: doors open (instantly when loading a save, with their sound when you solve)
+const DOOR_ACT={
+  welcome_gate:q=>openGate(RI('intro'),q),
+  ring_gates:q=>ROOMS.forEach((_,r)=>{if(r>0&&r<NR-1)openGate(r,q);if(r>0)openEntr(r,q)}),
+  launch_gate:q=>openGate(NR-1,q)};
+PROG.on('doorOpened',(id,quiet)=>{const f=DOOR_ACT[id];if(f)f(!!quiet)});
+PROG.on('areaCompleted',(id,quiet)=>{if(quiet)return;sfx.gate();const a=PROG.area(id);toast(a.start?'The Welcome Gate is open. Every area on the island is open to you now!':a.bonus?'You solved every challenge in the Summit Garden!':a.displayName+' is complete!','good')});
+PROG.on('endgameUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Enough areas are complete: the launch gate on the hill is open!','good'),3000)});
+PROG.on('bonusUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Every area is complete: the Summit Garden is open!','good'),6000)});
+PROG.on('reset',()=>{ROOMS.forEach((_,r)=>closeGate(r))});
+function celebrate(){if(celebrated)return;celebrated=true;sfx.cheer();if(document.pointerLockElement)document.exitPointerLock();$('#done').hidden=false}
 (function(){
-  const ids=new Set(loadSave());if(!ids.size)return;
-  PANELS.forEach(p=>{if(ids.has(p.id)){p.solved=true;p.complete=true;p.path=p.solution.slice();p.atEnd=true;p.pend={dx:p.nub[0],dy:p.nub[1],t:NUB}}});
-  ROOMS.forEach((_,q)=>{if(roomDone(q)){openGate(q,true);openEntr(q+1,true)}});let r=0;while(r<NR&&roomDone(r))r++;if(r>=NR)celebrated=true;   // already finished before
-  pz=r<NR?z0s[r]-3:zF0-3;
+  const d=PROG.load();if(!d)return;
+  PANELS.forEach(p=>{if(PROG.S.solved.has(p.pid))markSolved(p)});
+  if(PROG.S.rocket){rocketGone();celebrated=true}
+  if(d.pos&&isFinite(d.pos[0])&&isFinite(d.pos[1])){px=d.pos[0];pz=d.pos[1];yaw=d.pos[2]||0}
+  else if(PROG.S.solved.size){const r=PROG.areaOpen('castle')?1:0;pz=z0s[r]-3}
+  if(d.migratedFrom)setTimeout(()=>toast('Your progress from the old version has been carried over.','good'),1500);
 })();
+// where you are standing is saved every few seconds, so Continue puts you back there
+setInterval(()=>{if(started&&mode==='walk'&&!MENU.open){PROG.setPos([+px.toFixed(2),+pz.toFixed(2),+yaw.toFixed(3)]);PROG.save()}},5000);
 menuProgress();
 
 /* ---------- demo drawing on the start card ---------- */
@@ -5579,7 +5812,6 @@ function frameStep(t){
     else if(started&&aimedBtn&&$('#help').hidden){pr.hidden=false;const used=ROCKET.done;pr.className=used?'off':'';pr.textContent=used?'The rocket has already launched':(isTouch||lockFailed?'Tap':'Click')+' to launch the rocket';ch.classList.toggle('hot',!used)}
     else if(started&&aimedBench&&$('#help').hidden){pr.hidden=false;pr.className='';pr.textContent=(isTouch||lockFailed?'Tap':'Click')+' to sit on the bench';ch.classList.add('hot')}
     else{pr.hidden=true;ch.classList.remove('hot')}
-    if(!celebrated&&started&&!MENU.open&&pz<zF0-2&&PANELS.every(p=>p.solved)){celebrated=true;sfx.cheer();if(document.pointerLockElement)document.exitPointerLock();$('#done').hidden=false}
     if((hudTick+=dt)>0.25){hudTick=0;if(started)updateHud()}
   }else if(mode==='sit'){
     let dy=yaw-sitYaw;if(dy>1.9)yaw=sitYaw+1.9;if(dy<-1.9)yaw=sitYaw-1.9;
@@ -5597,7 +5829,6 @@ function frameStep(t){
   OCEAN.position.set(Math.round(camera.position.x/4.5)*4.5,0.07,Math.round(camera.position.z/4.5)*4.5);   // the sea's fine grid follows you
   dayUpdate();sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
   gates.concat(ENTR).forEach(g=>{if(g&&g.open&&g.t<1){g.t=Math.min(1,g.t+dt/(g.dur||2.4));run(poseGate,g)}});
-  if(!MENU.open)for(let r=1;r<NR;r++){const g=ENTR[r];if(g&&!g.open&&gates[r-1].open&&pz<z0s[r-1]-AREA-GAP/2)openEntr(r)}
   for(const f of GDECO)run(f,ts);
   trophy.rotation.y+=dt*0.6;
   for(const a of anims)run(a,ts,dt);
@@ -5621,6 +5852,18 @@ function frameStep(t){
     POST.render(ts);
   }else renderer.render(scene,camera);
 }
+/* ---------- debug tools ----------
+   in the browser console: GAME.debug.tp('snow') walks you to an area's entrance, .solve('castle_3') solves a puzzle,
+   .solveArea('beach'), .reset(), .state() prints the progression state, .validate() runs the validation test.
+   opening the page with ?debug also shows a small debug panel (see the debug panel section) */
+window.GAME={PROG,debug:{
+  tp(id){const r=ROOMS.findIndex((_,i)=>AREA_OF_ROOM[i]===id);if(id==='summit'||id==='hill'){goToHill();return'Meridian Hill'}if(r<0)return'unknown area: '+id;goToPlace(r);return ROOMS[r].name},
+  solve(id){const p=PROG.panel(id);if(!p)return'unknown puzzle: '+id;if(p.solved)return id+' is already solved';if(!isPowered(p))return id+' has no power yet';markSolved(p);PROG.puzzleSolved(id);refreshWorld();updateHud();return id+' solved'},
+  solveArea(id){const a=PROG.area(id);if(!a)return'unknown area: '+id;if(!PROG.areaOpen(id))return id+' is not open yet';a.puzzles.forEach(q=>{const p=PROG.panel(q);if(p&&!p.solved&&isPowered(p)){markSolved(p);PROG.puzzleSolved(q)}});refreshWorld();updateHud();return PROG.status(id)},
+  reset(){resetProgress();return'progress reset'},
+  state(){const st=PROG.state();console.table(st.areas);return st},
+  validate(){const v=validateProgression();if(v.ok)console.log('validation passed:',v.puzzles,'puzzles in',v.areas,'areas,',v.selfContained,'self-contained');else console.warn('validation failed',v.errors);return v}}};
+function goToHill(){px=0;pz=zF0-3;ph=heightAt(px,pz);yaw=0;pitch=0}
 refreshWorld();updateHud();camera.position.set(px,EYE,pz);
 requestAnimationFrame(frame);
 })();
