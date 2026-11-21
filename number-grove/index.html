@@ -1312,7 +1312,7 @@ function nearPieceW(x,z,out){out=out||{};const P0=pieceAtW(x,z,0);if(P0)return W
    if(d>0){c.copy(WET).lerp(DEEP,Math.min(1,d/18))}
    c.convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
  g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));g.computeVertexNormals();
- const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.set(cx,0,cz);gm.receiveShadow=true;gm.userData.world=1;scene.add(gm);
+ const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.set(cx,0,cz);gm.receiveShadow=true;gm.userData.world=1;gm.userData.ground=1;scene.add(gm);
  const bed=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000),new THREE.MeshStandardMaterial({color:DEEP.clone().convertSRGBToLinear(),roughness:0.96}));bed.rotation.x=-Math.PI/2;bed.position.set(0,-7.02,cz);bed.userData.world=1;scene.add(bed)}
 // the ocean: one big sheet of water out to the horizon. it is cut away over the island using a mask of the land, and
 // breaks into white surf along the shore
@@ -2981,8 +2981,8 @@ const matSnowBall=triPatch(new THREE.MeshStandardMaterial({color:lin(0xf3f7fa),r
 const matIce=new THREE.MeshStandardMaterial({color:lin(0x7fbcd8),roughness:0.12,metalness:0,envMap:skyCube,envMapIntensity:1.0});
 function snowGround(zc,len){flat(new THREE.PlaneGeometry(AW*2,len),matSnow,0,0.016,zc)}
 // a pine with snow sitting on its branches
-function snowPine(x,z,s){[x,z]=offPath(x,z,0.9,1.2);addTree(x,z,{type:'pine',s});const b=groundAt(x,z);
-  [[1.85,1.12],[2.75,0.82],[3.6,0.5]].forEach(([h,r])=>{const m=mesh(new THREE.ConeGeometry(r*s,0.55*s,14),matSnowBall,x,b+h*s,z,scene,true);m.rotation.y=RS()*6})}
+function snowPine(x,z,s){[x,z]=offPath(x,z,0.9,1.2);addTree(x,z,{type:'pine',s});const b=groundAt(x,z),T=TREES[TREES.length-1];T.extra=[];
+  [[1.85,1.12],[2.75,0.82],[3.6,0.5]].forEach(([h,r])=>{const m=mesh(new THREE.ConeGeometry(r*s,0.55*s,14),matSnowBall,x,b+h*s,z,scene,true);m.rotation.y=RS()*6;T.extra.push(m)})}
 function frozenPond(x,z,rx,rz){NOPET.push({x,z,rx:rx+1.3,rz:rz+1.3});flat(new THREE.CircleGeometry(1,64),0xdde6ec,x,0.019,z).scale.set(rx+0.9,1,rz+0.9);flat(new THREE.CircleGeometry(1,64),matIce,x,0.028,z).scale.set(rx,1,rz);
   for(let i=0;i<14;i++){const a=i/14*6.28+RS()*0.3,s=0.4+RS()*0.6;INST.rock.push({x:x+Math.cos(a)*(rx+0.9),y:0.1*s,z:z+Math.sin(a)*(rz+0.9),s,sy:s*0.55,ry:RS()*6,c:pick([0xe4ebf0,0xd7dfe6])})}
   for(let a=0;a<6.28;a+=0.5)reserve(x+Math.cos(a)*rx*0.55,z+Math.sin(a)*rz*0.55,Math.min(rx,rz)*0.6);reserve(x,z,Math.min(rx,rz))}
@@ -4131,11 +4131,18 @@ const HILLWALK={x0:-32,x1:32,z0:-58,z1:60};   // the path round the summit (worl
   // spokes: through each link's open inner side near the next place's entrance, then up the hill to the summit path
   PIECES.spokes=[];
   // (each spoke takes the first line across its link, a few metres before the entrance, that nothing stands on)
-  const clearAt=(L,z)=>!colliders.some(c=>{if((c.pc||pieceOfS(c.minZ!=null?(c.minZ+c.maxZ)/2:c.z).id)!==L.id||c.dyn||!c.on)return false;if(c.t==='circ')return c.x<0.5&&c.x>-X_IN-1&&Math.abs(c.z-z)<c.r+1.75;if(c.t==='box'||c.t==='wbox')return c.maxX>-X_IN-1&&c.minX<0.5&&c.maxZ>z-1.75&&c.minZ<z+1.75;return false});
-  // (if the link before a place has no clear line, the spoke leaves from the link after it instead)
+  // what stands on a spoke's line across link L at strip z: trees and rocks can be cleared away; anything else (lamps,
+  // benches, logs, posts, water) means the line can't be used
+  const blockers=(L,z)=>colliders.filter(c=>{if((c.pc||pieceOfS(c.minZ!=null?(c.minZ+c.maxZ)/2:c.z).id)!==L.id||c.dyn||!c.on)return false;if(c.t==='circ')return c.x<0.5&&c.x>-X_IN-1&&Math.abs(c.z-z)<c.r+1.75;if(c.t==='box'||c.t==='wbox')return c.maxX>-X_IN-1&&c.minX<0.5&&c.maxZ>z-1.75&&c.minZ<z+1.75;return false});
+  const treeOf=c=>TREES.find(T=>T.col===c),rockOf=c=>c.t==='circ'&&INST.rock.find(o=>Math.abs(o.x-c.x)<0.01&&Math.abs(o.z-c.z)<0.01);
+  const clearable=(L,z)=>blockers(L,z).every(c=>treeOf(c)||rockOf(c));
+  const clearLine=(L,z)=>{blockers(L,z).forEach(c=>{const T=treeOf(c);if(T){T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});(T.extra||[]).forEach(m=>m.parent&&m.parent.remove(m));const ti=TREES.indexOf(T);if(ti>=0)TREES.splice(ti,1)}
+      const ro=rockOf(c);if(ro){const ri=INST.rock.indexOf(ro);if(ri>=0)INST.rock.splice(ri,1)}const ci=colliders.indexOf(c);if(ci>=0)colliders.splice(ci,1)})};
   const DS=[4.4,5,3.6,6.4,7.8,2.9,2.3,9.2,10.6,12,13.5,15,16.5,18];
-  for(let r=1;r<NR;r++){let L=PIECES.byId['l'+(r-1)],zs=null;{const d=DS.find(d=>clearAt(L,z0s[r]+d));if(d!=null)zs=z0s[r]+d}
-    if(zs==null){const L2=PIECES.byId['l'+(r<NR-1?r:0)],top=L2.zt,d=DS.find(d=>clearAt(L2,top-d));if(d!=null){L=L2;zs=top-d}else zs=z0s[r]+2.3}
+  // (if the link before a place has no usable line, the spoke leaves from the link after it instead)
+  for(let r=1;r<NR;r++){let L=PIECES.byId['l'+(r-1)],zs=null;{const d=DS.find(d=>clearable(L,z0s[r]+d));if(d!=null)zs=z0s[r]+d}
+    if(zs==null){const L2=PIECES.byId['l'+(r<NR-1?r:0)],top=L2.zt,d=DS.find(d=>clearable(L2,top-d));if(d!=null){L=L2;zs=top-d}else zs=z0s[r]+2.3}
+    clearLine(L,zs);
     BCTX=L.id;paths([[[-1.6,zs],[-X_IN-0.4,zs]]],3,0,r===SNOWR?SNOWPATH:PATHC);BCTX=null;
     const a=S2W(-X_IN-0.4,zs,L,{}),H=HILLWALK,cx=Math.max(H.x0,Math.min(H.x1,a.x*0.25)),cz=Math.max(H.z0,Math.min(H.z1,a.z*0.25));
     // aim at the nearest point of the summit path, entering square to its edge
@@ -4228,7 +4235,7 @@ function flowerGeo(petals,fine){const P=[0,0.03,0],N=[0,1,0],C=[1,0.8,0.22],I=[]
     for(let j=0;j<rows.length-1;j++){const i0=base+j*2;I.push(i0,i0+2,i0+1,i0+1,i0+2,i0+3)}}
   return geoFrom(P,N,null,I,C)}
 // tulip: six curved petals in two rings forming a cup that flares slightly at the lip, darker at the base
-function tulipGeo(){const P=[],N=[],C=[],I=[],R=8,CC=6;
+function tulipGeo(R,CC){R=R||8;CC=CC||6;const P=[],N=[],C=[],I=[];
   for(let pi=0;pi<6;pi++){const outer=pi<3,a0=pi*2.094+(outer?0:1.047),sz=outer?1:0.92,base=P.length/3;
     for(let j=0;j<=R;j++){const v=j/R,rad=(0.012+0.034*Math.sin(Math.PI*Math.min(1,v*0.9+0.1)))*sz+(v>0.82?(v-0.82)*0.06:0),ha=0.55*Math.sin(Math.PI*(0.15+0.85*v))+0.12,y=0.1*v*sz;
       for(let i=0;i<=CC;i++){const u=i/CC*2-1,a=a0+u*ha,rr=rad*(1-0.07*u*u);P.push(Math.cos(a)*rr,y+0.008*u*u*v,Math.sin(a)*rr);N.push(Math.cos(a),0.2,Math.sin(a));const g=0.6+0.4*v;C.push(g,g*(0.9+0.1*v),g*(0.88+0.12*v))}}
@@ -4290,10 +4297,10 @@ const coreMat=std({color:lin(0x5e5e5e),roughness:0.95}),pineMat=std({map:needleT
 const grassMat=windPatch(std({vertexColors:true,side:THREE.DoubleSide,roughness:0.9}),0.09,0);
 const INF=1e9,crowns=INST.crown.concat(INST.farCrown);
 // trees
-buildLOD([{geo:trunkG(18,8),mat:M(0x7a5236),d:55,shadow:true},{geo:trunkG(9,2),mat:M(0x7a5236),d:150,shadow:true},{geo:trunkG(5,1),mat:M(0x7a5236),d:INF}],INST.trunk,36);
-buildLOD([{geo:foliageGeo(120,5,0.33,0.36),mat:leafMat,d:50,shadow:true,depth:leafDepth},{geo:foliageGeo(52,9,0.42,0.48),mat:leafMat,d:130,shadow:true,depth:leafDepth},{geo:foliageGeo(20,17,0.5,0.62),mat:leafMat,d:INF}],crowns,36);
+buildLOD([{geo:trunkG(18,8),mat:M(0x7a5236),d:44,shadow:true},{geo:trunkG(9,2),mat:M(0x7a5236),d:115},{geo:trunkG(5,1),mat:M(0x7a5236),d:INF}],INST.trunk,48);
+buildLOD([{geo:foliageGeo(120,5,0.33,0.36),mat:leafMat,d:40,shadow:true,depth:leafDepth},{geo:foliageGeo(52,9,0.42,0.48),mat:leafMat,d:100,depth:leafDepth},{geo:foliageGeo(20,17,0.5,0.62),mat:leafMat,d:INF}],crowns,48);
 // the solid core inside each crown only fills gaps between the leaf cards, so it is kept small and shadowy
-buildLOD([{geo:coreGeo(0.5,1,22,16),mat:coreMat,d:50,shadow:true},{geo:coreGeo(0.5,1,11,8),mat:coreMat,d:130,shadow:true},{geo:coreGeo(0.5,1,6,5),mat:coreMat,d:INF}],crowns,36);
+buildLOD([{geo:coreGeo(0.5,1,22,16),mat:coreMat,d:40,shadow:true},{geo:coreGeo(0.5,1,11,8),mat:coreMat,d:100},{geo:coreGeo(0.5,1,6,5),mat:coreMat,d:INF}],crowns,48);
 const needleCard=makeTex(256,(c,s,r)=>{c.clearRect(0,0,s,s);c.lineCap='round';
   for(let k=0;k<3;k++){const x0=s*(0.3+0.2*k),tw=0.5+r()*0.3;c.strokeStyle='rgb(120,110,90)';c.lineWidth=3;c.beginPath();c.moveTo(x0,s);c.quadraticCurveTo(x0+(r()-0.5)*20,s*0.5,x0+(r()-0.5)*30,s*0.06);c.stroke();
     for(let i=0;i<110;i++){const tt=i/110,y=s*(1-tt*0.94),x=x0+(r()-0.5)*8*tt,l=(14+r()*16)*(1-tt*0.4),v=150+Math.floor(r()*105);c.strokeStyle=`rgb(${v},${v},${v})`;c.lineWidth=2.6;
@@ -4306,34 +4313,34 @@ function coneCards(n,seed,size){const r=mulberry32(seed),P=[],N=[],U=[],I=[];
   return geoFrom(P,N,U,I)}
 const needleMat=windPatch(std({map:needleCard,alphaTest:0.45,side:THREE.DoubleSide,roughness:0.85}),0.025,0.9),needleDepth=new THREE.MeshDepthMaterial({depthPacking:THREE.RGBADepthPacking,map:needleCard,alphaTest:0.45,side:THREE.DoubleSide});
 const pineCore=std({map:needleTex,color:lin(0x9a9a9a),side:THREE.DoubleSide,roughness:0.95});const pineCoreGeo=pineGeo(6,28,2);pineCoreGeo.scale(0.8,1,0.8);
-buildLOD([{geo:pineCoreGeo,mat:pineCore,d:55,shadow:true},{geo:pineGeo(5,14,2),mat:pineMat,d:150,shadow:true},{geo:pineGeo(3,8,1),mat:pineMat,d:INF}],INST.pine,36);
-buildLOD([{geo:coneCards(300,3,0.85),mat:needleMat,d:55,shadow:true,depth:needleDepth},{geo:coneCards(70,7,1.0),mat:needleMat,d:110,depth:needleDepth}],INST.pine,36);
+buildLOD([{geo:pineCoreGeo,mat:pineCore,d:44,shadow:true},{geo:pineGeo(5,14,2),mat:pineMat,d:115},{geo:pineGeo(3,8,1),mat:pineMat,d:INF}],INST.pine,48);
+buildLOD([{geo:coneCards(300,3,0.85),mat:needleMat,d:42,shadow:true,depth:needleDepth},{geo:coneCards(70,7,1.0),mat:needleMat,d:85,depth:needleDepth}],INST.pine,48);
 // bushes and hedge tops
 {const b0=foliageGeo(90,13,0.32,0.3),b1=foliageGeo(32,21,0.45,0.42);b0.scale(0.8,0.8,0.8);b1.scale(0.8,0.8,0.8);
- buildLOD([{geo:b0,mat:leafMat,d:40,shadow:true,depth:leafDepth},{geo:b1,mat:leafMat,d:120,shadow:true,depth:leafDepth}],INST.bush,24);
- buildLOD([{geo:coreGeo(0.3,3,16,12),mat:coreMat,d:40,shadow:true},{geo:coreGeo(0.3,3,7,5),mat:coreMat,d:120}],INST.bush,24)}
+ buildLOD([{geo:b0,mat:leafMat,d:32,shadow:true,depth:leafDepth},{geo:b1,mat:leafMat,d:90,depth:leafDepth}],INST.bush,36);
+ buildLOD([{geo:coreGeo(0.3,3,16,12),mat:coreMat,d:32,shadow:true},{geo:coreGeo(0.3,3,7,5),mat:coreMat,d:90}],INST.bush,36)}
 // ground cover
 {const lc=z0s[CONN.findIndex(c=>c.name==='Lavender Path')]-AREA-GAP/2;let w=0;for(const o of INST.rock)if(!(Math.abs(o.z-lc)<GAP/2+0.5&&Math.abs(o.x)<AW+2))INST.rock[w++]=o;INST.rock.length=w}
-buildLOD([{geo:rockGeo(36,24),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0.03),d:40,shadow:true},{geo:rockGeo(12,8),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0),d:150,shadow:true}],INST.rock,30);
+buildLOD([{geo:rockGeo(36,24),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0.03),d:30,shadow:true},{geo:rockGeo(12,8),mat:triPatch(std({roughness:0.9}),TX.rock,0.8,0),d:110}],INST.rock,40);
 // flowers: tulips everywhere by default, real roses on the rose arches, sunflowers in Sunflower Lane, lavender spikes
 {const fm=windPatch(std({vertexColors:true,side:THREE.DoubleSide,roughness:0.55}),0.05,0.5),far=flowerGeo(5,false),by=k=>INST.flower.filter(o=>(o.k||'tulip')===k);
  // a rose: a tight spiral bud in the middle, then rings of cupped petals that open wider and curl back at the tips
  // towards the outside; darker deep inside, lighter at the petal edges
  const rose=roseFlowerGeo();
- buildLOD([{geo:tulipGeo(),mat:fm,d:32},{geo:far,mat:fm,d:65}],by('tulip'),16);
- buildLOD([{geo:sunflowerGeo(),mat:fm,d:50},{geo:far,mat:fm,d:95}],by('sun'),16);
- {const still=std({vertexColors:true,side:THREE.DoubleSide,roughness:0.55});buildLOD([{geo:rose,mat:still,d:36},{geo:far,mat:still,d:70}],by('rose'),16)}   // roses don't sway
- buildLOD([{geo:lavGeo(),mat:fm,d:36},{geo:withColor(flowerGeo(4,false),1),mat:fm,d:70}],by('lav'),16)}
+ buildLOD([{geo:tulipGeo(6,4),mat:fm,d:13},{geo:tulipGeo(3,2),mat:fm,d:30},{geo:far,mat:fm,d:58}],by('tulip'),24);
+ buildLOD([{geo:sunflowerGeo(),mat:fm,d:32},{geo:far,mat:fm,d:75}],by('sun'),24);
+ {const still=std({vertexColors:true,side:THREE.DoubleSide,roughness:0.55});buildLOD([{geo:rose,mat:still,d:26},{geo:far,mat:still,d:58}],by('rose'),24)}   // roses don't sway
+ buildLOD([{geo:lavGeo(),mat:fm,d:26},{geo:withColor(flowerGeo(4,false),1),mat:fm,d:58}],by('lav'),24)}
 // stems carry two long leaves at the base
 {const c=new THREE.CylinderGeometry(0.005,0.008,1,5);c.translate(0,0.5,0);const parts=[c];
  [0,2.4].forEach((a,i)=>{const P=[],N=[],U=[],I=[],dx=Math.cos(a),dz=Math.sin(a);for(let j=0;j<=6;j++){const t=j/6,w=0.016*Math.sin(Math.PI*Math.min(1,t*1.05+0.04)),y=0.6*t*(0.85+0.15*i),o=0.07*t*t;
    [-1,1].forEach(sd=>{P.push(dx*o-dz*w*sd,y,dz*o+dx*w*sd);N.push(dx,0.4,dz);U.push(0,0)})}for(let j=0;j<6;j++){const q=j*2;I.push(q,q+2,q+1,q+1,q+2,q+3)}parts.push(geoFrom(P,N,U,I))});
- buildLOD([{geo:mergeGeos(parts),mat:std({color:lin(0x4f8a3a),side:THREE.DoubleSide,roughness:0.75}),d:35}],INST.stem,16)}
-buildLOD([{geo:grassGeo(7,4,11),mat:grassMat,d:26},{geo:grassGeo(4,2,23),mat:grassMat,d:58}],INST.grass,12,'grass');
+ buildLOD([{geo:mergeGeos(parts),mat:std({color:lin(0x4f8a3a),side:THREE.DoubleSide,roughness:0.75}),d:22}],INST.stem,24)}
+buildLOD([{geo:grassGeo(7,4,11),mat:grassMat,d:22},{geo:grassGeo(4,2,23),mat:grassMat,d:48}],INST.grass,16,'grass');
 {const s=new THREE.Shape();s.moveTo(-0.045,-0.45);s.lineTo(0.045,-0.45);s.lineTo(0.045,0.34);s.lineTo(0,0.45);s.lineTo(-0.045,0.34);s.closePath();
  const pg=new THREE.ExtrudeGeometry(s,{depth:0.022,bevelEnabled:true,bevelThickness:0.006,bevelSize:0.006,bevelSegments:2});pg.translate(0,0,-0.011);buildLOD([{geo:pg,mat:M(0xfffaf0),d:140,shadow:true}],INST.picket,30)}
 {const rm=windPatch(std({vertexColors:true,side:THREE.DoubleSide,color:lin(0x7da552),roughness:0.9}),0.04,0),reeds=INST.reed.map(o=>Object.assign({},o,{s:1.5,sy:o.sy*3,ry:o.x*7.1+o.z*3.3}));
- buildLOD([{geo:reedGeo(11,7,31),mat:rm,d:40},{geo:reedGeo(5,3,37),mat:rm,d:95}],reeds,16)}
+ buildLOD([{geo:reedGeo(11,7,31),mat:rm,d:30},{geo:reedGeo(5,3,37),mat:rm,d:70}],reeds,24)}
 // bulrush heads: a velvety brown cigar with a thin spike on top, on its own stalk
 {const hd=lathe([[0,-0.01],[0.022,0.0],[0.031,0.03],[0.033,0.1],[0.032,0.16],[0.024,0.19],[0.007,0.2],[0.004,0.32],[0,0.33]],16,24),st=new THREE.CylinderGeometry(0.006,0.008,1.6,6);st.translate(0,-0.8,0);
  buildLOD([{geo:mergeGeos([hd,st]),mat:triPatch(std({color:lin(0x6b4226),roughness:0.95}),TX2.fur,8,0.02),d:80,shadow:true}],INST.cattail.filter((_,i)=>i%2===0),16)}
@@ -4345,9 +4352,9 @@ buildLOD([{geo:grassGeo(7,4,11),mat:grassMat,d:26},{geo:grassGeo(4,2,23),mat:gra
   return geoFrom(P,N,null,I,C)})();
  buildLOD([{geo:lilyGeo,mat:std({vertexColors:true,roughness:0.35,side:THREE.DoubleSide}),d:130}],INST.lily.map(o=>Object.assign({},o,{c:0x4f9a3f})),20);
  buildLOD([{geo:flowerGeo(9,true),mat:windPatch(std({vertexColors:true,side:THREE.DoubleSide,roughness:0.6}),0,0),d:90}],INST.lily.filter(o=>o.c!==0x4f9a3f).map(o=>({x:o.x+0.1,y:0.085,z:o.z,s:2.3,c:0xffa8c8,ry:o.ry})),20)}
-{const am=std({color:lin(0xd8352a),roughness:0.35});buildLOD([{geo:new THREE.SphereGeometry(0.12,18,12),mat:am,d:55},{geo:new THREE.SphereGeometry(0.12,8,6),mat:am,d:150}],INST.apple,24)}
-{const cm=std({vertexColors:true,side:THREE.DoubleSide,roughness:0.5});buildLOD([{geo:cabbageGeo(10,18,12,5),mat:cm,d:30,shadow:true},{geo:cabbageGeo(6,12,8,5),mat:cm,d:130,shadow:true}],INST.cabbage,20)}
-{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);buildLOD([{geo:g,mat:new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false,color:0x000000}),d:95,recv:false,order:1}],INST.blob,30)}
+{const am=std({color:lin(0xd8352a),roughness:0.35});buildLOD([{geo:new THREE.SphereGeometry(0.12,14,10),mat:am,d:30},{geo:new THREE.SphereGeometry(0.12,6,4),mat:am,d:90}],INST.apple,36)}
+{const cm=std({vertexColors:true,side:THREE.DoubleSide,roughness:0.5});buildLOD([{geo:cabbageGeo(10,18,12,5),mat:cm,d:24,shadow:true},{geo:cabbageGeo(6,12,8,5),mat:cm,d:90}],INST.cabbage,30)}
+{const g=new THREE.PlaneGeometry(1,1);g.rotateX(-Math.PI/2);buildLOD([{geo:g,mat:new THREE.MeshBasicMaterial({map:blobTex,transparent:true,depthWrite:false,color:0x000000}),d:75,recv:false,order:1}],INST.blob,48)}
 
 /* ---------- merge static meshes into a few big ones per material and chunk (far fewer draw calls).
    small details (window frames, posts, fruit...) go in their own chunks that are hidden when far away ---------- */
@@ -4527,7 +4534,7 @@ buildOwlHeights();
       if(g.index)for(let i=0;i<g.index.count;i++)I[io++]=g.index.getX(i)+vo;else for(let i=0;i<pa.count;i++)I[io++]=i+vo;
       vo+=pa.count;o.parent.remove(o)});
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('normal',new THREE.BufferAttribute(N,3));g.setAttribute('uv',new THREE.BufferAttribute(U,2));if(hasC)g.setAttribute('color',new THREE.BufferAttribute(Cl,3));g.setIndex(new THREE.BufferAttribute(I,1));g.computeBoundingSphere();
-    const m=new THREE.Mesh(g,list[0].material);m.castShadow=list[0].castShadow;m.receiveShadow=true;m.userData.pc=list.pc;scene.add(m);
+    const m=new THREE.Mesh(g,list[0].material);m.castShadow=list[0].castShadow;m.receiveShadow=true;m.userData.pc=list.pc;m.userData.mergedMesh=1;scene.add(m);
     if(list.small)LODS.push({c:g.boundingSphere.center,r:g.boundingSphere.radius,meshes:[m],ds:[90],n:1,level:-2})});
 })();
 updateLOD(true);
@@ -4663,7 +4670,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   // the sculpted body is shared by every variant that only differs in what is added on top (sunglasses, crowns, armour, held things)
   const pose=V0.includes('up2')?'up2':V0.includes('wide')?'wide':V0.includes('hold')?'hold':V0.includes('lick')?'lick':V0.includes('aim')?'aim':V0.includes('front')?'front':V0.includes('reach')?'reach':'',
     bkey=(K._id||(K._id=Object.keys(CRIT).find(k=>CRIT[k]===K)))+'|'+pose+'|'+(HAT?1:0)+(clown?'c':'')+(mime?'m':'')+'|'+(OUT||'')+(OUT==='farmer'||OUT==='shop'?TC:''),
-    body=BODYG.get(bkey)||BODYG.set(bkey,sculpt(sh,{h:clown?0.0095:0.0108,blend:0.012,paint})).get(bkey);
+    body=BODYG.get(bkey)||BODYG.set(bkey,sculpt(sh,{h:clown?0.011:0.0125,blend:0.012,paint})).get(bkey);
   const x=partAdder(X),gl=partAdder(G),S=(r,w,h)=>new _G.Sph(r,w||24,h||16);
   if(!mime&&!knight)[-1,1].forEach(s=>x(tube([[s*0.072,0.835,0.232],[s*0.105,0.852,0.238],[s*0.138,0.84,0.226]],0.0065,10),new THREE.Color(E).multiplyScalar(0.6).getHex()));   // eyebrows
   [-1,1].forEach(s=>{if(SHADES)return;partAdder(Y)(S(1,28,20),0,s*0.105,0.75,0.25,0.055,0.065,0.032);partAdder(H)(S(0.016,12,8),0,s*0.09,0.78,0.279);partAdder(H)(S(0.0075,10,6),0,s*0.118,0.725,0.276)});
@@ -4766,7 +4773,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   if(V0.includes('icecream')){x(new _G.Cone(0.045,0.13,16),0xd9a35a,0.05,0.505,0.3,1,1,1,Math.PI,0,0);for(let k=0;k<4;k++)x(new _G.Tor(0.012+k*0.009,0.002,4,16),0xb07a3a,0.05,0.475+k*0.02,0.3,1,1,1,Math.PI/2,0,0);
     gl(S(0.05,20,14),0xffb3c7,0.05,0.6,0.31);[[0.03,0.64,0.33,0xffd23f],[0.08,0.62,0.33,0x7ab8ff],[0.05,0.645,0.28,0x7cc35a],[0.02,0.6,0.355,0xffffff],[0.085,0.58,0.34,0xff6b57]].forEach(([a,b,cc,col])=>x(new THREE.BoxGeometry(0.004,0.004,0.014),col,a,b,cc,1,1,1,a*30,b*20,0))}
   let armU=null,armF=null;if(ARMU.length){const ku=bkey+'|armU',kf=bkey+'|armF';armU=BODYG.get(ku);armF=BODYG.get(kf);
-    if(!armU){armU=sculpt(ARMU,{h:0.0108,blend:0.012,paint});armU.translate(-AJ.a[0],-AJ.a[1],-AJ.a[2]);BODYG.set(ku,armU)}if(!armF){armF=sculpt(ARMF,{h:0.0108,blend:0.012,paint});armF.translate(-AJ.m[0],-AJ.m[1],-AJ.m[2]);BODYG.set(kf,armF)}}
+    if(!armU){armU=sculpt(ARMU,{h:0.0125,blend:0.012,paint});armU.translate(-AJ.a[0],-AJ.a[1],-AJ.a[2]);BODYG.set(ku,armU)}if(!armF){armF=sculpt(ARMF,{h:0.0125,blend:0.012,paint});armF.translate(-AJ.m[0],-AJ.m[1],-AJ.m[2]);BODYG.set(kf,armF)}}
   return{body,armU,armF,aj:AJ,smile:!SHADES&&K.ear!=='stalk',crown:CROWNG,extra:X.length?partsGeo(X):null,gloss:G.length?partsGeo(G):null,eyes:Y.length?partsGeo(Y):null,hi:H.length?partsGeo(H):null,veil:VL.length?partsGeo(VL):null}}
 function critterMesh(kind,variant){const key=kind+(variant||''),P=CRITG[key]||(CRITG[key]=critterParts(CRIT[kind],variant)),m=new THREE.Mesh(P.body,critMat);m.castShadow=true;
   const EY=[];[[P.extra,partMat],[P.gloss,glossMat],[P.eyes,eyeMat],[P.hi,hiMat],[P.veil,veilMat]].forEach(([g,mt])=>{if(g){const c=new THREE.Mesh(g,mt);c.castShadow=mt!==hiMat;m.add(c);if(g===P.eyes||g===P.hi)EY.push(c)}});
@@ -6140,9 +6147,57 @@ const PGROUP={};
   {const B=ROCKET.button,P=PIECES.byId.fin;S2W(B.x,B.z,P,q);B.wx=q.x;B.wz=q.z}
   CULL.forEach(c=>{const pid=c.o.parent&&c.o.parent.userData.piece;c.P=pid?PIECES.byId[pid]:null});
   scene.updateMatrixWorld(true);
+  // each piece's bounds, so a whole piece that is out of sight (and not close by) can be skipped at once
+  PIECES.forEach(P=>{const b=new THREE.Box3().setFromObject(P.g);P.sphere=b.isEmpty()?null:b.getBoundingSphere(new THREE.Sphere())});
 })();
+// a piece entirely outside the view is not drawn (its thousands of objects aren't even looked at), unless it is near
+// enough to throw shadows into view
+const _pf=new THREE.Frustum(),_pm=new THREE.Matrix4();
+function pieceCull(){camera.updateMatrixWorld();_pm.multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse);_pf.setFromProjectionMatrix(_pm);const cp=camera.position;
+  for(const P of PIECES){if(!P.sphere)continue;const near=P.sphere.center.distanceTo(cp)-P.sphere.radius<55;P.g.visible=near||_pf.intersectsSphere(P.sphere)}}
+/* ---------- lighter versions of dense meshes for when they are far away ----------
+   the sculpted pets, animals and props are smooth up close (tens of thousands of triangles each); from more than a few
+   metres away nobody can see that detail, so each gets a simplified copy (vertices merged on a fine grid, keeping
+   thin parts such as ears and leaves two-sided) that is swapped in by distance. their shadows use it too */
+const HLOD=[];
+function simplifyGeo(g,cell){const P=g.attributes.position,Nn=g.attributes.normal,C=g.attributes.color,U=g.attributes.uv,n=P.count,ix=g.index?g.index.array:null;
+  if(!g.boundingBox)g.computeBoundingBox();const bb=g.boundingBox,K=4096,id=new Int32Array(n),map=new Map();const acc=[];
+  for(let i=0;i<n;i++){const x=P.getX(i),y=P.getY(i),z=P.getZ(i);let d=0;if(Nn){const a=Nn.getX(i),b=Nn.getY(i),c=Nn.getZ(i),A=Math.abs(a),B=Math.abs(b),Cc=Math.abs(c);d=A>=B&&A>=Cc?(a>0?1:2):B>=Cc?(b>0?3:4):(c>0?5:6)}
+    const key=((Math.floor((x-bb.min.x)/cell)*K+Math.floor((y-bb.min.y)/cell))*K+Math.floor((z-bb.min.z)/cell))*8+d;let c=map.get(key);
+    if(c===undefined){c=acc.length;map.set(key,c);acc.push([0,0,0,0,0,0,0,0,0,0,0,0])}const e=acc[c];e[0]+=x;e[1]+=y;e[2]+=z;e[11]++;
+    if(Nn){e[3]+=Nn.getX(i);e[4]+=Nn.getY(i);e[5]+=Nn.getZ(i)}if(C){e[6]+=C.getX(i);e[7]+=C.getY(i);e[8]+=C.getZ(i)}if(U){e[9]+=U.getX(i);e[10]+=U.getY(i)}id[i]=c}
+  const m=acc.length,pos=new Float32Array(m*3),nor=new Float32Array(m*3),col=C?new Float32Array(m*3):null,uv=U?new Float32Array(m*2):null;
+  acc.forEach((e,k)=>{const w=1/e[11];pos[k*3]=e[0]*w;pos[k*3+1]=e[1]*w;pos[k*3+2]=e[2]*w;const l=Math.hypot(e[3],e[4],e[5])||1;nor[k*3]=e[3]/l;nor[k*3+1]=e[4]/l;nor[k*3+2]=e[5]/l;
+    if(col){col[k*3]=e[6]*w;col[k*3+1]=e[7]*w;col[k*3+2]=e[8]*w}if(uv){uv[k*2]=e[9]*w;uv[k*2+1]=e[10]*w}});
+  const tri=[],T=ix?ix.length:n,seen=new Set();for(let t=0;t<T;t+=3){const a=id[ix?ix[t]:t],b=id[ix?ix[t+1]:t+1],c=id[ix?ix[t+2]:t+2];if(a===b||b===c||a===c)continue;
+    const k=a<b?(a<c?a*1e12+(b<c?b*1e6+c:c*1e6+b):c*1e12+a*1e6+b):(b<c?b*1e12+(a<c?a*1e6+c:c*1e6+a):c*1e12+b*1e6+a);if(seen.has(k))continue;seen.add(k);tri.push(a,b,c)}
+  const o=new THREE.BufferGeometry();o.setAttribute('position',new THREE.BufferAttribute(pos,3));if(Nn)o.setAttribute('normal',new THREE.BufferAttribute(nor,3));
+  if(col)o.setAttribute('color',new THREE.BufferAttribute(col,3));if(uv)o.setAttribute('uv',new THREE.BufferAttribute(uv,2));
+  for(const k in g.attributes)if(!o.attributes[k]){const a=g.attributes[k],na=new Float32Array(m*a.itemSize),cnt=new Float32Array(m);for(let i=0;i<n;i++){const c=id[i];cnt[c]++;for(let q=0;q<a.itemSize;q++)na[c*a.itemSize+q]+=a.array[i*a.itemSize+q]}for(let c=0;c<m;c++)for(let q=0;q<a.itemSize;q++)na[c*a.itemSize+q]/=cnt[c]||1;o.setAttribute(k,new THREE.BufferAttribute(na,a.itemSize))}
+  o.setIndex(m>65535?new THREE.BufferAttribute(new Uint32Array(tri),1):new THREE.BufferAttribute(new Uint16Array(tri),1));o.computeBoundingSphere();o.boundingSphere=g.boundingSphere?g.boundingSphere.clone():o.boundingSphere;return o}
+(function buildHLOD(){const cache=new Map();
+  // the meshes worth it: dense pets and props (near and far versions by their size), and the big merged buildings and
+  // walls of each place (far versions on a fixed grid, for when the place is seen from across the island)
+  const levelsFor=(g,R)=>{let L=cache.get(g);if(L!==undefined)return L;const tris=(g.index?g.index.count:g.attributes.position.count)/3,out=[];
+    const cells=R<=6?[R/30,R/13]:[0.32,0.85];for(const c of cells){const lo=simplifyGeo(g,Math.max(c,0.004)),lt=lo.index.count/3;if(lt<(out.length?out[out.length-1].t:tris)*0.6)out.push({g:lo,t:lt})}
+    L=out.length?out.map(o=>o.g):null;cache.set(g,L);return L};
+  scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o===OCEAN||o.userData.world&&!(o.parent&&o.parent.userData.piece))return;const g=o.geometry;if(!g||!g.attributes.position||g.morphAttributes&&Object.keys(g.morphAttributes).length)return;
+    if(!g.boundingSphere)g.computeBoundingSphere();const R=g.boundingSphere.radius,tris=(g.index?g.index.count:g.attributes.position.count)/3;
+    if(R<=6?tris<2500:tris<6000)return;const L=levelsFor(g,R);if(!L)return;const r=R*Math.max(o.scale.x,o.scale.y,o.scale.z);
+    HLOD.push({o,lv:[g,...L],c:g.boundingSphere.center.clone(),rad:R<=6?0:r,ds:R<=6?[5+r*6,11+r*26].slice(0,L.length):[48,115].slice(0,L.length)})})})();
+// memory: geometry that never changes after it is built (merged buildings, the far versions above, the plants' shapes,
+// the ground) only needs to live on the graphics card. once uploaded there, its copy in page memory is let go
+function freeAfterUpload(g){if(!g||g.userData.freed)return;g.userData.freed=1;if(!g.boundingSphere)g.computeBoundingSphere();if(!g.boundingBox)g.computeBoundingBox();
+  const drop=function(){this.array=null};for(const k in g.attributes){const a=g.attributes[k];if(a.isInterleavedBufferAttribute||a.usage!==THREE.StaticDrawUsage)continue;a.onUpload(drop)}if(g.index&&g.index.usage===THREE.StaticDrawUsage)g.index.onUpload(drop)}
+{const keep=new Set(panelFaces.map(f=>f.geometry));
+ HLOD.forEach(L=>L.lv.forEach(g=>{if(!keep.has(g))freeAfterUpload(g)}));
+ LODS.forEach(L=>L.meshes.forEach(m=>freeAfterUpload(m.geometry)));freeAfterUpload(OCEAN.geometry);scene.children.forEach(o=>{if(o.userData.ground)freeAfterUpload(o.geometry)});
+ scene.traverse(o=>{if(o.isMesh&&o.userData.mergedMesh&&!keep.has(o.geometry))freeAfterUpload(o.geometry)})}
+const _hv=new THREE.Vector3();
+function updateHLOD(){const cp=camera.position;for(const L of HLOD){_hv.copy(L.c).applyMatrix4(L.o.matrixWorld);const d=Math.max(0,_hv.distanceTo(cp)-L.rad);let k=0;while(k<L.ds.length&&d>L.ds[k])k++;const g=L.lv[k];if(L.o.geometry!==g)L.o.geometry=g}}
 const _dc={};
-function distCull(){const cp=camera.position;for(const c of CULL){let wx=c.o.position.x+c.off.x,wz=c.o.position.z+c.off.z;if(c.P){S2W(wx,wz,c.P,_dc);wx=_dc.x;wz=_dc.z}const x=wx-cp.x,z=wz-cp.z,lim=70+c.r*22,out=x*x+z*z>lim*lim;
+function distCull(){const cp=camera.position;for(const c of CULL){let wx=c.o.position.x+c.off.x,wz=c.o.position.z+c.off.z;if(c.P){S2W(wx,wz,c.P,_dc);wx=_dc.x;wz=_dc.z}const x=wx-cp.x,z=wz-cp.z,d2=x*x+z*z,lim=70+c.r*22,out=d2>lim*lim;
+  {const sl=18+c.r*14,sh=d2<sl*sl;if(sh!==c.sh){c.sh=sh;for(const m of c.ms){if(m.userData.cs===undefined)m.userData.cs=m.castShadow;m.castShadow=sh&&m.userData.cs}}}
   if(out!==c.out){c.out=out;for(const m of c.ms)m.layers.set(out?1:0)}}}
 // nothing that goes wrong in one effect may stop the game: the next frame is always asked for first, and each per-frame
 // job (every animation, gate, decoration and the ambient sound) runs on its own. a job that throws is reported once in
@@ -6204,7 +6259,7 @@ function frameStep(t){
    px=wx;pz=wz;camera.position.set(cx,cy,cz)}
   for(const a of animsW)run(a,ts,dt);
   U_TIME.value=ts;waterNormal.offset.set(ts*0.012,ts*0.007);
-  if((cullTick+=dt)>0.15){cullTick=0;updateLOD();distCull()}
+  if((cullTick+=dt)>0.15){cullTick=0;updateLOD();distCull();updateHLOD()}
   fpsN++;prN++;const rdt=(t-(frame.lt||t))/1000;frame.lt=t;fpsT+=rdt;prT+=rdt;
   if(fpsT>=0.5){$('#fps').textContent=Math.round(fpsN/fpsT)+' fps';fpsT=0;fpsN=0}
   if(prT>=3){const f=prN/prT;prT=0;prN=0;
@@ -6214,6 +6269,7 @@ function frameStep(t){
   clouds.forEach(g=>{g.position.x+=dt*1.5;if(g.position.x>310)g.position.x=-310});
   {const near=LP.P===PIECES.byId.fin&&LP.z<zF0+40;if(near!==confetti.on){confetti.on=near;confetti.forEach(m=>m.visible=near)}}
   if(LP.P===PIECES.byId.fin&&LP.z<zF0+8)confetti.forEach(m=>{m.position.y-=m.userData.v*dt;m.rotation.x+=dt*2;m.rotation.y+=dt*1.3;if(m.position.y<0)m.position.y=8});
+  pieceCull();
   U_SUNV.value.copy(SUN_OFF).normalize().transformDirection(camera.matrixWorldInverse);
   if(POST.on){
     // depth of field: while solving, the world behind the panel goes soft so the puzzle stands out
