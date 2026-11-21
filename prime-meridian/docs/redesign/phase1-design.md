@@ -21,7 +21,7 @@ Every place keeps:
 | 6 | Snowflake Hollow | Taking away | Snow and ice | Giant igloo, Christmas tree | snow_1 … snow_8 | snow_1, snow_2 | snow_8 |
 | 7 | Glasshouse Gardens | Doubles and halves | Glass and flowers | The glasshouse | glass_1 … glass_8 | glass_1, glass_2 | glass_8 |
 | 8 | Match Maker Market | Same answers in each area | Market stalls | Hall clock tower | match_1 … match_8 | match_1, match_2 | match_8 |
-| 9 | Number Bond Beach | Each area makes the target | Sand and sea | Lighthouse | bonds_1 … bonds_8 | bonds_1, bonds_2 | bonds_8 |
+| 9 | Number Bond Beach | Each area makes the target | Sand and sea | Lighthouse | beach_1 … beach_8 | beach_1, beach_2 | beach_8 |
 
 - **Same puzzles, same order:** every area keeps its 8 puzzles in today's order. Puzzle `castle_4` is today's `6-3`, and so on. The puzzles themselves don't change (same seed, same generator).
 - **One chain per area:** with 8 puzzles, no area goes over the brief's "more than about 8" line for splitting. Inside an area, puzzle N needs puzzle N−1.

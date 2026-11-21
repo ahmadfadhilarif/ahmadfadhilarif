@@ -28,6 +28,37 @@ calculation, raycast sightlines, save and reload, an old save, and screenshots.
 - Sounds were checked for errors only, not listened to.
 - The test browser renders very slowly, about 1–7 frames a second, so gates and the rocket countdown, which run in game time, take far longer there than in real play.
 
+## Optimisation, after the redesign
+
+Measured in the test browser at the same eight viewpoints:
+- the landing beach
+- the junction by the Welcome Gate
+- inside Place Value Castle
+- Snowflake Hollow
+- Number Bond Beach
+- the hilltop, both looking along the summit and out over the island
+- the Summit Garden
+
+Counts include the shadow pass.
+
+| | Before | After |
+|---|---|---|
+| Triangles per frame | 2.5–8.4 million | 1.4–3.6 million |
+| Draw calls per frame | 1,670–2,820 | 880–2,150 |
+| Load time (test browser) | about 41 s | about 33 s |
+| Page memory after exploring | about 450 MB | under 400 MB |
+
+How:
+- **Detail by distance:** simplified copies of the dense pets, animals and sculpted props, and far versions of big merged buildings, swapped in by distance (shadows use them too).
+- **Flowers:** three detail levels for tulips, the island's default flower.
+- **Plants:** they switch to lighter versions sooner, only the nearest version casts shadows, and they are batched in bigger cells.
+- **Shadows:** small props stop casting shadows a short way off.
+- **Whole places:** skipped when out of view and not nearby.
+- **Memory:** unchanging geometry released from page memory once it's on the graphics card.
+- **Pets:** sculpted on a slightly coarser grid, with no visible difference up close.
+
+Up close everything keeps its full detail.
+
 ## What changed, phase by phase
 
 - **Phase 2 (progression):**
@@ -54,7 +85,7 @@ calculation, raycast sightlines, save and reload, an old save, and screenshots.
   - Meridian Hill and the Summit Garden in the menu's places list
   - a final validation run
 
-**Files:** `number-grove/index.html` (changed), and `number-grove/docs/redesign/*` (new). No files were deleted.
+**Files:** `prime-meridian/index.html` (changed), `prime-meridian/README.md` (rewritten), and `prime-meridian/docs/redesign/*` (new). The folder was renamed from `number-grove`. No files were deleted.
 
 ## Final area table
 
@@ -101,7 +132,7 @@ calculation, raycast sightlines, save and reload, an old save, and screenshots.
 ```
 
 - **The ring:** the outer ring is the loop path through every place and link.
-- **Spokes:** the lines in the middle are the spokes from each place up to the path round the summit. Adding Garden, Snowflake Hollow and the beach take theirs from the link after them, where the link before had no clear line.
+- **Spokes:** the lines in the middle are the spokes from each place up to the path round the summit. Each spoke clears its own way through the link's planting.
 - **The summit:** the hilltop is about 12 m up, and the hill is about 230 m across, larger than any place. On top:
   - the walled Finish Meadow and launch pad facing south
   - the Meridian Spire on the island's middle line

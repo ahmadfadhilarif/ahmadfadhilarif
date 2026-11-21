@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Number Grove</title>
+<title>Prime Meridian</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
@@ -115,7 +115,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
 <div id="menuFade"></div>
 <div id="menu">
   <div class="mpanel">
-    <div class="mhead"><p class="eyebrow">A walking maths puzzle island</p><h1 class="logo">Number <em>Grove</em></h1></div>
+    <div class="mhead"><p class="eyebrow">A walking maths puzzle island</p><h1 class="logo">Prime <em>Meridian</em></h1></div>
     <div id="mProg" class="mprog" hidden><div class="mprogtext"><b id="mProgN">0</b> of <span class="ptotal">76</span> panels solved <span id="mProgP"></span></div><div class="mbar"><i id="mProgBar"></i></div></div>
     <nav class="mbtns" aria-label="Main menu">
       <button id="mPlay" type="button" class="primary"><span id="mPlayText">Play</span><span aria-hidden="true">›</span></button>
@@ -131,7 +131,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
     <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">Once the Welcome Garden is done, every place is open: play them in any order. Six finished places open the launch on Meridian Hill; all nine open the Summit Garden.</p><ol id="placeList" class="places"></ol></div>
     <div id="pgHow" class="mpage" hidden><h2>How to play</h2>
       <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
-      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables to the next panel, and solve every panel in a place to open its gate. Halfway along the walk to the next place, that place's gate opens too.</p>
+      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables from panel to panel. Finish the Welcome Garden and every place on the island opens: play them in any order, and if one is too tricky, try another. Each finished place lights its beacon; six beacons open the launch on Meridian Hill.</p>
       <dl class="how">
         <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
         <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
@@ -170,8 +170,8 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       <dt>Look</dt><dd>Mouse, or the arrow keys to turn. Tablet: drag.</dd>
       <dt>Solve</dt><dd>Look at a panel and click. Click once to start your line at the big circle, move the mouse to trace it, then click again when you reach the rounded end. Tablet: press the big circle and drag.</dd>
       <dt>Power</dt><dd>A dark panel has no power. Follow the yellow cable from the last panel you solved.</dd>
-      <dt>Gates</dt><dd>Solve every panel in a place and its exit gate opens. Halfway along the walk to the next place, that place's gate opens too.</dd>
-      <dt>Owl</dt><dd>The owl flies to the next panel to solve, and a yellow glow runs along the cable to it.</dd>
+      <dt>Gates</dt><dd>The Welcome Gate opens when you finish the Welcome Garden, and from then on every place's gates are open. A place's shortcut gate onto the meadow opens when you finish it. The launch gate opens at six finished places, the Summit Garden at all nine.</dd><dt>Lanterns</dt><dd>A lantern by each place's gates shows how far you have got: dark, amber or green.</dd>
+      <dt>Owl</dt><dd>The owl flies to the next panel with power near you, and a yellow glow runs along the cable to it.</dd>
     </dl>
     <div class="row"><button id="helpClose" type="button" class="sun">Back to the garden</button><button id="solveAllBtn" type="button" class="ghost">Solve all puzzles</button><button id="helpReset" type="button" class="ghost">Start over</button></div>
   </div>
@@ -179,9 +179,9 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
 
 <div id="done" class="overlay" hidden>
   <div class="card">
-    <p class="eyebrow">Every gate is open</p>
-    <h2>You finished Number Grove!</h2>
-    <p>You solved every panel: drawing lines and collecting stars, ordering numbers, counting in steps, adding, times tables, odd and even, taking away, doubles and halves, matching sums and number bonds. That is a lot of maths thinking.</p>
+    <p class="eyebrow">Lift-off!</p>
+    <h2>You finished Prime Meridian!</h2>
+    <p id="doneText">The rocket is away. You solved your way round the island: ordering numbers, counting in steps, adding, times tables, odd and even, taking away, doubles and halves, matching sums and number bonds. That is a lot of maths thinking.</p>
     <div class="row"><button id="doneClose" type="button" class="sun">Keep exploring</button></div>
   </div>
 </div>
@@ -3772,7 +3772,7 @@ function buildApproach(){   // the landing: the beach at the island's north tip,
    const pl=blk(1.1,0.03,0.16,bx+1.2,0.03,bz+1.4,0xa55f35);pl.rotation.y=-0.7;
    colCirc(bx,bz,1.35);colCirc(bx+fx*1.0,bz+fz*1.0,0.7);reserve(bx,bz,2.4);NOGREEN.push({x0:bx-2.2,x1:bx+2.2,z0:bz-2.2,z1:bz+2.2})}
   paths([[[0,ISL_N-4],[0,1.2]]],3);
-  signPost(3.9,10.5,['Welcome to Number Grove',NR+' places and '+PANELS.length+' puzzles. In you go!'],-0.45);
+  signPost(3.9,10.5,['Welcome to Prime Meridian','Nine places round Meridian Hill. In you go!'],-0.45);
   flowerBed(-6.5,4.6,1.4);flowerBed(6.5,4.6,1.4);lamp(2.4,6.5);lamp(-2.4,13);bench(-3.4,9,'e');
   for(const [x,z] of [[-8,9],[8.5,15],[-10,15]])addTree(x,z,{type:'round',s:1.1});
 }
@@ -5596,7 +5596,7 @@ const sfx={
    100 bpm with a little swing: warm electric-piano chords (Fmaj7, G6, Em7, Am9), a round bass, a gentle beat
    with claps and hi-hats, and a catchy plucked tune with an echo that comes and goes. kept quiet, under the effects */
 const MUSIC={on:true,started:false};
-try{MUSIC.on=localStorage.getItem('number-grove-music')!=='off'}catch(e){}
+try{MUSIC.on=(localStorage.getItem('prime-meridian-music')||localStorage.getItem('number-grove-music'))!=='off'}catch(e){}
 function musicVol(){if(MUSIC.out)MUSIC.out.gain.setTargetAtTime(MUSIC.on&&!muted?0.06:0,AC.currentTime,0.4)}
 function musicStart(){if(MUSIC.started||!AC||!AC.createBiquadFilter)return;MUSIC.started=true;
   const out=AC.createGain();out.gain.value=0;const comp=AC.createDynamicsCompressor();comp.threshold.value=-20;comp.ratio.value=3;out.connect(comp);comp.connect(AC.destination);MUSIC.out=out;
@@ -5851,7 +5851,7 @@ function solveCurrent(){const p=active||nextPanel();if(!p)return;if(!isPowered(p
 $('#solveBtn').addEventListener('click',solveCurrent);$('#solveNextBtn').addEventListener('click',solveCurrent);
 $('#soundBtn').addEventListener('click',()=>{muted=!muted;$('#soundBtn').textContent=muted?'Sound off':'Sound on';musicVol()});
 $('#musicBtn').textContent=MUSIC.on?'Music on':'Music off';
-$('#musicBtn').addEventListener('click',()=>{MUSIC.on=!MUSIC.on;$('#musicBtn').textContent=MUSIC.on?'Music on':'Music off';try{localStorage.setItem('number-grove-music',MUSIC.on?'on':'off')}catch(e){}if(MUSIC.on)musicStart();musicVol()});
+$('#musicBtn').addEventListener('click',()=>{MUSIC.on=!MUSIC.on;$('#musicBtn').textContent=MUSIC.on?'Music on':'Music off';try{localStorage.setItem('prime-meridian-music',MUSIC.on?'on':'off')}catch(e){}if(MUSIC.on)musicStart();musicVol()});
 // solve every puzzle at once and open every gate (handy for exploring or testing)
 function solveAll(){if(mode==='solve')exitSolve();
   for(let go=true;go;){go=false;PANELS.forEach(p=>{if(!p.solved&&PROG.isUnlocked(p.pid)){markSolved(p);PROG.puzzleSolved(p.pid);go=true}})}
@@ -5974,14 +5974,14 @@ const POST=(()=>{
 
 // three quality levels: Ultra (everything), High (bloom, grading, depth of field, smoothing; no occlusion or sun rays), Low (plain, fastest)
 let hiQ=true,QL='high';const maxPR=Math.min(window.devicePixelRatio||1,isTouchStart?1.5:2);let curPR=maxPR;
-const QLS=POST.ok?['ultra','high','low']:['high','low'],QNAME={ultra:'Ultra',high:'High',low:'Low'},QKEY='number-grove-quality';
+const QLS=POST.ok?['ultra','high','low']:['high','low'],QNAME={ultra:'Ultra',high:'High',low:'Low'},QKEY='prime-meridian-quality';
 function setQuality(q){if(!QLS.includes(q))q=QLS[0];QL=q;const hi=q!=='low';hiQ=hi;sun.castShadow=hi;lodScale=hi?1:0.55;
   {const ms=isTouchStart?2048:q==='ultra'?4096:2048;if(sun.shadow.mapSize.x!==ms){sun.shadow.mapSize.set(ms,ms);if(sun.shadow.map){sun.shadow.map.dispose();sun.shadow.map=null}}}
   LODS.forEach(L=>{if(L.tag==='grass')L.meshes.forEach(m=>m.count=hi?L.n:Math.ceil(L.n*0.5))});
   POST.set(POST.ok&&hi,q==='ultra',q==='ultra');
   curPR=hi?maxPR:Math.min(maxPR,1.25);renderer.setPixelRatio(curPR);resize();updateLOD(true);$('#qualBtn').textContent='Quality: '+QNAME[q];
   try{localStorage.setItem(QKEY,q)}catch(e){}}
-{let q=null;try{q=localStorage.getItem(QKEY)}catch(e){}setQuality(q||(isTouchStart?'low':QLS[0]))}
+{let q=null;try{q=localStorage.getItem(QKEY)||localStorage.getItem('number-grove-quality')}catch(e){}setQuality(q||(isTouchStart?'low':QLS[0]))}
 $('#qualBtn').addEventListener('click',()=>setQuality(QLS[(QLS.indexOf(QL)+1)%QLS.length]));
 $('#helpBtn').addEventListener('click',()=>{if(document.pointerLockElement)document.exitPointerLock();$('#help').hidden=false});
 $('#helpClose').addEventListener('click',()=>{$('#help').hidden=true;if(mode==='walk')requestLock()});
@@ -5998,13 +5998,13 @@ $('#helpReset').addEventListener('click',()=>{if(mode==='solve')exitSolve();rese
    shown first, over a slow fly-over of the places; Play/Continue/Resume, New game, Places (progress, difficulty and a
    quick way back to any place you have reached), How to play and Settings. the Menu button or M brings it back */
 const MENU={open:true,t:0};
-const DIFF={castle:1,windmill:1,adding:2,times:2,oddeven:3,snow:3,glass:4,match:4,beach:5};
+const DIFF={intro:1,castle:1,windmill:1,adding:2,times:2,oddeven:3,snow:3,glass:4,match:4,beach:5};
 function firstOpen(){let r=0;while(r<NR&&roomDone(r))r++;return r}
 const placeOpen=r=>PROG.areaOpen(AREA_OF_ROOM[r]);
 // stand just inside a place's entrance, facing in (yaw 0 looks along strip -z, so add the piece's turn)
 function goToPlace(r){const P=r?PIECES.byId['r'+r]:PIECES.byId.start,w=S2W(0,r?z0s[r]-2.5:ISL_N-0.8,P,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=P.phi;pitch=0}
 function menuPage(id){['pgPlaces','pgHow','pgSettings','pgNew'].forEach(k=>$('#'+k).hidden=k!==id);$('#mSub').hidden=!id;if(id==='pgPlaces')buildPlaces();if(id==='pgSettings')syncSettings();if(id==='pgHow')drawDemo()}
-document.querySelectorAll('.ptotal').forEach(e=>e.textContent=PANELS.length);document.querySelectorAll('.pplaces').forEach(e=>e.textContent=NR);
+document.querySelectorAll('.ptotal').forEach(e=>e.textContent=PANELS.length);document.querySelectorAll('.pplaces').forEach(e=>e.textContent=NR-1);
 function menuProgress(){const n=PANELS.filter(p=>p.solved).length,d=PROG.doneCount();
   $('#mPlayText').textContent=started?'Resume':n?'Continue':'Play';$('#mNew').hidden=!n;$('#mProg').hidden=!n;
   $('#mProgN').textContent=n;$('#mProgP').textContent='· '+d+' of '+PROG.R.main.length+' areas';$('#mProgBar').style.width=(n/PANELS.length*100)+'%'}
@@ -6071,7 +6071,10 @@ PROG.on('areaCompleted',(id,quiet)=>{if(quiet)return;sfx.gate();const a=PROG.are
 PROG.on('endgameUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Enough areas are complete: the launch gate on the hill is open!','good'),3000)});
 PROG.on('bonusUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Every area is complete: the Summit Garden is open!','good'),6000)});
 PROG.on('reset',()=>{ROOMS.forEach((_,r)=>closeGate(r))});
-function celebrate(){if(celebrated)return;celebrated=true;sfx.cheer();if(document.pointerLockElement)document.exitPointerLock();$('#done').hidden=false}
+function celebrate(){if(celebrated)return;celebrated=true;sfx.cheer();
+  {const n=PROG.doneCount(),t=$('#doneText');if(t)t.textContent=n>=9&&PROG.isComplete('summit')?'The rocket is away, and you solved every puzzle on the island, the Summit Garden\'s challenges too. That is a lot of maths thinking.'
+    :n>=9?'The rocket is away and all nine places are finished. The Summit Garden on the hilltop is open: five advanced challenges are waiting.'
+    :'The rocket is away! You finished '+n+' of the 9 places. The others are still waiting, and finishing all nine opens the Summit Garden on the hilltop.'}if(document.pointerLockElement)document.exitPointerLock();$('#done').hidden=false}
 (function(){
   const d=PROG.load();refreshFeedback();if(!d)return;
   PANELS.forEach(p=>{if(PROG.S.solved.has(p.pid))markSolved(p)});
@@ -6202,7 +6205,7 @@ function distCull(){const cp=camera.position;for(const c of CULL){let wx=c.o.pos
 // nothing that goes wrong in one effect may stop the game: the next frame is always asked for first, and each per-frame
 // job (every animation, gate, decoration and the ambient sound) runs on its own. a job that throws is reported once in
 // the console and simply skipped for that frame; only one that fails frame after frame for ten seconds is switched off
-function jobFail(f,e){f.fails=(f.fails||0)+1;if(!f.told){f.told=true;console.error('Number Grove: an effect failed and was skipped',e)}if(f.fails>600)f.dead=true}
+function jobFail(f,e){f.fails=(f.fails||0)+1;if(!f.told){f.told=true;console.error('Prime Meridian: an effect failed and was skipped',e)}if(f.fails>600)f.dead=true}
 function run(f,a,b){if(f.dead)return;try{f(a,b);f.fails=0}catch(e){jobFail(f,e)}}
 function frame(t){requestAnimationFrame(frame);try{frameStep(t)}catch(e){jobFail(frame,e)}}
 function frameStep(t){

@@ -2,7 +2,7 @@
 
 ## Engine and project structure
 
-- **One file:** the whole game is `number-grove/index.html` (about 700 KB, 5,628 lines). It has no build step, no modules and no asset files.
+- **One file:** the whole game is `prime-meridian/index.html` (was `prime-meridian/index.html`) (about 700 KB, 5,628 lines). It has no build step, no modules and no asset files.
 - **Engine:** three.js r128, loaded from cdnjs. Fonts come from Google Fonts.
 - **Everything is made in code at load time:** every model (pets are sculpted from signed-distance shapes), every texture (drawn on canvases), and every sound and piece of music (Web Audio synthesis).
 - **Main loop:** `frame()` asks for the next frame, then runs `frameStep()`. That moves the player, runs about 400 animation jobs (`anims`), updates level of detail and culling, and renders.
