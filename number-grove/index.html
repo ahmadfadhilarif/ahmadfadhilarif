@@ -633,10 +633,63 @@ const ROOM_KEYS=['adding','times','oddeven','match','windmill','beach','castle',
 // in steps), then searching for sums, sorting by times tables, then the fence puzzles that split the grid into areas
 // (odd/even, then taking away's heavier sums, doubles and halves, mixed sums), and number bonds, the hardest, come last
 const ROOM_ORDER=['intro','castle','windmill','adding','times','oddeven','snow','glass','match','beach'];
-ROOMS.sort((a,b)=>ROOM_ORDER.indexOf(a.key)-ROOM_ORDER.indexOf(b.key));const RI=k=>ROOMS.findIndex(r=>r.key===k);
+ROOMS.sort((a,b)=>ROOM_ORDER.indexOf(a.key)-ROOM_ORDER.indexOf(b.key));let RIH=null;const RI=k=>{const i=ROOMS.findIndex(r=>r.key===k);RIH=i;return i};   // RIH: the place last looked up, a hint for where a block of building code belongs
 // the links between places keep their order, except the frosty path, which always leads into Snowflake Hollow
 const CONN=(()=>{const fr=CONN0.find(c=>c.kind==='frost'),rest=CONN0.filter(c=>c!==fr),out=[];for(let k=0;k<ROOMS.length-1;k++)out.push(k===RI('snow')-1?fr:rest.shift());return out})();
 const NR=ROOMS.length, z0s=ROOMS.map((_,r)=>-r*(AREA+GAP)), zF0=z0s[NR-1]-AREA, LEN=-zF0+FIN;
+
+/* ---------- the island layout: a ring of places round Meridian Hill ----------
+   every place and every link between two places is still built in its own "strip" coordinates, as if they were laid
+   end to end along one long line (x across it, z along it, each place in its own stretch of z), exactly as before.
+   then each piece is set down on the island by one turn and one offset: the nine places and nine links make a ring
+   (each piece turned 20 degrees from the last) round a hill in the middle, the Welcome Garden sits on a peninsula on
+   the south coast with its gate onto the ring, and the finish (the launch pad and the Summit Garden) sits on the hilltop.
+   world north is -z. walking a place from its entrance to its exit goes anticlockwise round the ring, so every place's
+   strip +x side (where its sea always was) faces out to the ocean and its -x side faces the hill.
+   PIECES lists them; S2W / W2S convert between strip and world for a piece; pieceOfS finds the piece a strip point is in */
+const X_IN=38.5,H_TOP=12,PIECES=[];
+const PCID=(kind,i)=>kind==='room'?'r'+i:kind==='link'?'l'+i:kind;
+(function layout(){
+  // strip bands: a room owns [z0s[r]-AREA, z0s[r]] (its walls on both ends), a link the open stretch between two rooms
+  const add=(kind,i,zt,zb)=>{const P={id:PCID(kind,i),kind,i,zt,zb,y:0};PIECES.push(P);return P};
+  const ring=[];for(let r=1;r<NR;r++){ring.push(add('room',r,z0s[r],z0s[r]-AREA));ring.push(add('link',r<NR-1?r:0,r<NR-1?z0s[r]-AREA:z0s[0]-AREA,r<NR-1?z0s[r+1]:z0s[1]))}
+  // walk round the inner edge: each piece's inner edge runs along its walking direction, then the next turns 20 degrees
+  let px=0,pz=0,dx=1,dz=0;const turn=Math.PI*2/ring.length;
+  ring.forEach(P=>{P.ax=px;P.az=pz;P.dx=dx;P.dz=dz;const L=P.zt-P.zb;px+=dx*L;pz+=dz*L;const c=Math.cos(turn),s=Math.sin(turn),nx=dx*c+dz*s,nz=-dx*s+dz*c;dx=nx;dz=nz});
+  // centre the ring, then turn it so the Welcome junction (where the castle begins) is due south
+  let cx=0,cz=0;ring.forEach(P=>{cx+=P.ax;cz+=P.az});cx/=ring.length;cz/=ring.length;
+  const j=ring[0],ja=Math.atan2(j.ax-cx,j.az-cz),rot=-ja;   // angle of the junction from +z (south); turn it to 0
+  const R=(x,z)=>[x*Math.cos(rot)+z*Math.sin(rot),-x*Math.sin(rot)+z*Math.cos(rot)];
+  ring.forEach(P=>{[P.ax,P.az]=R(P.ax-cx,P.az-cz);[P.dx,P.dz]=R(P.dx,P.dz)});
+  // a piece's frame: strip (x,z) -> world = A + d*(zt-z) + n*(x+X_IN), with n = (-dz,dx) its outward normal
+  const frame=(P,ax,az,dx,dz,xIn)=>{const nx=-dz,nz=dx;P.phi=Math.atan2(-dx,-dz);P.c=Math.cos(P.phi);P.s=Math.sin(P.phi);
+    P.ox=ax+dx*P.zt+nx*xIn;P.oz=az+dz*P.zt+nz*xIn;P.nx=nx;P.nz=nz};
+  ring.forEach(P=>{frame(P,P.ax,P.az,P.dx,P.dz,X_IN);P.ring=true});
+  PIECES.ring=ring;
+  // the Welcome Garden (with the landing beach beyond it) points north at the hill; its gate stands just outside the
+  // ring's outer corners at the junction
+  const st=add('start',0,1e9,z0s[0]-AREA),jr=Math.hypot(j.ax,j.az),gz=jr+(X_IN*2)*Math.cos(turn/2)+4;
+  st.phi=0;st.c=1;st.s=0;st.ox=0;st.oz=gz-(z0s[0]-AREA);st.nx=1;st.nz=0;st.gate=[0,gz];
+  // the finish: the launch pad and the Summit Garden on the hilltop, entrance gate facing south down the hill
+  const fn=add('fin',0,zF0,-1e9);fn.phi=0;fn.c=1;fn.s=0;fn.ox=0;fn.oz=-(zF0-52);fn.y=H_TOP;fn.nx=1;fn.nz=0;
+  PIECES.byId={};PIECES.forEach(P=>PIECES.byId[P.id]=P);PIECES.jr=jr;PIECES.turn=turn;
+})();
+// the piece a strip point belongs to. the Welcome Garden owns its exit wall and every room owns the walls on both its
+// ends; the finish starts just inside the old last wall (the beach's exit, which now opens onto the Tulip Walk)
+function pieceOfS(z){const B=PIECES.byId;if(z>=z0s[0]-AREA)return B.start;if(z<zF0-0.5)return B.fin;
+  for(let r=1;r<NR;r++)if(z<=z0s[r]&&z>=z0s[r]-AREA)return B['r'+r];
+  for(let k=0;k<NR-1;k++)if(z<z0s[k]-AREA&&z>z0s[k+1])return B['l'+k];return B.fin}
+function S2W(x,z,P,out){P=P||pieceOfS(z);out=out||{};out.x=P.ox+x*P.c+z*P.s;out.z=P.oz-x*P.s+z*P.c;out.y=P.y;out.P=P;return out}
+function W2S(x,z,P,out){out=out||{};const dx=x-P.ox,dz=z-P.oz;out.x=dx*P.c-dz*P.s;out.z=dx*P.s+dz*P.c;out.P=P;return out}
+// which piece a world point is in (its strip band, from the hill edge out to beyond the coast), or null in the gaps
+// between pieces, on the hill and out at sea. m widens the bands
+const _w2s={};
+// LP: the player's position in the strip coordinates of the piece they are in (see playerLogic); WP: in the world.
+// animsW: per-frame jobs that work in world coordinates (the rest of anims work in strip coordinates)
+const LP={x:0,z:0,P:null},WP={x:0,z:0},_lpq={},animsW=[];
+let BCTX=null;   // the piece being built just now (see building blocks)
+function pieceAtW(x,z,m){m=m||0;for(const P of PIECES){if(P.kind==='fin')continue;W2S(x,z,P,_w2s);
+  if(_w2s.z<=P.zt+m&&_w2s.z>=P.zb-m&&(P.kind==='start'?Math.abs(_w2s.x)<X_IN+40:_w2s.x>=-X_IN-m&&_w2s.x<X_IN+120))return P}return null}
 
 const PANELS=[];
 // the Summit Garden on top of Meridian Hill: five optional, advanced challenges that open once every area is complete.
@@ -1083,6 +1136,8 @@ const LIVE_DUCKS=[],CAFES=[],NOPET=[],offIce=(x,z)=>!NOPET.some(q=>((x-q.x)/q.rx
 
 /* ---------- collision, heights, reserved zones ---------- */
 const colliders=[],platforms=[],reserved=[],waters=[];
+// colliders and floors made while a piece is being built belong to that piece (see BCTX in building blocks)
+[colliders,platforms].forEach(a=>{a.push=function(...x){for(const c of x)if(c&&c.pc==null&&BCTX)c.pc=BCTX;return Array.prototype.push.apply(this,x)}});
 function colBox(minX,maxX,minZ,maxZ){const c={t:'box',minX,maxX,minZ,maxZ,on:true};colliders.push(c);return c}
 function colCirc(x,z,r){colliders.push({t:'circ',x,z,r,on:true})}
 // reserved spots live in a coarse grid so scattering thousands of plants stays quick in the bigger world
@@ -1097,37 +1152,63 @@ function onDeck(x,z){return platforms.some(p=>p.deck&&!p.cableOnly&&inP(p,x,z))}
 function inWater(x,z,m){return waters.some(w=>w.box?(x>w.minX-m&&x<w.maxX+m&&z>w.minZ-m&&z<w.maxZ+m):((x-w.x)/(w.rx+m))**2+((z-w.z)/(w.rz+m))**2<1)}
 function flatAt(x,z,m){const h=heightAt(x,z);return heightAt(x+m,z)===h&&heightAt(x-m,z)===h&&heightAt(x,z+m)===h&&heightAt(x,z-m)===h}
 /* ---------- the island ----------
-   Number Grove sits on a long, remote island far out at sea. coastX(side,z) is how far out from the middle line the shore
-   lies on the west (side -1) or east (side 1); the gardens fill the middle and wild woods, grass and sand run down to the
-   water on both sides. at the north and south tips the island rounds off into the sea */
+   the island is a ring of places round Meridian Hill (see the island layout). coastX(side,z) still answers, in a piece's
+   strip coordinates, how far out from its middle line the edge lies: on a ring piece the hill side (-1) is a straight
+   edge at X_IN and the sea side (+1) is the wavy coast; the Welcome Garden peninsula has sea on both sides and rounds
+   off into the sea at its tip beyond the landing beach. onIsland / shoreD / hillH work in world coordinates; the
+   strip-coordinate helpers convert first */
 const ISL_N=z0s[0]+26,ISL_S=zF0-FIN-48,ISL_NT=ISL_N-24,ISL_ST=ISL_S+32,ZBEACH=z0s[RI('beach')];
-function coastX(side,z){let w=AW+8.5+3*Math.sin(z*0.031+side*1.7)+2*Math.sin(z*0.083+side*2.9)+1.2*Math.sin(z*0.21+side*0.6);
+function coastX(side,z){const P=pieceOfS(z);if(P.kind==='fin')return 34;if(side<0&&P.kind!=='start')return X_IN;
+  let w=AW+8.5+3*Math.sin(z*0.031+side*1.7)+2*Math.sin(z*0.083+side*2.9)+1.2*Math.sin(z*0.21+side*0.6);
   if(side>0){const a=ZBEACH+1,b=ZBEACH-AREA-1,d=z>a?z-a:z<b?b-z:0;if(d<9){const k=d/9,s=k*k*(3-2*k);w=11+(w-11)*s}}   // the beach room's sea is part of the ocean
   if(z>ISL_NT){const u=Math.min(1,(z-ISL_NT)/(ISL_N-ISL_NT));w*=Math.sqrt(Math.max(0,1-u*u))}
-  if(z<ISL_ST){const u=Math.min(1,(ISL_ST-z)/(ISL_ST-ISL_S));w*=Math.sqrt(Math.max(0,1-u*u))}
   return w}
-// rivers run right across the island and out into the sea
+// rivers run from springs at the foot of the hill out across their links into the sea
 const RIVERS=CONN.map((o,i)=>o.kind==='river'?{c:z0s[i]-AREA-GAP/2,hw:3.4}:null).filter(Boolean).concat([{c:z0s[RI('castle')]-40.4,hw:2.0}]);
-function onIsland(x,z,m){m=m||0;if(z>ISL_N-m||z<ISL_S+m)return false;const w=coastX(x<0?-1:1,z)-m;if(Math.abs(x)>=w)return false;
-  return true}
+// strip-coordinate version, for things that walk about inside one piece
+function onIslandS(x,z,m){m=m||0;const P=pieceOfS(z);if(P.kind==='fin')return true;
+  if(P.kind==='start')return z<ISL_N-m&&Math.abs(x)<coastX(x<0?-1:1,z)-m;return x<coastX(1,z)-m}
+// the world version: inside the ring is land (the meadow and the hill); a ring piece is land out to its coast; between
+// two pieces the coast runs smoothly from one to the other; the peninsula is land within its coast (and joins the ring)
+const _oi={};
+function onIsland(x,z,m){m=m||0;const r=Math.hypot(x,z);if(r<PIECES.jr-12)return true;
+  for(const P of PIECES.ring){W2S(x,z,P,_oi);if(_oi.z<=P.zt&&_oi.z>=P.zb&&_oi.x>-X_IN-20){if(_oi.x<-X_IN)return true;return _oi.x<coastX(1,_oi.z)-m}}
+  {const P=PIECES.byId.start;W2S(x,z,P,_oi);if(_oi.z>=P.zb-6&&_oi.z<ISL_N-m&&Math.abs(_oi.x)<(_oi.z<P.zb?X_IN:coastX(_oi.x<0?-1:1,Math.max(_oi.z,P.zb)))-m)return true}
+  // a gap between two ring pieces: between the end edge of piece A and the start edge of piece B, both from vertex V
+  const R=PIECES.ring,n=R.length;for(let k=0;k<n;k++){const B=R[k],A=R[(k+n-1)%n],vx=B.ax,vz=B.az,qx=x-vx,qz=z-vz;
+    const ca=qx*A.dx+qz*A.dz,cb=qx*B.dx+qz*B.dz;if(ca<0||cb>0)continue;   // past A's end and before B's start
+    const bx=A.nx+B.nx,bz=A.nz+B.nz,bl=Math.hypot(bx,bz),sd=(qx*bx+qz*bz)/bl;if(sd<0)continue;
+    const fa=Math.atan2(ca,qx*A.nx+qz*A.nz),fb=Math.atan2(-cb,qx*B.nx+qz*B.nz),f=fa/(fa+fb||1);
+    const ce=X_IN+coastX(1,A.zb)*(1-f)+coastX(1,B.zt)*f+2.5*Math.sin(k*2.3);return sd<ce-m}
+  return false}
 // a signed distance to the shore on a 1 m grid (negative on land), for the shape of the sea bed and the sand and surf
-const IG={x0:-100,z0:ISL_S-70,nx:201,nz:Math.ceil(ISL_N-ISL_S+140)+1};
+const IG={x0:-290,z0:-290,nx:581,nz:681};
 IG.d=(()=>{const {nx,nz,x0,z0}=IG,N=nx*nz,land=new Uint8Array(N),dI=new Float32Array(N),dO=new Float32Array(N),BIG=1e6;
   for(let j=0;j<nz;j++)for(let i=0;i<nx;i++)land[j*nx+i]=onIsland(x0+i,z0+j)?1:0;
   const pass=(d,isSrc)=>{for(let k=0;k<N;k++)d[k]=isSrc(k)?0:BIG;const S=Math.SQRT2;
     for(let j=0;j<nz;j++)for(let i=0;i<nx;i++){const k=j*nx+i;let v=d[k];if(i>0)v=Math.min(v,d[k-1]+1);if(j>0){v=Math.min(v,d[k-nx]+1);if(i>0)v=Math.min(v,d[k-nx-1]+S);if(i<nx-1)v=Math.min(v,d[k-nx+1]+S)}d[k]=v}
     for(let j=nz-1;j>=0;j--)for(let i=nx-1;i>=0;i--){const k=j*nx+i;let v=d[k];if(i<nx-1)v=Math.min(v,d[k+1]+1);if(j<nz-1){v=Math.min(v,d[k+nx]+1);if(i<nx-1)v=Math.min(v,d[k+nx+1]+S);if(i>0)v=Math.min(v,d[k+nx-1]+S)}d[k]=v}};
   pass(dO,k=>land[k]===1);pass(dI,k=>land[k]===0);const d=new Float32Array(N);for(let k=0;k<N;k++)d[k]=land[k]?0.5-dI[k]:dO[k]-0.5;IG.land=land;return d})();
-// a water (or river-bed) material that fades out past the shore on both sides, so a river runs on into the sea and melts into it
-function fadeAtSea(base,c,isWater){const m=base.clone(),xl=coastX(-1,c),xr=coastX(1,c);m.transparent=true;if(!isWater)m.depthWrite=false;m.customProgramCacheKey=()=>(isWater?'water':'bed')+'fade';
-  m.onBeforeCompile=sh=>{if(isWater)matWater.onBeforeCompile(sh);else{sh.vertexShader='varying vec3 vWW;\n'+sh.vertexShader.replace('#include <worldpos_vertex>','#include <worldpos_vertex>\nvWW=(modelMatrix*vec4(transformed,1.0)).xyz;');sh.fragmentShader='varying vec3 vWW;\n'+sh.fragmentShader}
+// a water (or river-bed) material that fades out at both ends of a river: into the sea past the coast, and into the
+// spring at the foot of the hill. measured along the mesh's own x (rivers lie along strip x)
+function fadeAtSea(base,c,isWater){const m=base.clone(),xl=X_IN-3,xr=coastX(1,c);m.transparent=true;if(!isWater)m.depthWrite=false;m.customProgramCacheKey=()=>(isWater?'water':'bed')+'fade';
+  m.onBeforeCompile=sh=>{if(isWater)matWater.onBeforeCompile(sh);
+    sh.vertexShader='varying float vSX;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvSX=position.x;');
     sh.uniforms.uXL={value:xl};sh.uniforms.uXR={value:xr};
-    sh.fragmentShader='uniform float uXL,uXR;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.a*=(1.0-smoothstep(uXL-2.0,uXL+7.0,-vWW.x))*(1.0-smoothstep(uXR-2.0,uXR+7.0,vWW.x));')};return m}
-function shoreD(x,z){const fx=Math.max(0,Math.min(IG.nx-1.001,x-IG.x0)),fz=Math.max(0,Math.min(IG.nz-1.001,z-IG.z0)),i=fx|0,j=fz|0,u=fx-i,v=fz-j,k=j*IG.nx+i,d=IG.d;
+    sh.fragmentShader='uniform float uXL,uXR;varying float vSX;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.a*=(1.0-smoothstep(uXL-2.0,uXL+3.0,-vSX))*(1.0-smoothstep(uXR-2.0,uXR+7.0,vSX));')};return m}
+function shoreDW(x,z){const fx=Math.max(0,Math.min(IG.nx-1.001,x-IG.x0)),fz=Math.max(0,Math.min(IG.nz-1.001,z-IG.z0)),i=fx|0,j=fz|0,u=fx-i,v=fz-j,k=j*IG.nx+i,d=IG.d;
   if(x<IG.x0||x>IG.x0+IG.nx-1||z<IG.z0||z>IG.z0+IG.nz-1)return 99;return (d[k]*(1-u)+d[k+1]*u)*(1-v)+(d[k+IG.nx]*(1-u)+d[k+IG.nx+1]*u)*v}
+const _sw={};function shoreD(x,z){S2W(x,z,null,_sw);return shoreDW(_sw.x,_sw.z)}
 // the sea bed shelves away from the beach: shallow and sandy near the shore, deep blue further out
-function hillH(x,z){const d=shoreD(x,z);if(d<=0)return 0;return -Math.min(7,0.12*d+0.025*d*d)}
+function hillHW(x,z){const d=shoreDW(x,z);if(d<=0)return 0;return -Math.min(7,0.12*d+0.025*d*d)}
+function hillH(x,z){S2W(x,z,null,_sw);return hillHW(_sw.x,_sw.z)}
 const groundAt=(x,z)=>Math.max(heightAt(x,z),hillH(x,z));
+// Meridian Hill: a broad hill filling the middle of the ring, rising to a flat summit that holds the launch pad and the
+// Summit Garden. hillY gives the ground height in world coordinates (0 out on the ring)
+const HILL={x0:-34,x1:34,z0:-60,z1:62,base:116};
+function hillY(x,z){const dx=Math.max(HILL.x0-x,0,x-HILL.x1),dz=Math.max(HILL.z0-z,0,z-HILL.z1);if(dx===0&&dz===0)return H_TOP;
+  const r=Math.hypot(x,z),a=Math.atan2(x,z),s=Math.sin(a),c=Math.cos(a),re=Math.min(Math.abs(s)>1e-6?(s>0?HILL.x1:-HILL.x0)/Math.abs(s):1e9,Math.abs(c)>1e-6?(c>0?HILL.z1:-HILL.z0)/Math.abs(c):1e9);
+  const k=Math.max(0,Math.min(1,(r-re)/(HILL.base-re)));if(k>=1)return 0;return H_TOP*(1-k*k*(3-2*k))}
 // the snowy part of the world: the frosty path and Snowflake Hollow, fading out over 14 m on either side
 const SNOWR=RI('snow'),SNOW_TOP=z0s[SNOWR-1]-AREA,SNOW_BOT=z0s[SNOWR]-AREA;
 function snowAmt(z){const d=Math.max(z-SNOW_TOP,SNOW_BOT-z,0);return Math.max(0,1-d/14)}
@@ -1138,7 +1219,7 @@ function colCells(){const G=COLG;G.n=colliders.length;G.cells.clear();const add=
   G.dyn=colliders.filter(c=>c.dyn)}
 const COL_EMPTY=[];
 function blocked(x,z,curH){
-  const r=0.32;if(!onIsland(x,z,0.6)&&!onDeck(x,z))return true;   // an invisible wall keeps you out of the sea
+  const r=0.32;if(!onIslandS(x,z,0.6)&&!onDeck(x,z))return true;   // an invisible wall keeps you out of the sea
   if(COLG.n!==colliders.length)colCells();const near=COLG.cells.get(Math.floor(x/COLG.S)*4096+Math.floor(z/COLG.S))||COL_EMPTY;
   for(const list of [near,COLG.dyn])for(const c of list){if(!c.on)continue;
     if(c.t==='box'){if(x>c.minX-r&&x<c.maxX+r&&z>c.minZ-r&&z<c.maxZ+r)return true}
@@ -1146,6 +1227,33 @@ function blocked(x,z,curH){
     else if(c.t==='water'){if(((x-c.x)/c.rx)**2+((z-c.z)/c.rz)**2<1&&!onDeck(x,z))return true}
     else if(c.t==='wbox'){if(x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ&&!onDeck(x,z))return true}}
   return heightAt(x,z)-curH>0.55;
+}
+
+/* ---------- the player in the world ----------
+   you walk in world coordinates. what is under and around you is looked up in the strip coordinates of each piece your
+   step falls in (only that piece's own colliders and floors: c.pc / p.pc, set when the world is put together), plus the
+   few things that live in world coordinates themselves (COLW, on the hill). the hill's slopes come from hillY */
+const COLW=[],PLATW=[],_pa=[],_pq=[];for(let i=0;i<24;i++)_pq.push({});
+function piecesAtW(x,z,m){_pa.length=0;let n=0;for(const P of PIECES){const q=W2S(x,z,P,_pq[n]);
+    if(P.kind==='fin'?(q.z<zF0+m&&q.z>zF0-118&&Math.abs(q.x)<46):P.kind==='start'?(q.z<=P.zt&&q.z>=P.zb-m&&Math.abs(q.x)<X_IN+40):(q.z<=P.zt+m&&q.z>=P.zb-m&&q.x>=-X_IN-m&&q.x<X_IN+120)){_pa.push(q);n++}}
+  return _pa}
+function heightAtP(x,z,pc){let h=0;for(const p of platforms){if(p.pc!==pc||!inP(p,x,z))continue;
+  if(p.t==='ramp'){const f=p.axis==='x'?(x-p.minX)/(p.maxX-p.minX):(z-p.minZ)/(p.maxZ-p.minZ);h=Math.max(h,p.hA+(p.hB-p.hA)*f)}else h=Math.max(h,p.h)}return h}
+function heightW(x,z){let h=hillY(x,z);for(const q of piecesAtW(x,z,0.4)){const v=heightAtP(q.x,q.z,q.P.id);if(v>0||q.P.y)h=Math.max(h,v+q.P.y)}
+  for(const p of PLATW)if(inP(p,x,z))h=Math.max(h,p.h);return h}
+function onDeckW(x,z){for(const q of piecesAtW(x,z,0.4))if(platforms.some(p=>p.pc===q.P.id&&p.deck&&!p.cableOnly&&inP(p,q.x,q.z)))return true;return false}
+function blockedW(x,z,curH){
+  const r=0.32;if(!onIsland(x,z,0.6)&&!onDeckW(x,z))return true;   // an invisible wall keeps you out of the sea
+  for(const c of COLW){if(!c.on)continue;if(c.t==='box'?(x>c.minX-r&&x<c.maxX+r&&z>c.minZ-r&&z<c.maxZ+r):((x-c.x)**2+(z-c.z)**2<(c.r+r)**2))return true}
+  if(COLG.n!==colliders.length)colCells();
+  const qs=piecesAtW(x,z,1.2).slice();
+  for(const q of qs){const pc=q.P.id,xs=q.x,zs=q.z,me=W2S(px,pz,q.P,{}),near=COLG.cells.get(Math.floor(xs/COLG.S)*4096+Math.floor(zs/COLG.S))||COL_EMPTY;
+    for(const list of [near,COLG.dyn])for(const c of list){if(!c.on||c.pc!==pc)continue;
+      if(c.t==='box'){if(xs>c.minX-r&&xs<c.maxX+r&&zs>c.minZ-r&&zs<c.maxZ+r)return true}
+      else if(c.t==='circ'){if(c.dyn&&(me.x-c.x)**2+(me.z-c.z)**2<(c.r+r)**2)continue;if((xs-c.x)**2+(zs-c.z)**2<(c.r+r)**2)return true}
+      else if(c.t==='water'){if(((xs-c.x)/c.rx)**2+((zs-c.z)/c.rz)**2<1&&!onDeck(xs,zs))return true}
+      else if(c.t==='wbox'){if(xs>c.minX&&xs<c.maxX&&zs>c.minZ&&zs<c.maxZ&&!onDeck(xs,zs))return true}}}
+  return heightW(x,z)-curH>0.55;
 }
 
 /* ---------- instanced scenery lists ---------- */
@@ -1187,21 +1295,28 @@ const cobbleTex=canvasTex(256,256,c=>{c.fillStyle='#bfb29a';c.fillRect(0,0,256,2
 
 /* ---------- island ground, sea bed and ocean ---------- */
 const SNOWC=new THREE.Color(0xeef3f7);
-{const x0=-100,x1=100,zA=ISL_N+60,zB=ISL_S-60,W=x1-x0,D=zA-zB,g=new THREE.PlaneGeometry(W,D,100,Math.round(D/2.5));g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cz=(zA+zB)/2,c=new THREE.Color(),SAND=new THREE.Color(0xe8d4a0),WET=new THREE.Color(0xc9b383),DEEP=new THREE.Color(0x2f6f86);
- for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i)+cz,d=shoreD(x,z),h=hillH(x,z);pos.setY(i,h);
+// for any world point: the nearest piece and the point in that piece's strip coordinates (out on the hill or in a gap
+// between pieces this carries on past the piece's edge), so snow, sand and the like can be looked up anywhere
+PIECES.ring.forEach(P=>{const m=S2W(0,(P.zt+P.zb)/2,P);P.ang=Math.atan2(m.x,m.z)});
+function nearPieceW(x,z,out){out=out||{};const P0=pieceAtW(x,z,0);if(P0)return W2S(x,z,P0,out);
+  const st=PIECES.byId.start;W2S(x,z,st,out);if(out.z>st.zb-12&&Math.abs(out.x)<X_IN+30&&Math.hypot(x,z)>PIECES.jr+40)return out;
+  const a=Math.atan2(x,z);let best=null,bd=9;for(const P of PIECES.ring){let d=Math.abs(a-P.ang);if(d>Math.PI)d=Math.PI*2-d;if(d<bd){bd=d;best=P}}return W2S(x,z,best,out)}
+{const x0=IG.x0,x1=IG.x0+IG.nx-1,zB=IG.z0,zA=IG.z0+IG.nz-1,W=x1-x0,D=zA-zB,g=new THREE.PlaneGeometry(W,D,Math.round(W/2.5),Math.round(D/2.5));g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cx=(x0+x1)/2,cz=(zA+zB)/2,c=new THREE.Color(),SAND=new THREE.Color(0xe8d4a0),WET=new THREE.Color(0xc9b383),DEEP=new THREE.Color(0x2f6f86),q={};
+ for(let i=0;i<pos.count;i++){const x=pos.getX(i)+cx,z=pos.getZ(i)+cz,d=shoreDW(x,z);pos.setY(i,d>0?hillHW(x,z):hillY(x,z));
    const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03);
-   {const sn=snowAmt(z);if(sn>0)c.lerp(SNOWC,sn*0.92)}
-   if(d>-4.5){const k=Math.min(1,(d+4.5)/3.5);c.lerp(SAND,k*k*(1-0.6*snowAmt(z)))}   // a sandy shore
-   {const bd=Math.max(z-ZBEACH,ZBEACH-AREA-z);if(bd<3)c.lerp(SAND,Math.min(1,(3-bd)/3))}   // Number Bond Beach is sand from shore to shore
+   nearPieceW(x,z,q);const ring=q.P.ring,sn=ring?snowAmt(q.z)*(q.x<-X_IN?Math.max(0,1-(-X_IN-q.x)/14):1):0;
+   if(sn>0)c.lerp(SNOWC,sn*0.92);
+   if(d>-4.5){const k=Math.min(1,(d+4.5)/3.5);c.lerp(SAND,k*k*(1-0.6*sn))}   // a sandy shore
+   if(ring&&q.x>-X_IN){const bd=Math.max(q.z-ZBEACH,ZBEACH-AREA-q.z);if(bd<3)c.lerp(SAND,Math.min(1,(3-bd)/3))}   // Number Bond Beach is sand from its walls to the sea
    if(d>0){c.copy(WET).lerp(DEEP,Math.min(1,d/18))}
    c.convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
  g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));g.computeVertexNormals();
- const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.z=cz;gm.receiveShadow=true;scene.add(gm);
- const bed=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000),new THREE.MeshStandardMaterial({color:DEEP.clone().convertSRGBToLinear(),roughness:0.96}));bed.rotation.x=-Math.PI/2;bed.position.set(0,-7.02,cz);scene.add(bed)}
+ const gm=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));gm.position.set(cx,0,cz);gm.receiveShadow=true;gm.userData.world=1;scene.add(gm);
+ const bed=new THREE.Mesh(new THREE.PlaneGeometry(6000,6000),new THREE.MeshStandardMaterial({color:DEEP.clone().convertSRGBToLinear(),roughness:0.96}));bed.rotation.x=-Math.PI/2;bed.position.set(0,-7.02,cz);bed.userData.world=1;scene.add(bed)}
 // the ocean: one big sheet of water out to the horizon. it is cut away over the island using a mask of the land, and
 // breaks into white surf along the shore
 const OCEAN=(()=>{const {nx,nz}=IG,data=new Uint8Array(nx*nz*4);for(let k=0;k<nx*nz;k++){const v=IG.land[k]?255:0,x=IG.x0+k%nx,z=IG.z0+Math.floor(k/nx);data[k*4]=v;data[k*4+1]=Math.max(0,Math.min(255,Math.round(128-IG.d[k]*20)));
-    data[k*4+2]=Math.abs(x)>AW-6&&RIVERS.some(r=>Math.abs(z-r.c)<r.hw+5)?255:0;data[k*4+3]=255}   // blue: river mouths, where no surf breaks
+    let mouth=0;if(!IG.land[k]&&IG.d[k]<12){const q=nearPieceW(x,z,_oi);mouth=q.P.kind==='link'&&q.x>AW-6&&RIVERS.some(r=>Math.abs(q.z-r.c)<r.hw+5)?255:0}data[k*4+2]=mouth;data[k*4+3]=255}   // blue: river mouths, where no surf breaks
   const tex=new THREE.DataTexture(data,nx,nz,THREE.RGBAFormat);tex.magFilter=tex.minFilter=THREE.LinearFilter;tex.needsUpdate=true;
   const mat=matWater.clone();mat.opacity=0.86;mat.userData.mask=tex;mat.customProgramCacheKey=()=>'ocean';
   mat.onBeforeCompile=sh=>{matWater.onBeforeCompile(sh);sh.uniforms.wAmp=W_SEA.amp;sh.uniforms.wScale=W_SEA.scale;sh.uniforms.wDisp=W_SEA.disp;sh.uniforms.uMask={value:tex};sh.uniforms.uMB={value:new THREE.Vector4(IG.x0,IG.z0,1/(nx-1),1/(nz-1))};
@@ -1216,9 +1331,14 @@ const OCEAN=(()=>{const {nx,nz}=IG,data=new Uint8Array(nx*nz*4);for(let k=0;k<nx
         float foam=(smoothstep(2.2,0.0,sd)*(0.55+0.45*wave)+smoothstep(0.6,0.0,sd)*0.5)*(1.0-mk.b);
         diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.11,0.47,0.56),smoothstep(5.0,0.5,sd)*0.45);
         diffuseColor.rgb=mix(diffuseColor.rgb,vec3(0.93,0.97,1.0),clamp(foam,0.0,1.0)*0.85);diffuseColor.a=mix(diffuseColor.a,0.97,clamp(foam,0.0,1.0));`)};
-  const og=new THREE.PlaneGeometry(900,900,200,200);og.rotateX(-Math.PI/2);const m=new THREE.Mesh(og,mat);m.position.set(0,0.07,0);m.frustumCulled=false;m.renderOrder=-1;scene.add(m);return m})();
+  const og=new THREE.PlaneGeometry(1100,1100,240,240);og.rotateX(-Math.PI/2);const m=new THREE.Mesh(og,mat);m.position.set(0,0.07,50);m.frustumCulled=false;m.renderOrder=-1;m.userData.world=1;scene.add(m);return m})();
 
 /* ---------- building blocks ---------- */
+// everything made so far (lights, sky, ground, sea) lives in world coordinates. from here on things are built in strip
+// coordinates; while a piece is being built (BCTX) whatever is added to the scene is tagged with it, so that objects
+// made at the origin and only moved later still end up in the right piece when the world is put together
+const WORLD_EARLY=new Set(scene.children);
+{const add0=scene.add.bind(scene);scene.add=function(...o){for(const x of o){if(!x||!x.userData||x.userData.pc!=null)continue;if(BCTX)x.userData.pc=BCTX;else if(RIH!=null&&RIH>=0&&x.userData.pcHint==null)x.userData.pcHint=RIH?'r'+RIH:'start'}return add0(...o)}}
 const PATHC=0xcdb991;let pathN=0;const PATHR=[],FILLR=[];
 function paths(lines,w,y,col){y=y||0;lines.forEach(([a,b])=>{
   const dx=Math.abs(b[0]-a[0]),dz=Math.abs(b[1]-a[1]),PWd=dx>0.01?dx+w:w,PDd=dz>0.01?dz+w:w,cx=(a[0]+b[0])/2,cz=(a[1]+b[1])/2;
@@ -3112,7 +3232,7 @@ const GLIT=(()=>{const N=1600,pos=new Float32Array(N*3).fill(-999),col=new Float
   g.setAttribute('position',new THREE.BufferAttribute(pos,3));g.setAttribute('color',new THREE.BufferAttribute(col,3));
   const tex=canvasTex(64,64,c=>{const r=c.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(0.25,'rgba(255,255,255,0.7)');r.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=r;c.fillRect(0,0,64,64);
     c.strokeStyle='rgba(255,255,255,0.9)';c.lineWidth=2;c.beginPath();c.moveTo(32,2);c.lineTo(32,62);c.moveTo(2,32);c.lineTo(62,32);c.stroke()});
-  const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.14,map:tex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false}));pts.frustumCulled=false;scene.add(pts);let n=0,live=0;
+  const pts=new THREE.Points(g,new THREE.PointsMaterial({size:0.14,map:tex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false}));pts.frustumCulled=false;pts.userData.world=1;scene.add(pts);let n=0,live=0;
   anims.push((t,dt)=>{if(!live){pts.visible=false;return}pts.visible=true;live=0;for(let k=0;k<N;k++){if(life[k]<=0)continue;life[k]-=dt;if(life[k]<=0){pos[k*3+1]=-999;continue}live++;
       vel[k*3]+=Math.sin(t*2+k)*0.15*dt;pos[k*3]+=vel[k*3]*dt;pos[k*3+1]+=vel[k*3+1]*dt;pos[k*3+2]+=vel[k*3+2]*dt;const a=Math.min(1,life[k]/(mx[k]*0.45))*(Math.random()<0.3?1.5:0.75);
       col[k*3]=base[k*3]*a;col[k*3+1]=base[k*3+1]*a;col[k*3+2]=base[k*3+2]*a}g.attributes.position.needsUpdate=true;g.attributes.color.needsUpdate=true});
@@ -3397,8 +3517,8 @@ function buildFinish(z0){
 const confetti=[];
 
 /* ---------- build everything ---------- */
-{const BUILD={intro:buildIntro,adding:buildArea0,times:buildArea1,oddeven:buildArea2,match:buildArea3,windmill:buildArea4,beach:buildBeach,castle:buildCastle,glass:buildGreenhouse,snow:buildSnow};ROOMS.forEach((room,r)=>BUILD[room.key](z0s[r]))}buildFinish(zF0);
-CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);else buildGardenLink(gz,o)});
+{const BUILD={intro:buildIntro,adding:buildArea0,times:buildArea1,oddeven:buildArea2,match:buildArea3,windmill:buildArea4,beach:buildBeach,castle:buildCastle,glass:buildGreenhouse,snow:buildSnow};ROOMS.forEach((room,r)=>{BCTX=r?'r'+r:'start';BUILD[room.key](z0s[r])})}BCTX='fin';buildFinish(zF0);
+CONN.forEach((o,i)=>{BCTX='l'+i;const gz=z0s[i]-AREA;if(o.kind==='river')buildRiver(gz,o);else buildGardenLink(gz,o)});BCTX=null;
 
 // stone archway with a big name board facing people walking up to it, plus a roadside sign by the gate
 /* ---------- themed gates ----------
@@ -3642,7 +3762,7 @@ function buildApproach(){   // the landing: the beach at the island's north tip,
   flowerBed(-6.5,4.6,1.4);flowerBed(6.5,4.6,1.4);lamp(2.4,6.5);lamp(-2.4,13);bench(-3.4,9,'e');
   for(const [x,z] of [[-8,9],[8.5,15],[-10,15]])addTree(x,z,{type:'round',s:1.1});
 }
-buildApproach();
+BCTX='start';buildApproach();BCTX=null;
 
 // panels
 const panelFaces=[],gates=[],ENTR=[],entryCables=[];
@@ -3675,18 +3795,20 @@ function buildPanel(p,spot,z0){
 }
 const route=(a,b,mode)=>mode==='zx'?[a,[a[0],b[1]],b]:[a,[b[0],a[1]],b];
 ROOMS.forEach((room,r)=>{
-  const z0=z0s[r],zBot=z0-AREA;
+  const z0=z0s[r],zBot=z0-AREA;BCTX=r?'r'+r:'start';
   room.list.forEach((p,i)=>buildPanel(p,room.spots[i],z0));
   // (cables are laid later by layCables, once everything they must go around exists)
   // divider with gate arch; past it, a short river or garden walk leads to the next place's open entrance
   divider(zBot,ROOMS[r].key);
-  gates[r]=makeGate(zBot,r<NR-1?linkTheme(CONN[r]):'fin',r<NR-1?CONN[r].name:'Finish Meadow',r<NR-1?'On the way to '+ROOMS[r+1].name:'Solve every panel to get here');
-  if(r<NR-1){const zE=z0s[r+1];divider(zE,ROOMS[r+1].key);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
-  reserve(0,zBot+2.5,3);reserve(0,zBot-2.5,3);
+  // exit gates open onto the link that follows round the ring (the beach's onto the Tulip Walk back to the castle);
+  // the Welcome Garden's opens out onto the ring itself
+  gates[r]=r===0?makeGate(zBot,linkTheme(CONN[0]),'Welcome Gate','Out to every place on the island'):makeGate(zBot,linkTheme(CONN[r<NR-1?r:0]),CONN[r<NR-1?r:0].name,'On the way to '+ROOMS[r<NR-1?r+1:1].name);
+  if(r<NR-1){const zE=z0s[r+1];BCTX='r'+(r+1);divider(zE,ROOMS[r+1].key);ENTR[r+1]=makeGate(zE,ROOMS[r+1].key,ROOMS[r+1].name,ROOMS[r+1].topic);reserve(0,zE+2.5,3);reserve(0,zE-2.5,3)}
+  reserve(0,zBot+2.5,3);reserve(0,zBot-2.5,3);BCTX=null;
 });
 // no tree may reach over or behind a panel: its leaves would poke through the board or crowd the view (run once the
 // panels are up and again after all the scattered trees are planted)
-SUMMIT.z0=zF0-72;SUMMIT.list.forEach((p,i)=>buildPanel(p,SUMMIT.spots[i],SUMMIT.z0));
+BCTX='fin';SUMMIT.z0=zF0-76;SUMMIT.list.forEach((p,i)=>buildPanel(p,SUMMIT.spots[i],SUMMIT.z0));BCTX=null;
 function clearTreesFromPanels(){const gone=new Set();PANELS.forEach(p=>{const fx=p.pos.x+p.normal.x*1.6,fz=p.pos.z+p.normal.z*1.6,bx=p.pos.x-p.normal.x*1.2,bz=p.pos.z-p.normal.z*1.2,py=p.pos.y+(PH+0.14)/2;
   TREES.forEach(T=>{if(gone.has(T))return;const d=Math.min(Math.hypot(T.x-p.pos.x,T.z-p.pos.z),Math.hypot(T.x-fx,T.z-fz),Math.hypot(T.x-bx,T.z-bz));if(d<T.r+1.1&&T.low<py+1.8)gone.add(T)})});
  gone.forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}const i=TREES.indexOf(T);if(i>=0)TREES.splice(i,1)})}
@@ -3786,7 +3908,8 @@ function fillPathGaps(z0,col){fillPathSlots(z0,col);const G=0.25,x0=-AW+0.5,zT=z
     for(let b=0;b<h;b++)for(let a=0;a<w;a++)fill[(j+b)*NX+i+a]=0;
     const e=G*0.75+0.06,minX=X(i)-e,maxX=X(i+w-1)+e,maxZ=Z(j)+e,minZ=Z(j+h-1)-e;FILLR.push({minX,maxX,minZ,maxZ,col});walkRect(minX,maxX,minZ,maxZ)}}
 LAMPS.forEach(([x,z])=>placeLamp(x,z));
-{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(LAMPPTS,3));const pts=new THREE.Points(g,LAMPGLOW);pts.renderOrder=3;pts.frustumCulled=false;scene.add(pts);LAMPGLOW.pts=pts}
+{const q={};for(let i=0;i<LAMPPTS.length;i+=3){const P=pieceOfS(LAMPPTS[i+2]);S2W(LAMPPTS[i],LAMPPTS[i+2],P,q);LAMPPTS[i]=q.x;LAMPPTS[i+1]+=P.y;LAMPPTS[i+2]=q.z}
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(LAMPPTS,3));const pts=new THREE.Points(g,LAMPGLOW);pts.renderOrder=3;pts.frustumCulled=false;pts.userData.world=1;scene.add(pts);LAMPGLOW.pts=pts}
 
 /* ---------- cable router: every cable is laid on a 0.5 m grid with A*, going around walls, water, benches and
    other panels, never crossing or running on top of a cable that is already down, and with few corners ---------- */
@@ -3876,18 +3999,79 @@ CONN.forEach((o,i)=>{const gz=z0s[i]-AREA;scatterArea(gz,gz-GAP,Object.assign({t
 scatterArea(zF0,zF0-FIN,{trees:0,bushes:0,rocks:0,flowers:160,grass:3500});
 reserve(0,zF0-44,16);   // keep the ground behind the finish clear (the launch pad)
 // the island's wild edges, between the gardens and the sea: woods, bushes, flowers and long grass, and rocks along the shore
-{const spot=m=>{for(let t=0;t<30;t++){const z=ISL_S+3+RS()*(ISL_N-ISL_S-6),side=RS()<0.5?-1:1,w=coastX(side,z),inGarden=z<z0s[0]-1&&z>zF0-FIN+1;
-    if(inGarden&&w<AW+m+1.5)continue;const x=inGarden?side*(AW+0.6+RS()*(w-AW-0.6-m)):side*RS()*(w-m);if(onIsland(x,z,m)&&!onWalk(x,z,1.2)&&!inWater(x,z,1))return[x,z]}return null};
- for(let n=0;n<420;n++){const q=spot(3.2);if(!q||!isFree(q[0],q[1],1.6))continue;const [x,z]=q;if(snowAmt(z)>0.4)snowPine(x,z,0.9+RS()*0.7);else addTree(x,z,{type:RS()<0.12?'blossom':RS()<0.35?'pine':'round',s:0.9+RS()*0.8})}
+/* ---------- paths across the island ----------
+   the loop path runs through every place and link; across the small gaps between neighbouring pieces it is joined by
+   short world paths. from the Welcome Gate a path leads up to the ring. from just outside every place's entrance a
+   spoke runs in through the link's open inner side and straight up Meridian Hill to the path round the summit */
+const WRES=new Map(),WRC=6;   // reserved spots in world coordinates (paths), on a coarse grid
+function wReserve(x,z,r){for(let i=Math.floor((x-r)/WRC);i<=Math.floor((x+r)/WRC);i++)for(let j=Math.floor((z-r)/WRC);j<=Math.floor((z+r)/WRC);j++){const k=i*10000+j;let a=WRES.get(k);if(!a)WRES.set(k,a=[]);a.push([x,z,r])}}
+function wFree(x,z,m){const a=WRES.get(Math.floor(x/WRC)*10000+Math.floor(z/WRC));if(!a)return true;for(const q of a){const rr=q[2]+m;if((x-q[0])**2+(z-q[1])**2<rr*rr)return false}return true}
+const WPATH=[];   // world path ribbons: {pts:[[x,z]...], w}
+// a paved ribbon that follows the ground (the hill's slope included) along a world polyline
+function worldPath(pts,w,col){const P=[],I=[],step=0.8,hw=w/2;let first=true;
+  for(let k=0;k<pts.length-1;k++){const [ax,az]=pts[k],[bx,bz]=pts[k+1],L=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.ceil(L/step)),tx=(bx-ax)/L,tz=(bz-az)/L,nx=-tz,nz=tx;
+    for(let i=first?0:1;i<=n;i++){const x=ax+(bx-ax)*i/n,z=az+(bz-az)*i/n;
+      for(const sd of [-1,1]){const qx=x+nx*hw*sd,qz=z+nz*hw*sd;P.push(qx,hillY(qx,qz)+0.035,qz)}
+      if(P.length>6){const b=P.length/3-4;I.push(b,b+2,b+1,b+1,b+2,b+3)}wReserve(x,z,hw+0.5)}first=false}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);g.computeVertexNormals();
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:lin(col||PATHC),roughness:0.95,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));m.receiveShadow=true;m.userData.world=1;scene.add(m);WPATH.push({pts,w});return m}
+const HILLWALK={x0:-32,x1:32,z0:-58,z1:60};   // the path round the summit (world)
+(function islandPaths(){const R=PIECES.ring,n=R.length,q={};
+  // joins in the loop path, from the end of each piece's path to the start of the next one's
+  for(let k=0;k<n;k++){const A=R[k],B=R[(k+1)%n],a=S2W(0,A.zb+0.2,A,{}),b=S2W(0,B.zt-0.2,B,{});worldPath([[a.x,a.z],[b.x,b.z]],3.2,B.kind==='room'&&B.i===SNOWR||A.kind==='room'&&A.i===SNOWR?SNOWPATH:PATHC)}
+  // from the Welcome Gate up to the loop path
+  {const g=PIECES.byId.start.gate,A=R[n-1],B=R[0],a=S2W(0,A.zb,A,{}),b=S2W(0,B.zt,B,{});worldPath([[g[0],g[1]-0.4],[(a.x+b.x)/2,(a.z+b.z)/2]],3.2)}
+  // spokes: through each link's open inner side near the next place's entrance, then up the hill to the summit path
+  PIECES.spokes=[];
+  // (each spoke takes the first line across its link, a few metres before the entrance, that nothing stands on)
+  const clearAt=(L,z)=>!colliders.some(c=>{if((c.pc||pieceOfS(c.minZ!=null?(c.minZ+c.maxZ)/2:c.z).id)!==L.id||c.dyn||!c.on)return false;if(c.t==='circ')return c.x<0.5&&c.x>-X_IN-1&&Math.abs(c.z-z)<c.r+1.75;if(c.t==='box'||c.t==='wbox')return c.maxX>-X_IN-1&&c.minX<0.5&&c.maxZ>z-1.75&&c.minZ<z+1.75;return false});
+  // (if the link before a place has no clear line, the spoke leaves from the link after it instead)
+  const DS=[4.4,5,3.6,6.4,7.8,2.9,2.3,9.2,10.6,12,13.5,15,16.5,18];
+  for(let r=1;r<NR;r++){let L=PIECES.byId['l'+(r-1)],zs=null;{const d=DS.find(d=>clearAt(L,z0s[r]+d));if(d!=null)zs=z0s[r]+d}
+    if(zs==null){const L2=PIECES.byId['l'+(r<NR-1?r:0)],top=L2.zt,d=DS.find(d=>clearAt(L2,top-d));if(d!=null){L=L2;zs=top-d}else zs=z0s[r]+2.3}
+    BCTX=L.id;paths([[[-1.6,zs],[-X_IN-0.4,zs]]],3,0,r===SNOWR?SNOWPATH:PATHC);BCTX=null;
+    const a=S2W(-X_IN-0.4,zs,L,{}),H=HILLWALK,cx=Math.max(H.x0,Math.min(H.x1,a.x*0.25)),cz=Math.max(H.z0,Math.min(H.z1,a.z*0.25));
+    // aim at the nearest point of the summit path, entering square to its edge
+    let ex=a.x,ez=a.z;const k=Math.min(Math.abs(H.x1/(a.x||1e-6)),Math.abs(H.z1/(a.z||1e-6)));ex=a.x*k;ez=a.z*k;ex=Math.max(H.x0,Math.min(H.x1,ex));ez=Math.max(H.z0,Math.min(H.z1,ez));
+    worldPath([[a.x,a.z],[ex,ez]],3);PIECES.spokes.push({r,L:L.id,zs,a:[a.x,a.z],b:[ex,ez]})}
+  {const H=HILLWALK;worldPath([[H.x0,H.z0],[H.x1,H.z0],[H.x1,H.z1],[H.x0,H.z1],[H.x0,H.z0]],3,0xe8dcb4)}
+})();
+// trees in world coordinates (the hill, the meadow and the gaps between pieces)
+function addTreeW(x,z,o){o=o||{};const base=hillY(x,z),s=o.s||(0.9+RS()*0.7),type=o.type||(RS()<0.55?'round':'pine');
+  INST.trunk.push({x,y:base+(type==='pine'?0.75:1.0)*s,z,s,sy:s*(type==='pine'?1:1.4),ry:RS()*6,w:1});
+  if(type==='pine')INST.pine.push({x,y:base+2.55*s,z,s,c:pick(PINEC),ry:RS()*6,w:1});
+  else{const c=o.c||pick(type==='blossom'?BLOSC:LEAFC),cs=s;INST.crown.push({x,y:base+3.1*s,z,s:cs*1.3,c,ry:RS()*6,w:1},{x:x+0.6*s,y:base+2.8*s,z:z+0.35*s,s:cs*0.9,c,ry:RS()*6,w:1},{x:x-0.5*s,y:base+3.6*s,z:z-0.3*s,s:cs*0.85,c,ry:RS()*6,w:1})}
+  INST.blob.push({x,y:base+0.036,z,s:1.35*s,ry:RS()*6,w:1});COLW.push({t:'circ',x,z,r:0.32*s,on:true});wReserve(x,z,1.3*s)}
+/* ---------- the wild ground between the gardens ----------
+   woods, bushes, flowers and long grass on the island's wild ground: each place's and link's margins (outside its
+   garden, out to the coast and in to the hill), the gaps between pieces, the meadow round the hill and the hill itself */
+{const q={},SUM={x0:-36,x1:36,z0:-62,z1:64};
+ // a random wild spot: in a piece's margins it answers in that piece's strip coordinates, elsewhere in world coordinates
+ const spot=m=>{for(let t=0;t<40;t++){const x=-235+RS()*470,z=-235+RS()*560;if(!onIsland(x,z,m))continue;
+     if(x>SUM.x0&&x<SUM.x1&&z>SUM.z0&&z<SUM.z1)continue;   // the summit is kept for the launch pad and the Summit Garden
+     const P=pieceAtW(x,z,0);
+     if(P){W2S(x,z,P,q);const gx=P.kind==='start'?(q.z>0.6?0:AW+0.6):AW+0.6;if(Math.abs(q.x)<gx)continue;if(onWalk(q.x,q.z,1.2)||inWater(q.x,q.z,1))continue;return{P,x:q.x,z:q.z}}
+     if(!wFree(x,z,1))continue;if(pieceAtW(x,z,2.5))continue;return{P:null,x,z}}return null};
+ const free=(s,m)=>s.P?isFree(s.x,s.z,m):wFree(s.x,s.z,m),snowy=s=>s.P&&s.P.ring?snowAmt(s.z):0;
+ for(let n=0;n<560;n++){const s=spot(3.2);if(!s||!free(s,1.6))continue;const type=RS()<0.12?'blossom':RS()<0.35?'pine':'round',sz=0.9+RS()*0.8;
+   if(s.P){if(snowy(s)>0.4)snowPine(s.x,s.z,0.9+RS()*0.7);else addTree(s.x,s.z,{type,s:sz})}else addTreeW(s.x,s.z,{type,s:sz})}
  TREES.filter(T=>Math.abs(T.x)<3.2&&T.z>ISL_N-10&&T.z<ISL_N+16).forEach(T=>{T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}const i=TREES.indexOf(T);if(i>=0)TREES.splice(i,1)});
- for(let n=0;n<520;n++){const q=spot(2.2);if(!q||!isFree(q[0],q[1],0.8))continue;const s=0.7+RS()*0.7;addBush(q[0],q[1],s,snowAmt(q[1])>0.4?0x6f8f7f:undefined);reserve(q[0],q[1],0.9*s)}
- for(let n=0;n<300;n++){const q=spot(2.5);if(!q||snowAmt(q[1])>0.3||!isFree(q[0],q[1],-0.4))continue;flowersAt(q[0],q[1],4,0.6)}
- for(let n=0;n<11000;n++){const q=spot(1.6);if(!q||RS()<snowAmt(q[1])||!isFree(q[0],q[1],-0.6))continue;INST.grass.push({x:q[0],y:0,z:q[1],s:0.8+RS()*0.6,ry:RS()*6,c:pick(GRASSC)})}
- // rocks along the waterline, half in the sea
- for(let z=ISL_N;z>ISL_S;z-=1.9)for(const side of [-1,1]){const w=coastX(side,z);if(w<1)continue;const x=side*(w+(RS()-0.65)*2.6);if(RS()<0.35||Math.abs(x)<AW+1&&z<z0s[0]&&z>zF0-FIN)continue;if(RIVERS.some(r=>Math.abs(z-r.c)<r.hw+0.5))continue;
-   const s=0.5+RS()*1.1;INST.rock.push({x,y:-0.05,z,s,sy:s*0.6,ry:RS()*6,c:pick(snowAmt(z)>0.4?[0xdfe6ec,0xc9d2d9]:[0xa9a59c,0xb9b4a8,0x9a968c,0x8a8478])})}
- // surf you can hear all round the island
- SNDS.push({k:'sea',fn:(x,z)=>{const zz=Math.max(ISL_S,Math.min(ISL_N,z)),sd=x<0?-1:1;return[sd*coastX(sd,zz),zz]}})}
+ for(let n=0;n<700;n++){const s=spot(2.2);if(!s||!free(s,0.8))continue;const sc=0.7+RS()*0.7;
+   if(s.P){addBush(s.x,s.z,sc,snowy(s)>0.4?0x6f8f7f:undefined);reserve(s.x,s.z,0.9*sc)}else{const g=hillY(s.x,s.z);INST.bush.push({x:s.x,y:g+0.42*sc,z:s.z,s:sc,sy:sc*0.78,c:pick(LEAFC),ry:RS()*6,w:1});INST.blob.push({x:s.x,y:g+0.037,z:s.z,s:sc,ry:RS()*6,w:1});wReserve(s.x,s.z,0.9*sc)}}
+ for(let n=0;n<420;n++){const s=spot(2.5);if(!s||snowy(s)>0.3||!free(s,-0.4))continue;
+   if(s.P)flowersAt(s.x,s.z,4,0.6);else for(let i=0;i<4;i++){const a=RS()*6.28,d=Math.sqrt(RS())*0.6,fx=s.x+Math.cos(a)*d,fz=s.z+Math.sin(a)*d,b=hillY(fx,fz),h=0.2+RS()*0.16;
+     INST.flower.push({x:fx,y:b+h,z:fz,s:0.8+RS()*0.5,c:pick(FLOWC),ry:RS()*6,rx:(RS()-0.5)*0.4,w:1});INST.stem.push({x:fx,y:b,z:fz,s:1,sy:h,w:1})}}
+ for(let n=0;n<15000;n++){const s=spot(1.6);if(!s||RS()<snowy(s)||!free(s,-0.6))continue;
+   if(s.P)INST.grass.push({x:s.x,y:0,z:s.z,s:0.8+RS()*0.6,ry:RS()*6,c:pick(GRASSC)});else INST.grass.push({x:s.x,y:hillY(s.x,s.z),z:s.z,s:0.8+RS()*0.6,ry:RS()*6,c:pick(GRASSC),w:1})}
+ // rocks along the waterline, half in the sea (not across a river mouth, nor in the beach's own bay)
+ for(let j=0;j<IG.nz;j+=1)for(let i=0;i<IG.nx;i+=1){const k=j*IG.nx+i,d=IG.d[k];if(d<-0.6||d>0.6||RS()>0.32)continue;const x=IG.x0+i+(RS()-0.5),z=IG.z0+j+(RS()-0.5);
+   const P=nearPieceW(x,z,q);if(P.P.ring&&q.x<AW+1&&q.x>-X_IN)continue;if(P.P.kind==='link'&&RIVERS.some(r=>Math.abs(q.z-r.c)<r.hw+1.5))continue;
+   const sn=P.P.ring?snowAmt(q.z):0,sc=0.5+RS()*1.1;INST.rock.push({x,y:-0.05,z,s:sc,sy:sc*0.6,ry:RS()*6,c:pick(sn>0.4?[0xdfe6ec,0xc9d2d9]:[0xa9a59c,0xb9b4a8,0x9a968c,0x8a8478]),w:1})}
+ // surf you can hear all round the island: the nearest bit of shore to you (worked out in the world, answered in the
+ // strip coordinates of the piece you are in, like every other sound)
+ SNDS.push({k:'sea',fn:(x,z)=>{const P=LP.P||PIECES.byId.start,w=S2W(x,z,P,{});let bx=w.x,bz=w.z+60,bd=1e9;
+   for(let a=0;a<24;a++){const ca=Math.cos(a/24*Math.PI*2),sa=Math.sin(a/24*Math.PI*2);for(let r=2;r<70;r+=3){if(shoreDW(w.x+ca*r,w.z+sa*r)>0){if(r<bd){bd=r;bx=w.x+ca*r;bz=w.z+sa*r}break}}}
+   const l=W2S(bx,bz,P,{});return[l.x,l.z]}})}
 
 clearTreesFromPanels();
 // inside the castle walls there is no grass, no bushes, no trees and no flowers
@@ -3970,6 +4154,9 @@ function rockGeo(ws,hs){const g=new THREE.SphereGeometry(0.5,ws,hs),p=g.attribut
 
 // each list is split into small spatial chunks. every chunk has one instanced mesh per detail level, all sharing the
 // same per-instance data; only the level that suits the chunk's distance from the camera is shown
+// the scattered plants and rocks were placed in strip coordinates: move each one to the world before they are instanced
+// (in world cells, so a cell far away can be hidden as a whole)
+{const q={};Object.values(INST).forEach(list=>list.forEach(o=>{if(o.w)return;const P=pieceOfS(o.z);S2W(o.x,o.z,P,q);o.x=q.x;o.z=q.z;o.y=(o.y||0)+P.y;o.ry=(o.ry||0)+P.phi;o.w=1}))}
 const LODS=[];let lodScale=1;
 function buildLOD(levels,list,cs,tag){if(!list.length)return;cs=cs||40;
   levels.forEach(l=>{if(!l.geo.boundingSphere)l.geo.computeBoundingSphere()});
@@ -3981,8 +4168,8 @@ function buildLOD(levels,list,cs,tag){if(!list.length)return;cs=cs||40;
     const mA=new THREE.InstancedBufferAttribute(new Float32Array(n*16),16),hasC=items[0].c!=null,cA=hasC?new THREE.InstancedBufferAttribute(new Float32Array(n*3),3):null;
     items.forEach((o,i)=>{e.set(o.rx||0,o.ry||0,0);q.setFromEuler(e);v.set(o.x,o.y,o.z);s.set(o.sx||o.s,o.sy||o.s,o.sz||o.s);m4.compose(v,q,s);m4.toArray(mA.array,i*16);if(hasC){c.set(o.c).convertSRGBToLinear();cA.setXYZ(i,c.r,c.g,c.b)}});
     const meshes=levels.map(l=>{const g=new THREE.BufferGeometry();g.index=l.geo.index;g.attributes=l.geo.attributes;g.boundingSphere=sphere;
-      const im=new THREE.InstancedMesh(g,l.mat,n);im.instanceMatrix=mA;if(cA)im.instanceColor=cA;im.castShadow=!!l.shadow;im.receiveShadow=l.recv!==false;if(l.depth)im.customDepthMaterial=l.depth;if(l.order)im.renderOrder=l.order;im.visible=false;scene.add(im);return im});
-    LODS.push({c:sphere.center,r:rad,meshes,ds:levels.map(l=>l.d),n,tag,level:-2})});
+      const im=new THREE.InstancedMesh(g,l.mat,n);im.instanceMatrix=mA;if(cA)im.instanceColor=cA;im.castShadow=!!l.shadow;im.receiveShadow=l.recv!==false;if(l.depth)im.customDepthMaterial=l.depth;if(l.order)im.renderOrder=l.order;im.visible=false;im.userData.world=1;scene.add(im);return im});
+    LODS.push({c:sphere.center,r:rad,meshes,ds:levels.map(l=>l.d),n,tag,level:-2,world:1})});
 }
 function updateLOD(force){const cp=camera.position;for(const L of LODS){const d=Math.max(0,Math.hypot(L.c.x-cp.x,L.c.z-cp.z)-L.r);let lv=-1;
   for(let i=0;i<L.ds.length;i++)if(d<L.ds[i]*lodScale){lv=i;break}
@@ -4063,8 +4250,8 @@ scene.traverse(o=>{if(o.isMesh&&(o.material===matWater||o.userData.water)){const
 function waterY(x,z){for(const w of WSURF){if(x<w.minX||x>w.maxX||z<w.minZ||z>w.maxZ)continue;
   if(w.circ){const cx=(w.minX+w.maxX)/2,cz=(w.minZ+w.maxZ)/2,rx=(w.maxX-w.minX)/2,rz=(w.maxZ-w.minZ)/2;if(((x-cx)/rx)**2+((z-cz)/rz)**2>0.92)continue}return w.y}return null}
 const RIP={pool:[],i:0};{const g=new THREE.RingGeometry(0.8,1,56);g.rotateX(-Math.PI/2);
-  for(let i=0;i<80;i++){const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xeaf6ff,transparent:true,opacity:0,depthWrite:false}));m.visible=false;m.renderOrder=4;scene.add(m);RIP.pool.push({m,t:1,life:1,size:1})}}
-function ripple(x,y,z,size,life){if(!RIP.pool.length)return;const r=RIP.pool[RIP.i++%RIP.pool.length];r.m.position.set(x,y+0.006,z);r.t=0;r.life=life||1.8;r.size=size||0.8;r.m.visible=true}
+  for(let i=0;i<80;i++){const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0xeaf6ff,transparent:true,opacity:0,depthWrite:false}));m.visible=false;m.renderOrder=4;m.userData.world=1;scene.add(m);RIP.pool.push({m,t:1,life:1,size:1})}}
+const _rp={};function ripple(x,y,z,size,life){if(!RIP.pool.length)return;const r=RIP.pool[RIP.i++%RIP.pool.length];S2W(x,z,null,_rp);r.m.position.set(_rp.x,y+_rp.y+0.006,_rp.z);r.t=0;r.life=life||1.8;r.size=size||0.8;r.m.visible=true}
 anims.push((t,dt)=>{
   for(let k=Math.random()<(dt*40)%1?1:0,n=Math.floor(dt*40)+k;n>0;n--){const x=px+(Math.random()-0.5)*60,z=pz+(Math.random()-0.5)*60,y=waterY(x,z);if(y!=null)ripple(x,y,z,0.3+Math.random()*0.6,1.4+Math.random()*1.2)}
   for(const r of RIPPLERS){const o=r.o;if((o.x-px)**2+(o.z-pz)**2>2500)continue;r.t=(r.t||0)-dt;if(r.lx===undefined){r.lx=o.x;r.lz=o.z}
@@ -4116,7 +4303,7 @@ function owlRoute(A,B,nA,nB){const bin=p=>OWLB.find(b=>b.inside(p.x,p.z)),ba=bin
    payload fairing. it stands on a concrete pad with a flame trench, a launch mount with hold-down clamps, a lattice
    strongback that tilts away before launch, and four lightning masts. when you walk into Finish Meadow a countdown
    starts on the board by the fountain; at zero the engines light, smoke boils out of the trench, and it climbs away */
-const ROCKET=(()=>{const zp=zF0-44,H=46,R=1.2,RF=1.71,M0=1.25,S={zp,M0,state:'idle',t:0,y:0,vy:0,dz:0,pitch:0};
+BCTX='fin';const ROCKET=(()=>{const zp=zF0-44,H=46,R=1.2,RF=1.71,M0=1.25,S={zp,M0,state:'idle',t:0,y:0,vy:0,dz:0,pitch:0};
   const mat=(c,r,m,o)=>new THREE.MeshStandardMaterial(Object.assign({color:lin(c),roughness:r,metalness:m||0},o||{}));
   const WHITE=mat(0xf3f4f5,0.35,0.05),BLACK=mat(0x1b1d20,0.55,0.1),GREY=mat(0x3a3d42,0.5,0.3),STEEL=mat(0x8a9097,0.35,0.7),SOOT=mat(0x5c5c5a,0.8,0.1),CONC=mat(0xb9b6ae,0.92);
   const g=new THREE.Group();g.position.set(0,M0,zp);scene.add(g);S.g=g;const add=(geo,m,x,y,z,p)=>{const o=new THREE.Mesh(geo,m);o.position.set(x||0,y||0,z||0);o.castShadow=o.receiveShadow=true;(p||g).add(o);return o};
@@ -4178,7 +4365,7 @@ const ROCKET=(()=>{const zp=zF0-44,H=46,R=1.2,RF=1.71,M0=1.25,S={zp,M0,state:'id
    {const px0=bx+2.4,pz0=bz+0.5;mesh(lathe([[0.32,0],[0.32,0.1],[0.22,0.16],[0.18,0.9],[0.26,1.0],[0.26,1.06],[0,1.06]],32),0xd9cfb8,px0,0,pz0);mesh(new _G.Cyl(0.19,0.21,0.06,28),0x2b3a42,px0,1.09,pz0);
     const btn=new THREE.Mesh(new _G.Sph(0.15,24,14,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:lin(0xe8302a),emissive:lin(0x8a0a08),emissiveIntensity:0.6,roughness:0.3}));btn.position.set(px0,1.11,pz0);btn.scale.y=0.55;btn.castShadow=true;scene.add(btn);colCirc(px0,pz0,0.35);S.button={x:px0,z:pz0,m:btn}}
    const bd=new THREE.Mesh(new THREE.PlaneGeometry(2.36,1.18),new THREE.MeshBasicMaterial({map:S.board,toneMapped:false}));bd.position.set(bx,2.3,bz+0.06);scene.add(bd);colCirc(bx,bz,1.2)}
-  return S})();
+  return S})();BCTX=null;
 // the launch: a deep thump and a rushing whoosh as the engines light, then an enormous rough roar (long brown noise, so it
 // never loops or clicks) that darkens and fades as the rocket climbs away, with the crackle of the exhaust over it
 function rocketSound(){if(!AMB.ready||muted)return;const t=AC.currentTime,sr=AC.sampleRate,o=shotOut(0.8,0,t);
@@ -4223,7 +4410,7 @@ buildOwlHeights();
   scene.updateMatrixWorld(true);const buckets=new Map(),wp=new THREE.Vector3();
   scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||!o.userData.st)return;for(let a=o.parent;a&&a!==scene;a=a.parent)if(!a.userData.st)return;
     const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();const ws=new THREE.Vector3();o.getWorldScale(ws);const small=g.boundingSphere.radius*Math.max(ws.x,ws.y,ws.z)<0.42;
-    o.getWorldPosition(wp);const key=o.material.uuid+'|'+(o.castShadow?1:0)+'|'+Math.floor(wp.z/44)+(small?'|s'+Math.floor(wp.x/30):'');let b=buckets.get(key);if(!b)buckets.set(key,b=[]);b.small=small;b.push(o)});
+    o.getWorldPosition(wp);let top=o;while(top.parent&&top.parent!==scene)top=top.parent;const pc=top.userData.pc||pieceOfS(wp.z).id;const key=o.material.uuid+'|'+(o.castShadow?1:0)+'|'+pc+'|'+Math.floor(wp.z/44)+(small?'|s'+Math.floor(wp.x/30):'');let b=buckets.get(key);if(!b)buckets.set(key,b=[]);b.small=small;b.pc=pc;b.push(o)});
   const v=new THREE.Vector3(),nm=new THREE.Matrix3();
   buckets.forEach(list=>{if(list.length<2&&!list.small)return;let nv=0,ni=0;list.forEach(o=>{const g=o.geometry;nv+=g.attributes.position.count;ni+=g.index?g.index.count:g.attributes.position.count});
     const P=new Float32Array(nv*3),N=new Float32Array(nv*3),U=new Float32Array(nv*2),I=new Uint32Array(ni),hasC=!!list[0].material.vertexColors,Cl=hasC?new Float32Array(nv*3).fill(1):null;let vo=0,io=0;   // vertex colours are kept too
@@ -4233,7 +4420,7 @@ buildOwlHeights();
       if(g.index)for(let i=0;i<g.index.count;i++)I[io++]=g.index.getX(i)+vo;else for(let i=0;i<pa.count;i++)I[io++]=i+vo;
       vo+=pa.count;o.parent.remove(o)});
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(P,3));g.setAttribute('normal',new THREE.BufferAttribute(N,3));g.setAttribute('uv',new THREE.BufferAttribute(U,2));if(hasC)g.setAttribute('color',new THREE.BufferAttribute(Cl,3));g.setIndex(new THREE.BufferAttribute(I,1));g.computeBoundingSphere();
-    const m=new THREE.Mesh(g,list[0].material);m.castShadow=list[0].castShadow;m.receiveShadow=true;scene.add(m);
+    const m=new THREE.Mesh(g,list[0].material);m.castShadow=list[0].castShadow;m.receiveShadow=true;m.userData.pc=list.pc;scene.add(m);
     if(list.small)LODS.push({c:g.boundingSphere.center,r:g.boundingSphere.radius,meshes:[m],ds:[90],n:1,level:-2})});
 })();
 updateLOD(true);
@@ -4242,9 +4429,9 @@ updateLOD(true);
 {const cg=new THREE.PlaneGeometry(0.12,0.2),cols=[0xffd23f,0xff6b57,0x5bb7e0,0x7cf29c,0xb48cff];const r=mulberry32(7);
  const cms=cols.map(c=>new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));for(let i=0;i<180;i++){const m=new THREE.Mesh(cg,cms[i%5]);m.position.set(-9+r()*18,r()*8,zF0-2-r()*(FIN-4));m.userData.v=0.6+r()*0.9;scene.add(m);confetti.push(m)}}
 const clouds=[];{const cm=new THREE.MeshLambertMaterial({color:0xffffff,emissive:lin(0x9aa8b4),fog:false}),cg=new THREE.SphereGeometry(1,24,16);clouds.mat=cm;
- for(let i=0;i<18;i++){const g=new THREE.Group();g.position.set(-250+RS()*500,55+RS()*25,40-RS()*(LEN+200));const n=9+Math.floor(RS()*6);
+ for(let i=0;i<18;i++){const g=new THREE.Group();g.position.set(-300+RS()*600,55+RS()*25,-320+RS()*700);const n=9+Math.floor(RS()*6);
    const parts=[];for(let k=0;k<n;k++){const e=1-Math.abs(k-n/2)/(n/2+1),s=2.2+RS()*1.5+4*e,pg=cg.clone();pg.scale(s*1.15,s*0.62,s*0.95);pg.translate((k-n/2)*2.6+RS()*1.5,s*0.35+RS()*0.8,RS()*5-2.5);parts.push(pg)}
-   g.add(new THREE.Mesh(mergeGeos(parts),cm));scene.add(g);clouds.push(g)}}
+   g.add(new THREE.Mesh(mergeGeos(parts),cm));g.userData.world=1;scene.add(g);clouds.push(g)}}
 
 const DAY_T0=performance.now()/1000,_ld=new THREE.Vector3(),_lc=new THREE.Color(),MOONC=lin(0xa8bcff);let dayClock='';
 function dayUpdate(){DAY.tod=DAY.fixed!=null?DAY.fixed:(0.354+(performance.now()/1000-DAY_T0)/DAYLEN)%1;const sd=sunAt(DAY.tod,DAY.sunDir),s=sd.y;DAY.s=s;
@@ -4261,7 +4448,7 @@ function dayUpdate(){DAY.tod=DAY.fixed!=null?DAY.fixed:(0.354+(performance.now()
   const hm=Math.floor(DAY.tod*24*60),hh=Math.floor(hm/60),mm=hm%60,txt=(s>-0.03?'☀ ':'☾ ')+((hh+11)%12+1)+':'+String(mm).padStart(2,'0')+(hh<12?' am':' pm');if(txt!==dayClock){dayClock=txt;$('#clock').textContent=txt}}
 /* ---------- state ---------- */
 let mode='walk',started=false,active=null,aimed=null,aimedBench=null,aimedBtn=null,sitB=null,sitYaw=0,locked=false,lockWorked=false,lockFailed=false,isTouch=isTouchStart;
-let px=3.0,pz=ISL_N-0.8,ph=0,yaw=0,pitch=0,bob=0,celebrated=false,firstSolveTip=true;
+let px=S2W(3.0,ISL_N-0.8,PIECES.byId.start,{}).x,pz=S2W(3.0,ISL_N-0.8,PIECES.byId.start,{}).z,ph=0,yaw=0,pitch=0,bob=0,celebrated=false,firstSolveTip=true;
 const keys={},joy={x:0,y:0};
 const camFrom=new THREE.Vector3(),camTo=new THREE.Vector3();let camT=1,yawFrom=0,yawTo=0,pitchFrom=0;
 
@@ -4688,7 +4875,7 @@ const FW=(()=>{const N=5000,pos=new Float32Array(N*3).fill(-9999),col=new Float3
   g.setAttribute('position',new THREE.BufferAttribute(pos,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('color',new THREE.BufferAttribute(col,3).setUsage(THREE.DynamicDrawUsage));
   const tex=canvasTex(64,64,c=>{const gr=c.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,1)');gr.addColorStop(0.18,'rgba(255,255,255,0.85)');gr.addColorStop(0.5,'rgba(255,255,255,0.16)');gr.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=gr;c.fillRect(0,0,64,64)});
   const m=new THREE.PointsMaterial({size:3.4,map:tex,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true,fog:false,toneMapped:false});
-  const pts=new THREE.Points(g,m);pts.frustumCulled=false;pts.userData.noCull=1;pts.renderOrder=6;scene.add(pts);
+  const pts=new THREE.Points(g,m);pts.frustumCulled=false;pts.userData.noCull=1;pts.userData.world=1;pts.renderOrder=6;scene.add(pts);
   const P=[];for(let i=0;i<N;i++)P.push({life:0,max:1,vx:0,vy:0,vz:0,r:1,g:1,b:1,drag:0.98,grav:1,tw:0});return{pts,pos,col,P,g,N,shells:[],next:1,k:0}})();
 function fwSpawn(x,y,z,vx,vy,vz,c,life,drag,grav,tw){const F=FW;for(let n=0;n<F.N;n++){F.k=(F.k+1)%F.N;const p=F.P[F.k];if(p.life>0)continue;Object.assign(p,{life,max:life,vx,vy,vz,drag,grav,tw:tw||0,r:c[0],g:c[1],b:c[2]});F.pos[F.k*3]=x;F.pos[F.k*3+1]=y;F.pos[F.k*3+2]=z;return}}
 const FWC=[[1,0.25,0.2],[1,0.8,0.2],[0.3,0.6,1],[0.4,1,0.45],[1,0.4,0.9],[0.75,0.45,1],[1,1,1],[1,0.55,0.15]];
@@ -4700,8 +4887,9 @@ function fwBurst(s){const types=['peony','ring','willow','crackle'],ty=s.type,c1
   else{const n=ty==='willow'?190:ty==='crackle'?120:220;for(let i=0;i<n;i++){const u=Math.random()*2-1,a=Math.random()*Math.PI*2,r=Math.sqrt(1-u*u),v=(ty==='willow'?16:ty==='crackle'?19:22)*(0.85+Math.random()*0.3);
     const c=ty==='willow'?[1,0.72,0.28]:ty==='crackle'?[1,1,0.95]:(i%3?c1:c2);fwSpawn(s.x,s.y,s.z,Math.cos(a)*r*v,u*v,Math.sin(a)*r*v,c,ty==='willow'?3.4:ty==='crackle'?1.6:2.3,ty==='willow'?0.95:0.965,ty==='willow'?0.6:0.35,ty==='crackle'?1:0)}}
   for(let i=0;i<14;i++)fwSpawn(s.x,s.y,s.z,(Math.random()-0.5)*4,(Math.random()-0.5)*4,(Math.random()-0.5)*4,[1,1,0.9],0.25,0.9,0)}
-anims.push((t,dt)=>{const F=FW,inFin=!MENU.open&&started&&pz<zF0+1;
-  if(inFin&&(F.next-=dt)<=0){F.next=0.35+Math.random()*0.9;let x,z;if(Math.random()<0.6){x=(Math.random()-0.5)*80;z=ISL_S-6-Math.random()*28}else{const sd=Math.random()<0.5?-1:1;z=zF0-8-Math.random()*(zF0-ISL_S);x=sd*(coastX(sd,z)+14+Math.random()*25)}
+// (world coordinates: shells go up from boats out at sea all round the island while you are on the hilltop)
+animsW.push((t,dt)=>{const F=FW,inFin=!MENU.open&&started&&LP.P===PIECES.byId.fin&&LP.z<zF0+1;
+  if(inFin&&(F.next-=dt)<=0){F.next=0.35+Math.random()*0.9;let x,z;for(let tr=0;tr<12;tr++){const a=Math.random()*Math.PI*2,r=245+Math.random()*45;x=Math.sin(a)*r;z=Math.cos(a)*r;if(shoreDW(x,z)>20)break}
     F.shells.push({x,y:0.1,z,vy:30+Math.random()*7,vx:(Math.random()-0.5)*2,vz:(Math.random()-0.5)*2,type:['peony','peony','ring','willow','crackle'][Math.floor(Math.random()*5)],tt:0});fwSound('launch',x,0,z)}
   for(let i=F.shells.length-1;i>=0;i--){const s=F.shells[i];s.vy-=9.8*dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.z+=s.vz*dt;if((s.tt-=dt)<=0){s.tt=0.018;fwSpawn(s.x,s.y,s.z,(Math.random()-0.5)*1.2,-1-Math.random(),(Math.random()-0.5)*1.2,[1,0.75,0.4],0.45+Math.random()*0.3,0.97,0.2)}
     if(s.vy<5||s.y>78){fwBurst(s);F.shells.splice(i,1)}}
@@ -4845,7 +5033,9 @@ const near2=(m,r)=>{const dx=m.position.x-camera.position.x,dz=m.position.z-came
 const WVC=[[1.0,0.35,13.0,0.12,1.1],[1.0,-0.2,9.0,0.09,0.0],[0.7,-0.65,5.3,0.055,1.7],[0.85,0.75,3.1,0.035,4.1],[-0.3,1.0,2.4,0.022,3.3],[0.95,0.25,1.7,0.016,2.3],[0.2,-1.0,1.15,0.01,5.2],[-0.8,0.6,0.8,0.006,0.9]]
   .map(([dx,dz,L,A,ph])=>{const l=Math.hypot(dx,dz),k=6.2831853/L;return[dx/l,dz/l,k,Math.sqrt(9.8*k),A,ph]});
 function wvH(x,z,t){let h=0;for(const w of WVC)h+=w[4]*Math.sin((w[0]*x+w[1]*z)*w[2]-w[3]*t+w[5]);return h}
-function seaH(x,z){const t=U_TIME.value,G=4.5,i=Math.floor(x/G),j=Math.floor(z/G),u=x/G-i,v=z/G-j,f=(a,b)=>wvH(a*G,b*G,t)*0.55;
+// the sea's height at a point (strip coordinates of whatever is floating; the waves themselves are worked out in the world)
+const _sh={};function seaH(x,z){S2W(x,z,null,_sh);return seaHW(_sh.x,_sh.z)}
+function seaHW(x,z){const t=U_TIME.value,G=4.5,i=Math.floor(x/G),j=Math.floor(z/G),u=x/G-i,v=z/G-j,f=(a,b)=>wvH(a*G,b*G,t)*0.55;
   const h00=f(i,j),h10=f(i+1,j),h01=f(i,j+1),h11=f(i+1,j+1);return 0.07+(u+v<=1?h00+u*(h10-h00)+v*(h01-h00):h11+(1-u)*(h01-h11)+(1-v)*(h10-h11))}
 // Number Bond Beach, out in the deeper water: two pets on skimboards riding the swell, facing the beach with their arms
 // out for balance, gliding one way and then the other and rising and falling with the waves (each keeps to its own
@@ -5031,9 +5221,9 @@ anims.push(waveUpdate);
 /* ---------- the guide owl and the cable glow ----------
    a friendly owl perches on top of the next panel to solve; when you solve it, the owl flies off in a gentle arc to
    the next one. a warm glow runs along the yellow cable from the last solved panel to the next panel */
-const nextPanel=()=>{const P=placeAt(pz),here=P.k==='room'?AREA_OF_ROOM[P.r]:P.k==='gap'?AREA_OF_ROOM[P.r+1]:null;
+const nextPanel=()=>{const P=placeAt(),here=P.k==='room'?AREA_OF_ROOM[P.r]:P.k==='gap'?AREA_OF_ROOM[P.next]:P.k==='summit'?'summit':null;
   if(here){const a=PROG.area(here),q=a.puzzles.map(id=>PROG.panel(id)).find(p=>p&&!p.solved&&isPowered(p));if(q)return q}
-  let best=null,bd=1e9;for(const p of PANELS){if(p.solved||!isPowered(p))continue;const d=Math.hypot(p.pos.x-px,p.pos.z-pz);if(d<bd){bd=d;best=p}}return best};
+  let best=null,bd=1e9;for(const p of PANELS){if(p.solved||!isPowered(p))continue;const d=Math.hypot(p.wpos.x-WP.x,p.wpos.z-WP.z);if(d<bd){bd=d;best=p}}return best};
 // the guide owl, sculpted: an eagle-owl with a deep rounded body, streaked buff breast with fine bars, mottled brown back,
 // a big head with a pale facial disc (fine rings round each eye, a dark rim), pale brows and long ear tufts, glowing
 // orange eyes, a hooked dark beak, feathered legs with talons, and wings that fold against its flanks and open to fly
@@ -5104,7 +5294,8 @@ anims.push((t,dt)=>{if(!BRIDGE.set)return;const down=PROG.doorOpen('castle_drawb
   if(BRIDGE.t!==down){if(BRIDGE.moving!==down){BRIDGE.moving=down;if(down)gateSound('bridge',0,z0s[RI('castle')]-40.4,4.5)}const E=u=>u*u*(3-2*u);if(BRIDGE.u==null||Math.abs(E(BRIDGE.u)-BRIDGE.t)>1e-4)BRIDGE.u=BRIDGE.t;
     BRIDGE.u=down?Math.min(1,BRIDGE.u+dt/4.5):Math.max(0,BRIDGE.u-dt/2);BRIDGE.set(E(BRIDGE.u));if(BRIDGE.u===down)BRIDGE.moving=null}});
 anims.push((t,dt)=>{const O=OWL,np=nextPanel();
-  if(np!==O.target){const first=O.target===undefined;O.target=np;perchFor(np,O.B);O.yawTo=np?Math.atan2(np.normal.x,np.normal.z):0;
+  if(np!==O.target){const tp=np&&np.P?PGROUP[np.P.id]:PGROUP&&PGROUP.fin;if(tp&&O.g.parent!==tp){const op=O.g.parent,ophi=op&&op.userData.piece?PIECES.byId[op.userData.piece].phi:0;O.g.updateMatrixWorld();const w=trueWorld(O.g,new THREE.Vector3());tp.add(O.g);tp.updateMatrixWorld(true);tp.worldToLocal(w);O.g.position.copy(w);O.yaw+=ophi-PIECES.byId[tp.userData.piece].phi}
+    const first=O.target===undefined;O.target=np;perchFor(np,O.B);O.yawTo=np?Math.atan2(np.normal.x,np.normal.z):0;
     if(first){O.g.position.copy(O.B);O.yaw=O.yawTo}else{O.A.copy(O.g.position);const prev=PANELS[PANELS.indexOf(np)-1]||PANELS.filter(p=>p.solved).pop(),pts=owlRoute(O.A,O.B,prev&&prev.normal,np&&np.normal);O.curve=pts.length>2?new THREE.CatmullRomCurve3(pts,false,'centripetal'):new THREE.LineCurve3(pts[0],pts[pts.length-1]);
       O.t=0;O.dur=Math.min(18,Math.max(1.8,O.curve.getLength()/6.5));O.fly=true}}
   if(O.fly){O.t=Math.min(1,O.t+dt/O.dur);const k=O.t*O.t*(3-2*O.t),u=1-k;
@@ -5126,14 +5317,14 @@ anims.push((t,dt)=>{const O=OWL,np=nextPanel();
 // cable glow: bright pulses that travel along the cable into the next panel
 const GLOW=(()=>{const cv=document.createElement('canvas');cv.width=cv.height=64;const c=cv.getContext('2d'),gr=c.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,235,1)');gr.addColorStop(0.25,'rgba(255,225,110,0.85)');gr.addColorStop(1,'rgba(255,200,40,0)');c.fillStyle=gr;c.fillRect(0,0,64,64);
   const mat=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),color:0xffffff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,fog:false});
-  const pool=[];for(let i=0;i<48;i++){const s=new THREE.Sprite(mat);s.visible=false;s.renderOrder=2;scene.add(s);pool.push(s)}return{pool,pts:null,cum:null,len:0}})();
+  const pool=[];for(let i=0;i<48;i++){const s=new THREE.Sprite(mat);s.visible=false;s.renderOrder=2;s.userData.world=1;scene.add(s);pool.push(s)}return{pool,pts:null,cum:null,len:0}})();
 anims.push((t,dt)=>{const np=nextPanel(),pl=np?ROOMS[np.room]||SUMMIT:null,pts=pl&&pl.legPts?pl.legPts[np.ri]:null;   // leg i runs from the panel before (or the entrance) into panel i
   if(pts!==GLOW.pts){GLOW.pts=pts;GLOW.cum=[0];if(pts)for(let i=1;i<pts.length;i++)GLOW.cum.push(GLOW.cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));GLOW.len=pts?GLOW.cum[GLOW.cum.length-1]:0}
   const P=GLOW.pool;let used=0;
   if(pts&&GLOW.len>0.5&&started){const SP=9,n=Math.max(1,Math.min(12,Math.ceil(GLOW.len/SP))),head=(t*4.5)%(n*SP);
     for(let q=0;q<n;q++)for(let tr=0;tr<4;tr++){let d=head-q*SP-tr*0.32;if(d<0)d+=n*SP;if(d>GLOW.len||used>=P.length)continue;
       let i=1;while(i<GLOW.cum.length-1&&GLOW.cum[i]<d)i++;const a=pts[i-1],b=pts[i],sl=GLOW.cum[i]-GLOW.cum[i-1]||1,f=(d-GLOW.cum[i-1])/sl,x=a[0]+(b[0]-a[0])*f,z=a[1]+(b[1]-a[1])*f;
-      const s=P[used++];s.visible=true;s.position.set(x,heightAt(x,z)+0.1,z);const k=(1-tr*0.22)*(0.85+0.15*Math.sin(t*9+q));s.scale.set(0.75*k,0.75*k,1);s.material.opacity=1}}
+      const s=P[used++];s.visible=true;const w=S2W(x,z,null,_rp);s.position.set(w.x,heightAt(x,z)+w.y+0.1,w.z);const k=(1-tr*0.22)*(0.85+0.15*Math.sin(t*9+q));s.scale.set(0.75*k,0.75*k,1);s.material.opacity=1}}
   for(let i=used;i<P.length;i++)P[i].visible=false});
 
 /* ---------- ambient sound: noises come from the things around you, quieter the further away they are ----------
@@ -5345,13 +5536,18 @@ function openEntr(r,instant){const g=ENTR[r];if(!g||g.open)return;openG(g,instan
 function closeGate(r){closeG(gates[r]);closeG(ENTR[r])}
 function roomDone(r){return PROG.isComplete(AREA_OF_ROOM[r])}
 
-function placeAt(z){if(z>0.6)return{k:'road'};if(z<zF0)return{k:'fin'};
-  for(let r=0;r<NR;r++){if(z>z0s[r]-AREA)return{k:'room',r};if(r<NR-1&&z>z0s[r+1])return{k:'gap',r}}return{k:'fin'}}
+// where you are, from the piece you are in: the landing beach, a place, a link between two places, or Meridian Hill
+// (with the Summit Garden at its top). in a gap between two pieces it names the nearest one
+function placeAt(){const P=LP.P;if(!P)return{k:'road'};
+  if(P.kind==='start')return LP.z>0.6?{k:'road'}:{k:'room',r:0};
+  if(P.kind==='fin')return LP.z<SUMMIT.z0+0.5&&Math.abs(LP.x)<22?{k:'summit'}:{k:'fin'};
+  if(P.kind==='room')return{k:'room',r:P.i};return{k:'gap',r:P.i,next:P.i<NR-1?P.i+1:1}}
 function updateHud(){
-  const P=placeAt(pz);let name,topic,list,key;
-  if(P.k==='road'){name='Number Grove';topic='Walk up the path to the Welcome Garden';list=ROOMS[0].list;key='0'}
-  else if(P.k==='fin'){name='Finish Meadow';topic='Every gate is open';list=ROOMS.map((_,r)=>({solved:roomDone(r)}));key='f'}
-  else if(P.k==='gap'){name=CONN[P.r].name;topic='On the way to '+ROOMS[P.r+1].name;list=ROOMS[P.r+1].list;key=String(P.r+1)}
+  playerLogic(px,pz);const P=placeAt();let name,topic,list,key;
+  if(P.k==='road'){name='Prime Meridian';topic='Walk up the path to the Welcome Garden';list=ROOMS[0].list;key='0'}
+  else if(P.k==='fin'){name='Meridian Hill';topic=PROG.endgame()?'The launch gate is open':PROG.doneCount()+' of 9 places complete · 6 open the launch';list=ROOMS.slice(1).map((_,r)=>({solved:roomDone(r+1)}));key='f'}
+  else if(P.k==='summit'){name='Summit Garden';topic='Advanced challenges';list=SUMMIT.list;key='s'}
+  else if(P.k==='gap'){name=CONN[P.r].name;topic='On the way to '+ROOMS[P.next].name;list=ROOMS[P.next].list;key=String(P.next)}
   else{name=ROOMS[P.r].name;topic=ROOMS[P.r].topic;list=ROOMS[P.r].list;key=String(P.r)}
   $('#roomName').textContent=name;$('#roomTopic').textContent=topic;
   const pips=$('#pips');
@@ -5370,8 +5566,8 @@ function enterSolve(p){
   if(!isPowered(p)){toast('This panel has no power yet. Follow the cable from the last panel you solved.','bad');return}
   mode='solve';active=p;aimed=null;
   if(document.pointerLockElement)document.exitPointerLock();
-  camFrom.copy(camera.position);const d=solveDist();camTo.set(p.pos.x+p.normal.x*d,p.pos.y,p.pos.z+p.normal.z*d);camT=0;
-  yawFrom=yaw;yawTo=Math.atan2(p.normal.x,p.normal.z);pitchFrom=pitch;
+  camFrom.copy(camera.position);const d=solveDist();camTo.set(p.wpos.x+p.wnormal.x*d,p.wpos.y,p.wpos.z+p.wnormal.z*d);camT=0;
+  yawFrom=yaw;yawTo=Math.atan2(p.wnormal.x,p.wnormal.z);pitchFrom=pitch;
   while(yawFrom-yawTo>Math.PI)yawFrom-=Math.PI*2;while(yawFrom-yawTo<-Math.PI)yawFrom+=Math.PI*2;
   $('#solvebar').hidden=false;$('#crosshair').hidden=true;$('#prompt').hidden=true;$('#lookHint').hidden=true;$('#joy').hidden=true;
   $('#solveTip').textContent=isTouch?'Press the big circle and drag to the rounded end.':'Click to start your line, move to trace, click again at the rounded end.';
@@ -5383,22 +5579,22 @@ function exitSolve(fromEsc){
   if(p&&!p.complete&&!p.flash){p.path=[];p.pend=null;p.atEnd=false}
   if(p){if(p.flash)p.flash='wrong';drawPanel(p)}
   drawing=false;tracing=false;canvas.style.cursor='';active=null;mode='walk';
-  px=camTo.x;pz=camTo.z;ph=heightAt(px,pz);yaw=yawTo;pitch=0;camT=1;
+  px=camTo.x;pz=camTo.z;ph=heightW(px,pz);yaw=yawTo;pitch=0;camT=1;
   $('#solvebar').hidden=true;$('#crosshair').hidden=false;$('#joy').hidden=!isTouch;
   // go straight back to mouse-look; only show the hint if the browser refuses
   if(!isTouch&&!lockFailed){if(fromEsc){pendingLock=true;setTimeout(()=>{if(pendingLock){pendingLock=false;requestLock()}},350)}else requestLock();
     setTimeout(()=>{if(mode==='walk'&&!locked&&started&&!lockFailed&&$('#help').hidden&&$('#done').hidden)$('#lookHint').hidden=false},1100)}
 }
 
-function sitDown(b){mode='sit';sitB=b;aimed=null;aimedBench=null;camFrom.copy(camera.position);camTo.set(b.x-b.n[0]*0.05,b.y+1.12,b.z-b.n[1]*0.05);camT=0;
-  sitYaw=Math.atan2(-b.n[0],-b.n[1]);yawFrom=yaw;while(yawFrom-sitYaw>Math.PI)yawFrom-=Math.PI*2;while(yawFrom-sitYaw<-Math.PI)yawFrom+=Math.PI*2;pitchFrom=pitch;yaw=sitYaw;pitch=-0.05;
+function sitDown(b){mode='sit';sitB=b;aimed=null;aimedBench=null;camFrom.copy(camera.position);const ph_=b.P.phi,nx=b.n[0]*Math.cos(ph_)+b.n[1]*Math.sin(ph_),nz=-b.n[0]*Math.sin(ph_)+b.n[1]*Math.cos(ph_);camTo.set(b.wx-nx*0.05,b.wy+1.12,b.wz-nz*0.05);camT=0;
+  sitYaw=Math.atan2(-nx,-nz);yawFrom=yaw;while(yawFrom-sitYaw>Math.PI)yawFrom-=Math.PI*2;while(yawFrom-sitYaw<-Math.PI)yawFrom+=Math.PI*2;pitchFrom=pitch;yaw=sitYaw;pitch=-0.05;
   $('#prompt').hidden=true;$('#sitbar').hidden=false;$('#joy').hidden=true;$('#sitbar').textContent=isTouch?'You are sitting down. Drag to look around, tap to stand up.':'You are sitting down. Look around, then press E or click to stand up.'}
 function standUp(){if(mode!=='sit')return;const b=sitB;
   // step clear of the bench (and anything else) so you can walk straight away
   const on=b.out||b.n;let sx=b.x+on[0]*1.35,sz=b.z+on[1]*1.35;
   search:for(const d of [1.35,1.7,2.1,2.6])for(const a of [0,0.5,-0.5,1,-1]){const ca=Math.cos(a),sa=Math.sin(a),nx=on[0]*ca-on[1]*sa,nz=on[0]*sa+on[1]*ca,tx=b.x+nx*d,tz=b.z+nz*d;
     if(!blocked(tx,tz,heightAt(tx,tz))){sx=tx;sz=tz;break search}}
-  px=sx;pz=sz;ph=heightAt(px,pz);mode='walk';sitB=null;$('#sitbar').hidden=true;$('#joy').hidden=!isTouch}
+  {const w=S2W(sx,sz,b.P,{});px=w.x;pz=w.z}ph=heightW(px,pz);mode='walk';sitB=null;$('#sitbar').hidden=true;$('#joy').hidden=!isTouch}
 let drawing=false,tracing=false,vg=null,lastG=null,pauseTip=true;
 // grid coordinates under the pointer. onPanel=true requires the pointer to be over the panel itself;
 // otherwise the panel's plane is used, so a trace keeps following even if the mouse slips off the edge
@@ -5408,7 +5604,7 @@ function gridPoint(e,onPanel){
   const rect=canvas.getBoundingClientRect(),v=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
   ray.setFromCamera(v,camera);const L=layout(active);
   if(onPanel){const hit=ray.intersectObject(active.face)[0];if(!hit)return null;return[(hit.uv.x*CW-L.ox)/L.sp,((1-hit.uv.y)*CH-L.oy)/L.sp]}
-  const f=active.face;f.updateMatrixWorld();_o.setFromMatrixPosition(f.matrixWorld);_pl.setFromNormalAndCoplanarPoint(active.normal,_o);
+  const f=active.face;f.updateMatrixWorld();_o.setFromMatrixPosition(f.matrixWorld);_pl.setFromNormalAndCoplanarPoint(active.wnormal,_o);
   if(!ray.ray.intersectPlane(_pl,_pt))return null;const l=f.worldToLocal(_pt);
   return[((l.x/PW+0.5)*CW-L.ox)/L.sp,((0.5-l.y/PH)*CH-L.oy)/L.sp];
 }
@@ -5680,7 +5876,7 @@ function resetProgress(){
   PANELS.forEach(p=>{p.solved=false;p.complete=false;p.path=[];p.pend=null;p.flash=null;p.atEnd=false});
   ROOMS.forEach((_,r)=>closeGate(r));OWL.fly=false;OWL.target=undefined;OWL.P.rotation.x=0;OWL.head.rotation.x=0;OWL.open.forEach(w=>w.sh.visible=false);OWL.wings.forEach(w=>w.visible=true);
   rocketReset();
-  px=3.0;pz=ISL_N-0.8;ph=0;yaw=0;pitch=0;celebrated=false;refreshWorld();updateHud();
+  goToStart();celebrated=false;refreshWorld();updateHud();
 }
 $('#helpReset').addEventListener('click',()=>{if(mode==='solve')exitSolve();resetProgress();$('#help').hidden=true;toast('Fresh start. Good luck!')});
 /* ---------- main menu ----------
@@ -5690,7 +5886,8 @@ const MENU={open:true,t:0};
 const DIFF={castle:1,windmill:1,adding:2,times:2,oddeven:3,snow:3,glass:4,match:4,beach:5};
 function firstOpen(){let r=0;while(r<NR&&roomDone(r))r++;return r}
 const placeOpen=r=>PROG.areaOpen(AREA_OF_ROOM[r]);
-function goToPlace(r){px=0;pz=z0s[r]-2.5;ph=heightAt(px,pz);yaw=0;pitch=0}
+// stand just inside a place's entrance, facing in (yaw 0 looks along strip -z, so add the piece's turn)
+function goToPlace(r){const P=r?PIECES.byId['r'+r]:PIECES.byId.start,w=S2W(0,r?z0s[r]-2.5:ISL_N-0.8,P,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=P.phi;pitch=0}
 function menuPage(id){['pgPlaces','pgHow','pgSettings','pgNew'].forEach(k=>$('#'+k).hidden=k!==id);$('#mSub').hidden=!id;if(id==='pgPlaces')buildPlaces();if(id==='pgSettings')syncSettings();if(id==='pgHow')drawDemo()}
 document.querySelectorAll('.ptotal').forEach(e=>e.textContent=PANELS.length);document.querySelectorAll('.pplaces').forEach(e=>e.textContent=NR);
 function menuProgress(){const n=PANELS.filter(p=>p.solved).length,d=PROG.doneCount();
@@ -5748,7 +5945,7 @@ function celebrate(){if(celebrated)return;celebrated=true;sfx.cheer();if(documen
   PANELS.forEach(p=>{if(PROG.S.solved.has(p.pid))markSolved(p)});
   if(PROG.S.rocket){rocketGone();celebrated=true}
   if(d.pos&&isFinite(d.pos[0])&&isFinite(d.pos[1])){px=d.pos[0];pz=d.pos[1];yaw=d.pos[2]||0}
-  else if(PROG.S.solved.size){const r=PROG.areaOpen('castle')?1:0;pz=z0s[r]-3}
+  else if(PROG.S.solved.size){if(PROG.areaOpen('castle')){const g=PIECES.byId.start.gate;px=g[0];pz=g[1]-4;yaw=0}else goToPlace(0)}
   if(d.migratedFrom)setTimeout(()=>toast('Your progress from the old version has been carried over.','good'),1500);
 })();
 // where you are standing is saved every few seconds, so Continue puts you back there
@@ -5778,7 +5975,49 @@ const CULL=[];{const bb=new THREE.Box3(),sp=new THREE.Sphere();scene.updateMatri
   scene.children.forEach(o=>{if(o===sky||o.isLight||o.isInstancedMesh||o.isPoints||o.userData.merged||o.userData.noCull)return;if(!(o.isMesh||o.isGroup||o.isSprite))return;
     bb.makeEmpty();bb.setFromObject(o);if(bb.isEmpty())return;bb.getBoundingSphere(sp);if(sp.radius>4.5||sp.radius<0.001)return;
     const ms=[];o.traverse(c=>{if(c.isMesh||c.isSprite)ms.push(c)});if(ms.length)CULL.push({o,ms,off:sp.center.clone().sub(o.position),r:sp.radius,out:false})})}
-function distCull(){const cp=camera.position;for(const c of CULL){const x=c.o.position.x+c.off.x-cp.x,z=c.o.position.z+c.off.z-cp.z,lim=70+c.r*22,out=x*x+z*z>lim*lim;
+/* ---------- put the world together ----------
+   every piece gets a group carrying its turn and offset, and everything built in strip coordinates moves into its
+   piece's group (its strip position becomes its position inside the group), so it shows where the piece now sits while
+   its animations go on working in strip coordinates. colliders and floors are tagged with their piece for the player */
+// the player's position in the strip coordinates of the piece they are in, or the nearest one; on the hill that is the
+// finish (the hilltop), so animations that compare things with where you are keep working in their own coordinates
+function playerLogic(x,z){const q=_lpq;if(hillY(x,z)>0.3||Math.hypot(x,z)<PIECES.jr-30)W2S(x,z,PIECES.byId.fin,q);else nearPieceW(x,z,q);LP.x=q.x;LP.z=q.z;LP.P=q.P;return LP}
+// from here on, when game code asks an object inside a piece for its world position (or turns a local point into a
+// world one), it gets the answer in that piece's strip coordinates: the frame all of the piece's logic works in.
+// trueWorld() gives real world coordinates for the few places that need them
+const _gwp=THREE.Object3D.prototype.getWorldPosition,_l2w=THREE.Object3D.prototype.localToWorld,_tw={};
+function pieceGroupOf(o){for(let a=o.parent;a;a=a.parent)if(a.userData.piece)return a;return null}
+function toStripV(o,v){const g=pieceGroupOf(o);if(g){const P=PIECES.byId[g.userData.piece];W2S(v.x,v.z,P,_tw);v.x=_tw.x;v.z=_tw.z;v.y-=P.y}return v}
+function trueWorld(o,v){return _gwp.call(o,v)}
+THREE.Object3D.prototype.getWorldPosition=function(v){return toStripV(this,_gwp.call(this,v))};
+THREE.Object3D.prototype.localToWorld=function(v){return toStripV(this,_l2w.call(this,v))};
+const PGROUP={};
+(function assemble(){
+  PIECES.forEach(P=>{const g=new THREE.Group();g.position.set(P.ox,P.y,P.oz);g.rotation.y=P.phi;g.userData.piece=P.id;g.userData.world=1;scene.add(g);PGROUP[P.id]=g;P.g=g});
+  // one quiet pass of every animation, so things that only get a position from their animation have one
+  {const cp=camera.position.clone();camera.position.set(0,EYE,z0s[1]);for(const a of anims){try{a(0,0.016)}catch(e){}}camera.position.copy(cp)}
+  const box=new THREE.Box3(),v=new THREE.Vector3(),lost=[];
+  scene.children.slice().forEach(o=>{if(WORLD_EARLY.has(o)||o.userData.world||o===camera||o===sun||o===sun.target||o===hemi)return;
+    let id=o.userData.pc;
+    // by position; for things still sitting at the origin (pools, particles, hidden props) by their contents' box when
+    // that lies plausibly on the old strip, else by the place the code building them was working on
+    if(!id){if(o.position.x||o.position.z)id=pieceOfS(o.position.z).id;else{box.setFromObject(o);const ok=!box.isEmpty()&&(box.getCenter(v),Math.abs(v.x)<120&&v.z<80&&v.z>zF0-200&&(Math.abs(v.x)>1||Math.abs(v.z)>1));
+      id=ok?pieceOfS(v.z).id:o.userData.pcHint||(box.isEmpty()?null:pieceOfS(v.z).id)}}
+    if(!id){lost.push(o);return}PGROUP[id].add(o)});
+  RIH=null;if(lost.length)console.warn('assemble: left in the world',lost.length,lost.map(o=>o.type+':'+(o.name||'')).slice(0,12));
+  const czOf=c=>c.t==='box'||c.t==='wbox'||c.t==='ramp'||c.minZ!=null?(c.minZ+c.maxZ)/2:c.z;
+  colliders.forEach(c=>{if(c.pc==null)c.pc=pieceOfS(czOf(c)).id});platforms.forEach(p=>{if(p.pc==null)p.pc=pieceOfS(czOf(p)).id});
+  // things that still hold strip positions get a world copy for the player's checks
+  const q={};
+  LODS.forEach(L=>{if(L.world)return;const m=L.meshes[0],pid=m&&m.parent&&m.parent.userData.piece;if(!pid)return;const P=PIECES.byId[pid];S2W(L.c.x,L.c.z,P,q);L.c=new THREE.Vector3(q.x,L.c.y+P.y,q.z);L.world=1});
+  PANELS.forEach(p=>{const P=pieceOfS(p.pos.z);S2W(p.pos.x,p.pos.z,P,q);p.P=P;p.wpos=new THREE.Vector3(q.x,p.pos.y+P.y,q.z);p.wnormal=p.normal.clone().applyAxisAngle(new THREE.Vector3(0,1,0),P.phi)});
+  BENCHES.forEach(b=>{const P=pieceOfS(b.z);S2W(b.x,b.z,P,q);b.P=P;b.wx=q.x;b.wz=q.z;b.wy=(b.y||0)+P.y});
+  {const B=ROCKET.button,P=PIECES.byId.fin;S2W(B.x,B.z,P,q);B.wx=q.x;B.wz=q.z}
+  CULL.forEach(c=>{const pid=c.o.parent&&c.o.parent.userData.piece;c.P=pid?PIECES.byId[pid]:null});
+  scene.updateMatrixWorld(true);
+})();
+const _dc={};
+function distCull(){const cp=camera.position;for(const c of CULL){let wx=c.o.position.x+c.off.x,wz=c.o.position.z+c.off.z;if(c.P){S2W(wx,wz,c.P,_dc);wx=_dc.x;wz=_dc.z}const x=wx-cp.x,z=wz-cp.z,lim=70+c.r*22,out=x*x+z*z>lim*lim;
   if(out!==c.out){c.out=out;for(const m of c.ms)m.layers.set(out?1:0)}}}
 // nothing that goes wrong in one effect may stop the game: the next frame is always asked for first, and each per-frame
 // job (every animation, gate, decoration and the ambient sound) runs on its own. a job that throws is reported once in
@@ -5798,14 +6037,14 @@ function frameStep(t){
     const l=Math.hypot(fx,fz);if(l>1){fx/=l;fz/=l}
     const spd=(keys.ShiftLeft||keys.ShiftRight?8:5)*dt,s=Math.sin(yaw),c=Math.cos(yaw);
     const dx=(fx*c+fz*s)*spd,dz=(-fx*s+fz*c)*spd;
-    if(!blocked(px+dx,pz,ph))px+=dx;if(!blocked(px,pz+dz,ph))pz+=dz;
-    const gh=heightAt(px,pz);ph=gh>ph?Math.min(gh,ph+dt*8):Math.max(gh,ph-dt*4.5);
+    if(!blockedW(px+dx,pz,ph))px+=dx;if(!blockedW(px,pz+dz,ph))pz+=dz;
+    const gh=heightW(px,pz);ph=gh>ph?Math.min(gh,ph+dt*8):Math.max(gh,ph-dt*4.5);
     if(l>0.1)bob+=dt*9*l;
     camera.position.set(px,ph+EYE+Math.sin(bob)*0.035,pz);camera.rotation.set(pitch,yaw,0);
     ray.setFromCamera(center,camera);const hit=ray.intersectObjects(panelFaces)[0];
     aimed=hit&&hit.distance<4.5?hit.object.userData.panel:null;
-    aimedBtn=null;{const B=ROCKET.button,dx=B.x-px,dz=B.z-pz,dd=Math.hypot(dx,dz);if(!aimed&&dd<2.3&&dd>0.15&&(dx*-Math.sin(yaw)+dz*-Math.cos(yaw))/dd>0.8)aimedBtn=B}
-    aimedBench=null;if(!aimed&&!aimedBtn){let best=2.4;const fx=-Math.sin(yaw),fz=-Math.cos(yaw);for(const b of BENCHES){const dx=b.x-px,dz=b.z-pz,dd=Math.hypot(dx,dz);if(dd<best&&dd>0.2&&(dx*fx+dz*fz)/dd>0.72&&Math.abs(b.y-ph)<0.7){best=dd;aimedBench=b}}}
+    aimedBtn=null;{const B=ROCKET.button,dx=B.wx-px,dz=B.wz-pz,dd=Math.hypot(dx,dz);if(!aimed&&dd<2.3&&dd>0.15&&(dx*-Math.sin(yaw)+dz*-Math.cos(yaw))/dd>0.8)aimedBtn=B}
+    aimedBench=null;if(!aimed&&!aimedBtn){let best=2.4;const fx=-Math.sin(yaw),fz=-Math.cos(yaw);for(const b of BENCHES){const dx=b.wx-px,dz=b.wz-pz,dd=Math.hypot(dx,dz);if(dd<best&&dd>0.2&&(dx*fx+dz*fz)/dd>0.72&&Math.abs(b.wy-ph)<0.7){best=dd;aimedBench=b}}}
     const pr=$('#prompt'),ch=$('#crosshair');
     if(started&&aimed&&$('#help').hidden){const pow=isPowered(aimed),can=pow&&!aimed.solved;pr.hidden=false;pr.className=can?'':'off';
       pr.textContent=aimed.solved?'Solved ✓':!pow?'No power yet':(isTouch||lockFailed?'Tap the panel to solve':'Click to solve');ch.classList.toggle('hot',can)}
@@ -5822,17 +6061,23 @@ function frameStep(t){
     if(active)drawPanel(active);
   }
   if(MENU.open){   // a slow orbit over one place after another, with a soft fade between shots
-    MENU.t+=dt;const L=14,n=NR+1,k=Math.floor(MENU.t/L)%n,u=(MENU.t%L)/L,cz=k<NR?z0s[k]-34:zF0-15,a=0.9+k*1.3+u*0.75,R=k<NR?27:16,hgt=k<NR?13:7;
-    camera.position.set(Math.cos(a)*R,hgt-u*1.5,cz+Math.sin(a)*R);camera.lookAt(0,1.5,cz);
+    MENU.t+=dt;const L=14,n=NR+1,k=Math.floor(MENU.t/L)%n,u=(MENU.t%L)/L,cz=k<NR?z0s[k]-34:zF0-15,a=0.9+k*1.3+u*0.75,R=k<NR?27:16,hgt=k<NR?13:7,c=S2W(0,cz,null,{});
+    camera.position.set(c.x+Math.cos(a)*R,c.y+hgt-u*1.5,c.z+Math.sin(a)*R);camera.lookAt(c.x,c.y+1.5,c.z);
     $('#menuFade').style.opacity=Math.max(0,1-Math.min(u,1-u)*L/0.9).toFixed(3)}
   sky.position.copy(camera.position);
   OCEAN.position.set(Math.round(camera.position.x/4.5)*4.5,0.07,Math.round(camera.position.z/4.5)*4.5);   // the sea's fine grid follows you
   dayUpdate();sun.position.set(camera.position.x+SUN_OFF.x,SUN_OFF.y,camera.position.z+SUN_OFF.z);sun.target.position.set(camera.position.x,0,camera.position.z);
   gates.concat(ENTR).forEach(g=>{if(g&&g.open&&g.t<1){g.t=Math.min(1,g.t+dt/(g.dur||2.4));run(poseGate,g)}});
-  for(const f of GDECO)run(f,ts);
-  trophy.rotation.y+=dt*0.6;
-  for(const a of anims)run(a,ts,dt);
-  if(started)run(ambUpdate,dt,ts);
+  // animations and sounds work in strip coordinates: while they run, you (px, pz and the camera) are moved into the
+  // coordinates of the piece you are in, then put back for the world things that follow
+  {const wx=px,wz=pz;WP.x=px;WP.z=pz;const cx=camera.position.x,cy=camera.position.y,cz=camera.position.z,L=playerLogic(camera.position.x,camera.position.z);
+   px=L.x;pz=L.z;camera.position.set(L.x,cy-L.P.y,L.z);
+   for(const f of GDECO)run(f,ts);
+   trophy.rotation.y+=dt*0.6;
+   for(const a of anims)run(a,ts,dt);
+   if(started)run(ambUpdate,dt,ts);
+   px=wx;pz=wz;camera.position.set(cx,cy,cz)}
+  for(const a of animsW)run(a,ts,dt);
   U_TIME.value=ts;waterNormal.offset.set(ts*0.012,ts*0.007);
   if((cullTick+=dt)>0.15){cullTick=0;updateLOD();distCull()}
   fpsN++;prN++;const rdt=(t-(frame.lt||t))/1000;frame.lt=t;fpsT+=rdt;prT+=rdt;
@@ -5841,9 +6086,9 @@ function frameStep(t){
     // if Ultra is still too slow at the lowest resolution, step down to High once
     if(f<30&&curPR<=1&&QL==='ultra'&&started&&!frame.autoDown){frame.autoDown=true;setQuality('high');toast('Quality set to High to keep things smooth.')}
     else if(f<42&&curPR>1){curPR=Math.max(1,curPR-0.25);renderer.setPixelRatio(curPR);resize()}else if(f>57&&curPR<(hiQ?maxPR:Math.min(maxPR,1.25))){curPR=Math.min(hiQ?maxPR:1.25,curPR+0.25);renderer.setPixelRatio(curPR);resize()}}
-  clouds.forEach(g=>{g.position.x+=dt*1.5;if(g.position.x>260)g.position.x=-260});
-  {const near=camera.position.z<zF0+40;if(near!==confetti.on){confetti.on=near;confetti.forEach(m=>m.visible=near)}}
-  if(camera.position.z<zF0+8)confetti.forEach(m=>{m.position.y-=m.userData.v*dt;m.rotation.x+=dt*2;m.rotation.y+=dt*1.3;if(m.position.y<0)m.position.y=8});
+  clouds.forEach(g=>{g.position.x+=dt*1.5;if(g.position.x>310)g.position.x=-310});
+  {const near=LP.P===PIECES.byId.fin&&LP.z<zF0+40;if(near!==confetti.on){confetti.on=near;confetti.forEach(m=>m.visible=near)}}
+  if(LP.P===PIECES.byId.fin&&LP.z<zF0+8)confetti.forEach(m=>{m.position.y-=m.userData.v*dt;m.rotation.x+=dt*2;m.rotation.y+=dt*1.3;if(m.position.y<0)m.position.y=8});
   U_SUNV.value.copy(SUN_OFF).normalize().transformDirection(camera.matrixWorldInverse);
   if(POST.on){
     // depth of field: while solving, the world behind the panel goes soft so the puzzle stands out
@@ -5863,7 +6108,8 @@ window.GAME={PROG,debug:{
   reset(){resetProgress();return'progress reset'},
   state(){const st=PROG.state();console.table(st.areas);return st},
   validate(){const v=validateProgression();if(v.ok)console.log('validation passed:',v.puzzles,'puzzles in',v.areas,'areas,',v.selfContained,'self-contained');else console.warn('validation failed',v.errors);return v}}};
-function goToHill(){px=0;pz=zF0-3;ph=heightAt(px,pz);yaw=0;pitch=0}
+function goToHill(){const w=S2W(0,zF0+6,PIECES.byId.fin,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0;pitch=0}
+function goToStart(){const w=S2W(3.0,ISL_N-0.8,PIECES.byId.start,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0;pitch=0}
 refreshWorld();updateHud();camera.position.set(px,EYE,pz);
 requestAnimationFrame(frame);
 })();
