@@ -128,7 +128,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
   </div>
   <section id="mSub" class="msub" hidden aria-live="polite">
     <button id="mBack" type="button" class="mback">‹ Back</button>
-    <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">From the easiest place to the hardest. Finish every panel in a place to open its gate to the next.</p><ol id="placeList" class="places"></ol></div>
+    <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">Once the Welcome Garden is done, every place is open: play them in any order. Six finished places open the launch on Meridian Hill; all nine open the Summit Garden.</p><ol id="placeList" class="places"></ol></div>
     <div id="pgHow" class="mpage" hidden><h2>How to play</h2>
       <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
       <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables to the next panel, and solve every panel in a place to open its gate. Halfway along the walk to the next place, that place's gate opens too.</p>
@@ -1301,7 +1301,7 @@ const SNOWC=new THREE.Color(0xeef3f7);
 PIECES.ring.forEach(P=>{const m=S2W(0,(P.zt+P.zb)/2,P);P.ang=Math.atan2(m.x,m.z)});
 function nearPieceW(x,z,out){out=out||{};const P0=pieceAtW(x,z,0);if(P0)return W2S(x,z,P0,out);
   const st=PIECES.byId.start;W2S(x,z,st,out);if(out.z>st.zb-12&&Math.abs(out.x)<X_IN+30&&Math.hypot(x,z)>PIECES.jr+40)return out;
-  const a=Math.atan2(x,z);let best=null,bd=9;for(const P of PIECES.ring){let d=Math.abs(a-P.ang);if(d>Math.PI)d=Math.PI*2-d;if(d<bd){bd=d;best=P}}return W2S(x,z,best,out)}
+  const a=Math.atan2(x,z);let best=PIECES.ring[0],bd=9;for(const P of PIECES.ring){let d=Math.abs(a-P.ang);if(d>Math.PI)d=Math.PI*2-d;if(d<bd){bd=d;best=P}}return W2S(x,z,best,out)}
 {const x0=IG.x0,x1=IG.x0+IG.nx-1,zB=IG.z0,zA=IG.z0+IG.nz-1,W=x1-x0,D=zA-zB,g=new THREE.PlaneGeometry(W,D,Math.round(W/2.5),Math.round(D/2.5));g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cx=(x0+x1)/2,cz=(zA+zB)/2,c=new THREE.Color(),SAND=new THREE.Color(0xe8d4a0),WET=new THREE.Color(0xc9b383),DEEP=new THREE.Color(0x2f6f86),q={};
  for(let i=0;i<pos.count;i++){const x=pos.getX(i)+cx,z=pos.getZ(i)+cz,d=shoreDW(x,z);pos.setY(i,d>0?hillHW(x,z):hillY(x,z));
    const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03);
@@ -6008,7 +6008,14 @@ function buildPlaces(){const ol=$('#placeList');ol.textContent='';
     if(open){const b=document.createElement('button');b.type='button';b.className=cur?'sun':'ghost';b.textContent=cur?'Go':'Visit';b.setAttribute('aria-label',(cur?'Go to ':'Visit ')+room.name);
       b.addEventListener('click',()=>{goToPlace(r);play()});li.appendChild(b)}
     else{const s=document.createElement('span');s.className='plock';s.textContent='Locked';li.appendChild(s)}
-    ol.appendChild(li)})}
+    ol.appendChild(li)});
+  // Meridian Hill (the launch) and the Summit Garden (the five challenges)
+  [['Meridian Hill',PROG.endgame()?'The launch gate is open':PROG.doneCount()+' of 9 places finished · 6 open the launch',PROG.areaOpen('castle'),PROG.S.rocket,'★',()=>goToHill()],
+   ['Summit Garden','Advanced challenges · open when all 9 places are finished',PROG.bonus(),PROG.isComplete('summit'),'∞',()=>{goToHill();const w=S2W(0,SUMMIT.z0+3,PIECES.byId.fin,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0}]].forEach(([nm,tp,open,done,ic,go])=>{
+    const li=document.createElement('li');li.className=done?'done':!open?'locked':'';li.innerHTML=`<span class="pnum">${done?'✓':ic}</span><div><b></b><span class="ptopic"></span></div>`;
+    li.querySelector('b').textContent=nm;li.querySelector('.ptopic').textContent=tp;
+    if(open){const b=document.createElement('button');b.type='button';b.className='ghost';b.textContent='Visit';b.addEventListener('click',()=>{go();play()});li.appendChild(b)}
+    else{const s=document.createElement('span');s.className='plock';s.textContent='Locked';li.appendChild(s)}ol.appendChild(li)})}
 function syncSettings(){const t=(el,on,a,b)=>{el.textContent=on?a:b;el.className='tog '+(on?'on':'off')};t($('#sSound'),!muted,'On','Off');t($('#sMusic'),MUSIC.on,'On','Off');t($('#sFull'),!!document.fullscreenElement,'On','Off');
   const q=$('#sQual');q.textContent='';QLS.slice().reverse().forEach(k=>{const b=document.createElement('button');b.type='button';b.textContent=QNAME[k];b.className=k===QL?'on':'';b.addEventListener('click',()=>{setQuality(k);syncSettings()});q.appendChild(b)})}
 function openMenu(){if(mode==='solve')exitSolve();if(mode==='sit')standUp();if(document.pointerLockElement)document.exitPointerLock();
@@ -6099,7 +6106,7 @@ const CULL=[];{const bb=new THREE.Box3(),sp=new THREE.Sphere();scene.updateMatri
    its animations go on working in strip coordinates. colliders and floors are tagged with their piece for the player */
 // the player's position in the strip coordinates of the piece they are in, or the nearest one; on the hill that is the
 // finish (the hilltop), so animations that compare things with where you are keep working in their own coordinates
-function playerLogic(x,z){const q=_lpq;if(hillY(x,z)>0.3||Math.hypot(x,z)<PIECES.jr-30)W2S(x,z,PIECES.byId.fin,q);else nearPieceW(x,z,q);LP.x=q.x;LP.z=q.z;LP.P=q.P;return LP}
+function playerLogic(x,z){const q=_lpq;if(!isFinite(x)||!isFinite(z)){if(!playerLogic.told){playerLogic.told=1;console.warn('playerLogic: position is not a number',x,z,new Error().stack)}if(LP.P)return LP;x=0;z=PIECES.byId.start.oz}if(hillY(x,z)>0.3||Math.hypot(x,z)<PIECES.jr-30)W2S(x,z,PIECES.byId.fin,q);else nearPieceW(x,z,q);LP.x=q.x;LP.z=q.z;LP.P=q.P;return LP}
 // from here on, when game code asks an object inside a piece for its world position (or turns a local point into a
 // world one), it gets the answer in that piece's strip coordinates: the frame all of the piece's logic works in.
 // trueWorld() gives real world coordinates for the few places that need them
@@ -6226,6 +6233,15 @@ window.GAME={PROG,debug:{
   reset(){resetProgress();return'progress reset'},
   state(){const st=PROG.state();console.table(st.areas);return st},
   validate(){const v=validateProgression();if(v.ok)console.log('validation passed:',v.puzzles,'puzzles in',v.areas,'areas,',v.selfContained,'self-contained');else console.warn('validation failed',v.errors);return v}}};
+(function debugPanel(){let on=false;try{on=new URLSearchParams(location.search).has('debug')}catch(e){}if(!on)return;
+  const d=document.createElement('div');d.id='debugPanel';d.style.cssText='position:fixed;left:10px;bottom:10px;z-index:50;background:rgba(15,30,40,.92);color:#fff;font:13px/1.35 system-ui,sans-serif;padding:10px;border-radius:12px;max-width:340px';
+  const ids=PDATA.areas.map(a=>a.id).concat(['hill']);
+  d.innerHTML='<b>Debug</b> <select id="dbArea">'+ids.map(i=>'<option>'+i+'</option>').join('')+'</select><div id="dbBtns" style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0"></div><pre id="dbOut" style="margin:0;white-space:pre-wrap;max-height:220px;overflow:auto;font:12px ui-monospace,monospace"></pre>';
+  document.body.appendChild(d);const out=v=>d.querySelector('#dbOut').textContent=typeof v==='string'?v:JSON.stringify(v,null,1),A=()=>d.querySelector('#dbArea').value,D=window.GAME.debug;
+  [['Teleport',()=>out(D.tp(A()))],['Solve next',()=>{const a=PROG.area(A());const q=a&&a.puzzles.find(x=>!PROG.S.solved.has(x));out(q?D.solve(q):'nothing left in '+A())}],['Solve area',()=>out(D.solveArea(A()))],
+   ['State',()=>{const st=PROG.state();out(st.areas.map(a=>a.id+': '+a.status+' '+a.solved+'/'+a.of).join('\n')+'\nendgame '+st.endgame+' · bonus '+st.bonus)}],['Validate',()=>{const v=D.validate();out(v.ok?'validation passed: '+v.puzzles+' puzzles, '+v.areas+' areas, '+v.selfContained+' self-contained':v.errors.join('\n'))}],
+   ['Reset',()=>{if(confirm('Reset all progress?'))out(D.reset())}]].forEach(([t,f])=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.style.cssText='font:12px system-ui;padding:4px 8px;border-radius:8px;border:0;cursor:pointer';b.addEventListener('click',e=>{e.stopPropagation();f()});d.querySelector('#dbBtns').appendChild(b)});
+  const v=D.validate();out(v.ok?'validation passed at load: '+v.puzzles+' puzzles in '+v.areas+' areas':'VALIDATION FAILED\n'+v.errors.join('\n'))})();
 function goToHill(){const w=S2W(0,zF0+6,PIECES.byId.fin,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0;pitch=0}
 function goToStart(){const w=S2W(3.0,ISL_N-0.8,PIECES.byId.start,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0;pitch=0}
 refreshWorld();updateHud();camera.position.set(px,EYE,pz);
