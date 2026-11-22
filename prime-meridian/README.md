@@ -22,7 +22,7 @@ Each place teaches one rule with 8 line-drawing panels, from very easy to hard. 
 
 - **Gates:** each place has two gates on the loop path that runs round the island. A spoke path leads from each place up Meridian Hill.
 - **Lanterns:** a lantern by each gate shows dark (not started), amber (under way) or green (complete).
-- **Finishing a place:** its beacon lights and shines a beam of its colour to the Meridian Spire on the hilltop. A shortcut gate in its hill-side wall also opens onto the meadow.
+- **Finishing a place:** the yellow cable from its last panel runs to the place's laser tower, which stands a few steps away. The tower charges for ten seconds, with a rising hum and rings of light climbing it, then fires a beam of its colour to the Meridian Spire on the hilltop. Each tower is tall enough that its beam clears everything on the way, so the castle's tower rises above the keep. A shortcut gate in the place's hill-side wall also opens onto the meadow.
 - **Six finished places** open the launch pad on top of the hill. Press the button, watch the rocket go, and the "You finished" card follows 5 seconds after lift-off.
 - **All nine** open the Summit Garden behind the spire, on the island's middle line (the prime meridian, marked in brass).
 
