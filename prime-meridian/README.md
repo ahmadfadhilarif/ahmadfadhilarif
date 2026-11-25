@@ -50,17 +50,28 @@ Progress is saved in the browser (localStorage, save version 8). A save from Num
 - **Sit:** look at a bench or a picnic-table seat and press E or click
 - **Menu:** M or the Menu button. Places lets you visit any open place, Meridian Hill or the Summit Garden.
 
-## Quality
+## Quality and performance
 
 Ultra, High and Low quality levels trade post-processing and shadow detail for speed. The game also:
+- draws at most about 60 frames a second on fast (120–240 Hz) screens. Settings → Limit frame rate turns this off.
+- renders at no more than 1.5 pixels per screen pixel, and smooths edges with FXAA instead of a multisampled canvas
+- redraws the sun's shadow map every other frame
 - lowers its resolution a little when the frame rate drops, and raises it again when there is room
-- swaps in lighter versions of animals, props, buildings and plants when they are far away
+- swaps in lighter versions of animals, props, buildings and plants when they are far away, and leaves small things out
 - skips places that are out of view
+
+**Performance overlay:** press **F3** or **`**, click the fps counter, or open `index.html?perf`. It shows:
+- frames per second and time per frame
+- CPU and GPU time per frame (GPU time where the browser allows it)
+- draw calls (with the shadow pass's share) and triangles
+- render resolution, and the screen's refresh rate
+
+See [docs/performance.md](docs/performance.md) for the audit behind these and the measured results.
 
 ## For developers
 
 - **Progression data:** areas, puzzles, what each needs and what it opens, and doors all live in the `pm-progression` data block at the top of `index.html`.
-- **Debug tools:** open `index.html?debug` for a debug panel. In the console, `GAME.debug` has `tp`, `solve`, `solveArea`, `state`, `validate` and `reset`.
+- **Debug tools:** open `index.html?debug` for a debug panel and the performance overlay. In the console, `GAME.debug` has `tp`, `solve`, `solveArea`, `state`, `validate` and `reset`.
 - **Design and test notes:** [docs/redesign](docs/redesign):
   - the audit
   - the design
