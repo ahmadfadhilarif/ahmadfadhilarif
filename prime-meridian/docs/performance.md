@@ -172,6 +172,8 @@ The caves, the nine laser receivers, the themed towers and the lift add very lit
 | Castle courtyard | 815 → **824** | 122 → **124** | 2.00 M → **2.06 M** |
 | Times village | 1,081 → **1,082** | 334 → **341** | 2.42 M → **2.46 M** |
 
+The next batch added moving parts to four laser towers, a house round the Times Table Village tower, and paving to close narrow gaps between paths. Draw calls rose to **1,609** at the Welcome Garden, **838** in the castle courtyard and **1,112** in the Times village, 1–3% more. The gap filling adds about half a second to loading.
+
 ## Measuring it yourself
 
 Open `index.html?perf` and walk to the Welcome Garden, the castle courtyard and the Times village. On a desktop GPU, compare fps, GPU ms and draw calls with the tables above. Then turn Settings → Limit frame rate off to see the uncapped figures on a fast screen.

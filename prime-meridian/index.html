@@ -174,7 +174,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       <dt>Look</dt><dd>Mouse, or the arrow keys to turn. Tablet: drag.</dd>
       <dt>Solve</dt><dd>Look at a panel and click. Click once to start your line at the big circle, move the mouse to trace it, then click again when you reach the rounded end. Tablet: press the big circle and drag.</dd>
       <dt>Power</dt><dd>A dark panel has no power. Follow the yellow cable from the last panel you solved.</dd>
-      <dt>Gates</dt><dd>The Welcome Gate opens when you finish the Welcome Garden, and from then on every place's gates are open. A place's shortcut gate onto the meadow opens when you finish it.</dd><dt>Meridian Hill</dt><dd>Every spoke path leads into a cave under the hill. A finished place's laser tower fires at its receiver at the foot of the cliff. All nine beams bring down the barrier round the five final challenges in the middle of the cave. Solve those and the lift takes you up to the launch pad.</dd><dt>Lanterns</dt><dd>A lantern by each place's gates shows how far you have got: dark, amber or green.</dd>
+      <dt>Gates</dt><dd>The Welcome Gate opens when you finish the Welcome Garden, and from then on every place's gates are open.</dd><dt>Meridian Hill</dt><dd>Every spoke path leads into a cave under the hill. A finished place's laser tower fires at its receiver at the foot of the cliff. All nine beams bring down the barrier round the five final challenges in the middle of the cave. Solve those and the lift takes you up to the launch pad.</dd><dt>Lanterns</dt><dd>A lantern by each place's gates shows how far you have got: dark, amber or green.</dd>
       <dt>Owl</dt><dd>The owl flies to the next panel with power near you, and a yellow glow runs along the cable to it.</dd>
     </dl>
     <div class="row"><button id="helpClose" type="button" class="sun">Back to the garden</button><button id="solveAllBtn" type="button" class="ghost">Solve all puzzles</button><button id="helpReset" type="button" class="ghost">Start over</button></div>
@@ -1099,8 +1099,8 @@ const KIND={},KSPEC={plaster:[0.5,0.92,0.006],tiles:[0.85,0.75,0.035],wood:[0.55
 [[[0xf6e3c6,0xd8ecf2,0xf2d4d9,0xe5f0d0,0xfbe7b2,0xdfe6f7,0xa8c8d8,0xf2ead8,0xf0e6d2,0xf5efe2,0xe8d6b0],'plaster'],
  [[0xc9573f,0x3f6fa8,0x6d4a8f,0xb5683a,0x3f8f6a,0x3f5f7a,0xb5523b,0xd0574a],'tiles'],
  [[0x8a5a3b,0x7a4a2c,0xb5773e,0xb98a5a,0xa8784e,0xcfa477,0xc58a3a,0xe8604c,0x4a86c8,0xf2c84b,0x6fb35a,0xa98be0,0xf095c0],'wood'],
- [[0xd9cfb8,0xcfc3a8,0xb9ad96,0xe8dcc4,0xe9e0cc,0xbca57f,0xd8cbb0,0xa48d68,0xd9c49c,0x9c5b44],'stone'],
- [[0xcdb991,0xe6d2a0,0xf0dca0,0xe8dcb4,0xd4bf8e,0x2a2a28],'gravel'],[[0xdde6ec],'plaster'],[[0x6b5a40],'rock'],[[0x4a9446],'leaf'],[[0x79c05a,0x6aa84f],'grass'],[[0xe8c766],'straw'],[[0x7a5236],'bark'],[[0x6b4a2f],'rock'],[[0x355c7d],'glass'],[[0x2b3a42],'metal']
+ [[0xd9cfb8,0xcfc3a8,0xb9ad96,0xe8dcc4,0xe9e0cc,0xbca57f,0xd8cbb0,0xa48d68,0xd9c49c,0x9c5b44,0x9aa0a6,0x7f858b,0xb4b9be],'stone'],
+ [[0xcdb991,0xe6d2a0,0xf0dca0,0xe8dcb4,0xd4bf8e,0x2a2a28],'gravel'],[[0xdde6ec,0xa3b4c3],'plaster'],[[0x6b5a40],'rock'],[[0x4a9446],'leaf'],[[0x79c05a,0x6aa84f],'grass'],[[0xe8c766],'straw'],[[0x7a5236],'bark'],[[0x6b4a2f],'rock'],[[0x355c7d],'glass'],[[0x2b3a42,0x33383d,0x55595e],'metal']
 ].forEach(([cs,k])=>cs.forEach(c=>KIND[c]=k));
 const MATS={};
 function M(c){if(MATS[c])return MATS[c];const k=KIND[c],sp=KSPEC[k]||[0,0.85];
@@ -1274,8 +1274,9 @@ function heightAtP(x,z,pc,low){let h=0;for(const p of platforms){if(p.pc!==pc||!
 // (refH: the height of whoever is asking. down in the caves under the hill, the floor is the cave floor, not the hilltop
 // far overhead)
 const LOW=H_TOP-6;
+// (the cave/hilltop split of platforms only applies on the hill's own piece)
 function heightW(x,z,refH){if(refH!=null&&refH<LOW&&mesaD(x,z)<0.6){let h=0;for(const p of PLATW)if(p.low&&inP(p,x,z))h=Math.max(h,p.h);return h}
-  let h=hillY(x,z);const off=mesaD(x,z)>0;for(const q of piecesAtW(x,z,0.4)){if(off&&q.P.kind==='fin')continue;const v=heightAtP(q.x,q.z,q.P.id,refH!=null&&refH<LOW);if(v>0||q.P.y)h=Math.max(h,v+q.P.y)}
+  let h=hillY(x,z);const off=mesaD(x,z)>0;for(const q of piecesAtW(x,z,0.4)){if(off&&q.P.kind==='fin')continue;const v=heightAtP(q.x,q.z,q.P.id,q.P.kind==='fin'&&refH!=null&&refH<LOW);if(v>0||q.P.y)h=Math.max(h,v+q.P.y)}
   for(const p of PLATW)if(!p.low&&inP(p,x,z))h=Math.max(h,p.h);return h}
 function onDeckW(x,z){for(const q of piecesAtW(x,z,0.4))if(platforms.some(p=>p.pc===q.P.id&&p.deck&&!p.cableOnly&&inP(p,q.x,q.z)))return true;return false}
 function blockedW(x,z,curH){
@@ -1310,6 +1311,7 @@ function addTree(x,z,o){o=o||{};if(o.collide!==false)[x,z]=offPath(x,z,0.9,1.2);
   if(!far)put(INST.blob,{x,y:base+0.036,z,s:1.35*s,ry:RS()*6});
   if(o.collide!==false){colCirc(x,z,0.32*s);T.col=colliders[colliders.length-1]}
   if(o.collide!==false)reserve(x,z,1.3*s);
+  return T;
 }
 function addBush(x,z,s,c){const g=groundAt(x,z);INST.bush.push({x,y:g+0.42*s,z,s,sy:s*0.78,c:c||pick(LEAFC),ry:RS()*6});INST.blob.push({x,y:g+0.037,z,s:1.0*s,ry:RS()*6})}
 function flowersAt(x,z,n,spread,y,pal){for(let i=0;i<n;i++){const a=RS()*6.28,d=Math.sqrt(RS())*spread,fx=x+Math.cos(a)*d,fz=z+Math.sin(a)*d,b=(y!=null?y:groundAt(x,z)),h=0.2+RS()*0.16;
@@ -2836,9 +2838,9 @@ function buildCastle(z0){
    const S=new THREE.Shape();S.moveTo(-2.2,2.4);S.lineTo(2.2,2.4);S.lineTo(2.2,-0.2);S.quadraticCurveTo(2.15,-2.0,0,-3.0);S.quadraticCurveTo(-2.15,-2.0,-2.2,-0.2);S.closePath();
    const g=new THREE.ExtrudeGeometry(S,{depth:0.3,bevelEnabled:true,bevelThickness:0.08,bevelSize:0.08,bevelSegments:2});tex.repeat.set(1/4.4,1/6.4);tex.offset.set(0.5,3.4/6.4);tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
    const face=new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:0.12,roughness:0.45,metalness:0.2}),rim=new THREE.MeshStandardMaterial({color:lin(0xd4a017),metalness:0.8,roughness:0.3});
-   const sg=new THREE.Mesh(g,[face,rim]);sg.scale.setScalar(1.55);sg.position.set(-19+8+0.2,13+6.0,z0-57);sg.rotation.y=Math.PI/2;sg.castShadow=true;scene.add(sg);SIGIL.mat=face;
+   const sg=new THREE.Mesh(g,[face,rim]);sg.scale.setScalar(1.55);sg.position.set(-19+8+0.2,13+6.0,z0-57);sg.rotation.y=Math.PI/2;sg.castShadow=true;scene.add(sg);SIGIL.mat=face;SIGIL.mesh=sg;SIGIL.y0=sg.position.y;
    [-2,2].forEach(dz=>blk(0.4,4.8,0.4,-19+7.3,13+2.4,z0-57+dz,0x7a6a5a));
-   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19+8.6,13+5.8,z0-57);halo.scale.set(16,19,1);halo.userData.noCull=1;SIGIL.halo=halo}
+   const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19+8.6,13+5.8,z0-57);halo.scale.set(16,19,1);halo.userData.noCull=1;SIGIL.halo=halo;SIGIL.hy0=halo.position.y}
   birds(0,z0-50,5);
 }
 
@@ -3031,11 +3033,11 @@ function buildGreenhouse(z0){const gz=z0-34;
 
 /* ---------- AREA 8: Snowflake Hollow ---------- */
 // deep snow: a frozen lake, an igloo, snowmen, a log cabin, a hot cocoa hut, sledges, ice number blocks and snowfall
-const SNOWPATH=0xbfcad3;
+const SNOWPATH=0xa3b4c3;   // packed snow: a little bluer and darker than fresh snow, so a trodden trail shows (textured, see KIND)
 const matSnow=triPatch(new THREE.MeshStandardMaterial({color:lin(0xe0e8ee),roughness:0.9}),TX.plaster,0.22,0.02);
 const matSnowBall=triPatch(new THREE.MeshStandardMaterial({color:lin(0xf3f7fa),roughness:0.85}),TX.plaster,0.7,0.02);
 const matIce=new THREE.MeshStandardMaterial({color:lin(0x7fbcd8),roughness:0.12,metalness:0,envMap:skyCube,envMapIntensity:1.0});
-function snowGround(zc,len){flat(new THREE.PlaneGeometry(AW*2,len),matSnow,0,0.016,zc)}
+function snowGround(zc,len){flat(new THREE.PlaneGeometry(AW*2,len),matSnow,0,0.009,zc)}   // (just under the paths at 0.014, so the packed-snow trails show on it)
 // a pine with snow sitting on its branches
 function snowPine(x,z,s){[x,z]=offPath(x,z,0.9,1.2);addTree(x,z,{type:'pine',s});const b=groundAt(x,z),T=TREES[TREES.length-1];T.extra=[];
   [[1.85,1.12],[2.75,0.82],[3.6,0.5]].forEach(([h,r])=>{const m=mesh(new THREE.ConeGeometry(r*s,0.55*s,14),matSnowBall,x,b+h*s,z,scene,true);m.rotation.y=RS()*6;T.extra.push(m)})}
@@ -3188,8 +3190,12 @@ function xmasTree(fx,fz,S,bulbs,baubles){const R=mulberry32(Math.round(fx*7+fz*3
 function buildFrostLink(gz,c){snowGround(c,GAP);snowDrifts(gz,gz-GAP);
   frozenPond(13,c+1,4.8,3.4);snowman(-5.5,c+3,0.9,Math.PI/2);snowballs(5,c-6);bench(3,c-3,'w');
   const bulbs=[],baubles=[];
-  xmasTree(-13,c-1,2.3,bulbs,baubles);
-  for(const sd of [-1,1])for(const z of [gz-4,gz-10.5,gz-17,gz-21.5]){const x=sd*6.4;addTree(x,z,{type:'pine',s:1.05});reserve(x,z,1.6);lightSpiral(bulbs,x,z,1.4*1.05,4.0*1.05,1.3*1.05,44,4)}
+  // the big tree stands towards the Odd and Even Pond end, so its lowest boughs stay well clear of the path to the hill
+  xmasTree(-13,c+4.2,2.3,bulbs,baubles);
+  // (each pine's string of lights is its own mesh, kept with the tree: if the tree is cleared off a path, its lights go too,
+  // and they follow the tree if it had to be nudged off a path when planted. the meshes are merged later on)
+  for(const sd of [-1,1])for(const z of [gz-4,gz-10.5,gz-17,gz-21.5]){const T=addTree(sd*6.4,z,{type:'pine',s:1.05});reserve(T.x,T.z,1.6);const lb=[];lightSpiral(lb,T.x,T.z,1.4*1.05,4.0*1.05,1.3*1.05,44,4);
+    const lm=new THREE.Mesh(mergeColored(lb),bulbMat);lm.userData.st=1;scene.add(lm);(T.extra=T.extra||[]).push(lm)}
   sledge(7.5,c-8.5,0.5,0xd8352a);[[7.45,c-8.6,0.34,0x3d7cc9,0xffd23f],[7.6,c-8.15,0.28,0xd8352a,0xffffff],[7.4,c-9.0,0.26,0x2f9d6a,0xff6b57]].forEach(([x,z,sz,col,rib],i)=>present(x,0.32,z,sz,col,rib,0.5+i*0.4));
   // ice sculptures on snow plinths: a star and a snowflake
   {const ice=new THREE.MeshStandardMaterial({color:lin(0xc6ecff),transparent:true,opacity:0.7,roughness:0.05,metalness:0.1,envMapIntensity:1.4});
@@ -3717,7 +3723,10 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     const tc=[0xe8463a,0xffc21a,0x3d7cc9,0x4fb04f];leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{[0.06,L-0.06].forEach((x,i)=>mesh(new _G.Cyl(0.05,0.05,H,14),tc[i*2],dx(x),H/2+0.05,0,h));[0.3,H-0.05].forEach((y,i)=>mesh(new _G.Cyl(0.045,0.045,L,14),tc[1+i*2],dx(L/2),y,0,h).rotation.z=Math.PI/2);
       for(let i=1;i<6;i++)mesh(new _G.Cyl(0.025,0.025,H-0.5,10),tc[i%4],dx(i*L/6),H/2+0.15,0,h);blk(0.62,0.18,0.08,dx(L/2),1.35,0.06,0xffffff,h);blk(0.18,0.62,0.08,dx(L/2),1.35,0.06,0xffffff,h);
       blk(0.56,0.12,0.09,dx(L/2),1.35,0.07,tc[sd>0?0:2],h);blk(0.12,0.56,0.09,dx(L/2),1.35,0.07,tc[sd>0?0:2],h);hinges(h,dx)}));
-    [-1,1].forEach(s=>{for(let k=0;k<3;k++){const bx=s*(2.65+(k-1)*0.24),by=4.4+k*0.3;st(new _G.Cyl(0.004,0.004,by-3.5,4),0xffffff,bx,3.5+(by-3.5)/2,face*0.5);st(S(0.2,16,12),tc[(k+(s>0?1:0))%4],bx,by+0.2,face*0.5).scale.set(1,1.2,1)}})}
+    // a bunch of three balloons tied by their strings to a knot on top of each end of the arch
+    [-1,1].forEach(s=>{const ax=s*2.2,ay=4.13,az=face*0.45;st(S(0.035,8,6),0xffffff,ax,ay,az);
+      for(let k=0;k<3;k++){const bx=s*(2.2+(k-1)*0.34),by=5.0+(k===1?0.35:0)+k*0.08,bz=face*(0.45+(k-1)*0.1);rod([ax,ay,z+az],[bx,by,z+bz],0.005,0xffffff,scene,4).userData.st=1;
+        st(S(0.2,16,12),tc[(k+(s>0?1:0))%4],bx,by+0.23,bz).scale.set(1,1.2,1);st(new _G.Cone(0.03,0.05,8),tc[(k+(s>0?1:0))%4],bx,by+0.02,bz)}})}
   else if(th==='times'){   // village lychgate: white pickets with a times sign, under a little tiled roof
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,0xf6f1e6,H-0.3);for(let i=0;i<8;i++){const x=(i+0.5)*L/8;blk(0.12,H-0.25,0.04,dx(x),0.15+(H-0.25)/2,0,0xfffaf0,h);mesh(new _G.Cone(0.085,0.12,4),0xfffaf0,dx(x),H-0.04,0,h).rotation.y=Math.PI/4}
       const c=blk(0.6,0.12,0.08,dx(L/2),1.3,0.06,0x3d7cc9,h);c.rotation.z=0.785;const c2=blk(0.6,0.12,0.08,dx(L/2),1.3,0.06,0x3d7cc9,h);c2.rotation.z=-0.785;hinges(h,dx);ring(h,dx)}));
@@ -3760,7 +3769,16 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
     if(th==='stones')[-1,1].forEach(s=>{[0.3,0.24,0.18,0.12].forEach((r,i)=>st(S(r,12,8),[0x8a8a84,0xa8a49a,0x76736a,0x9a968c][i],s*1.9,3.6+[0,0.22,0.4,0.54][i]+0.05,0).scale.set(1,0.55,1))})}
   return {leaves,kind,snd}}
 // a gate at z: its arch and sign, its themed leaves and a collider while it is shut. face is the side people approach from
-function makeGate(z,th,name,topic,face){archway(z,name,topic,th);const t=gateTheme(z,th,face||1),snd=t.kind==='lift'?'lift':t.kind==='slide'?'slide':['adding','fin'].includes(th)?'metal':'wood';
+// a gate stands right on the line between two pieces of the island, so everything built for it (its leaves and dressing,
+// the roses and plants on it, its colliders) is kept with the gate's own piece; otherwise the parts just across the line
+// would be carried off with the next piece and float in the air beside it
+function makeGate(z,th,name,topic,face){const pc=pieceOfS(z).id,n0=scene.children.length,c0=colliders.length,p0=platforms.length,I0={};for(const k in INST)I0[k]=INST[k].length;
+  archway(z,name,topic,th);const t=gateTheme(z,th,face||1);
+  for(let i=n0;i<scene.children.length;i++){const o=scene.children[i];if(!o.userData.world&&o.userData.pc==null)o.userData.pc=pc}
+  for(const k in INST)for(let i=I0[k]||0;i<INST[k].length;i++)if(INST[k][i].pc==null&&!INST[k][i].w)INST[k][i].pc=pc;
+  for(let i=c0;i<colliders.length;i++)if(colliders[i].pc==null)colliders[i].pc=pc;for(let i=p0;i<platforms.length;i++)if(platforms[i].pc==null)platforms[i].pc=pc;
+  return makeGate2(z,th,t)}
+function makeGate2(z,th,t){const snd=t.kind==='lift'?'lift':t.kind==='slide'?'slide':['adding','fin'].includes(th)?'metal':'wood';
   return Object.assign(t,{z,snd,dur:{lift:3.4,slide:2.0,metal:2.4,wood:2.6}[snd],col:colBox(-1.6,1.6,z-0.3,z+0.3),open:false,t:0})}
 function archway(zA,name,topic,th){const own=th==='castle'||th==='snow'||th==='glass',tex=new THREE.MeshBasicMaterial({map:signTex([name,topic],820,226),toneMapped:false});
   if(!own){[-1.9,1.9].forEach(x=>{blk(0.7,3.5,1.2,x,1.75,zA,0xd9cfb8);blk(0.9,0.3,1.4,x,0.15,zA,0xcfc3a8);blk(0.86,0.2,1.36,x,3.45,zA,0xcfc3a8)});
@@ -3887,9 +3905,8 @@ ROOMS.forEach((room,r)=>{
 });
 // no tree may reach over or behind a panel: its leaves would poke through the board or crowd the view (run once the
 // panels are up and again after all the scattered trees are planted)
-/* ---------- each place's hill side: wall and shortcut gate; its laser tower; and lanterns at its gates ----------
-   every place is walled, in its own style, along the side that faces Meridian Hill. near its last puzzle a shortcut gate
-   in that wall opens once the place is complete, straight out onto the meadow. near the last panel stands the place's
+/* ---------- each place's hill side: an unbroken wall; its laser tower; and lanterns at its gates ----------
+   every place is walled, in its own style, along the side that faces Meridian Hill. near the last panel stands the place's
    laser tower: when the place is complete it charges and fires a beam of its colour to its receiver at the foot of Meridian Hill. a lantern by each of its gates shows how far
    you have got: dark (not started), amber (under way) or green (complete), with a board of pips beneath it */
 const AREA_COL={castle:0xe04a3a,windmill:0xf0b62e,adding:0xff8a3a,times:0x2fb3a6,oddeven:0x3d8be0,snow:0x7fd0ff,glass:0x4fc46e,match:0xb06ad8,beach:0xff6f8a};
@@ -3914,21 +3931,11 @@ function drawMarker(M){const c=M.ctx,a=PROG.area(M.id),n=a.puzzles.filter(q=>PRO
   const C=st==='complete'?'#4cd964':'#ffd23f';for(let k=0;k<N;k++){const x=128+(k-(N-1)/2)*27,y=70;c.beginPath();c.arc(x,y,10,0,7);c.fillStyle=k<n?C:'#2c5566';c.fill()}
   M.tex.needsUpdate=true;const col=st==='complete'?0x4cd964:st==='in_progress'?0xffb02e:0x55626a;M.lm.color.set(lin(col));M.lm.emissive.set(lin(col));M.lm.emissiveIntensity=st==='not_started'?0.12:1.6}
 function innerWall(r){const id=AREA_OF_ROOM[r],th=WALLTHEME[ROOMS[r].key]||'hedge',z0=z0s[r],zBot=z0-AREA,R=mulberry32(r*31+7);
-  // the shortcut gate: towards the place's far end, where nothing stands on the wall line or just inside it
-  const zg=[-58,-55,-61,-52,-49,-46,-43,-40,-37,-34].map(d=>z0+d).find(z=>!lineBusy(r,XW-0.9,XW+2.6,z-2.3,z+2.3))||z0-56;
-  // the wall, in stretches between anything already standing on its line (and over no water), leaving the gate's gap
-  let a=null;for(let z=z0;z>=zBot-0.01;z-=0.5){const free=!lineBusy(r,XW-0.6,XW+0.6,z-0.25,z+0.25)&&Math.abs(z-zg)>1.9,last=z-0.5<zBot-0.01;
+  // the wall runs unbroken along the place's hill side (there is no shortcut gate: the way to Meridian Hill is the spoke path),
+  // in stretches between anything already standing on its line, and over no water
+  let a=null;for(let z=z0;z>=zBot-0.01;z-=0.5){const free=!lineBusy(r,XW-0.6,XW+0.6,z-0.25,z+0.25),last=z-0.5<zBot-0.01;
     if(free&&a===null)a=z;if(a!==null&&(!free||last)){const b=free?z:z+0.5;if(a-b>=0.9){const len=a-b,zc=(a+b)/2;wallSeg(sgroup(XW,0,zc,Math.PI/2),len,th,R);colBox(XW-0.6,XW+0.6,b,a);for(let q=b;q<=a;q+=1)reserve(XW,q,1)}a=null}}
-  // gate posts, a lintel with a sign, and two leaves that swing out onto the meadow when the place is complete
-  const col=AREA_COL[id]||0xb98a5a,stone=th==='castle'?0xd9cfb8:0xe8e1d2;
-  [1,-1].forEach(s=>{blk(0.75,3.4,0.75,XW,1.7,zg+s*2.05,stone);mesh(new _G.Sph(0.2,14,10),matBrass,XW,3.6,zg+s*2.05);colBox(XW-0.4,XW+0.4,zg+s*2.05-0.4,zg+s*2.05+0.4)});
-  blk(0.55,0.36,4.9,XW,3.25,zg,stone);
-  {const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.6,0.62),new THREE.MeshBasicMaterial({map:signTex(['Shortcut','Out to Meridian Hill'],512,124),toneMapped:false}));sg.position.set(XW+0.29,2.75,zg);sg.rotation.y=Math.PI/2;scene.add(sg)}
-  const leaves=[1,-1].map(s=>{const g=new THREE.Group();g.position.set(XW,0,zg+s*1.66);scene.add(g);
-    blk(0.1,2.3,1.6,0,1.25,-s*0.8,col,g);[0.4,2.0].forEach(y=>blk(0.14,0.12,1.6,0,y,-s*0.8,0x2b3a42,g));blk(0.14,2.3,0.1,0,1.25,-s*1.58,0x2b3a42,g);
-    mesh(new THREE.TorusGeometry(0.11,0.025,8,20),matBrass,0.1,1.2,-s*1.45,g).rotation.y=Math.PI/2;return g});
-  const gc=colBox(XW-0.25,XW+0.25,zg-1.66,zg+1.66);reserve(XW+1.6,zg,2.2);reserve(XW-1.6,zg,2.2);
-  SHORTCUTS[id]={r,zg,leaves,col:gc,t:0,open:false};
+  const col=AREA_COL[id]||0xb98a5a;   // (the place's colour: its laser and lamps)
   // the laser tower: on open ground a few steps from the place's last panel (near it, never right beside it). that panel's
   // cable runs to its foot. how tall it grows is settled once the island is put together (buildTowers, after assemble)
   {const L=ROOMS[r].list,p=L[L.length-1],bx=p.wall?p.normal.x:-p.normal.x,bz=p.wall?p.normal.z:-p.normal.z;let best=null;
@@ -3942,8 +3949,8 @@ function innerWall(r){const id=AREA_OF_ROOM[r],th=WALLTHEME[ROOMS[r].key]||'hedg
       if(!best||s<best.s)best={s,x,z,ux:-ux,uz:-uz}}}
    if(best){colCirc(best.x,best.z,1.25);reserve(best.x,best.z,2.6);
      TOWERS[id]={r,id,col,x:best.x,z:best.z,ux:best.ux,uz:best.uz,st:0,t:0};ROOMS[r].towerPt=[best.x+best.ux*1.38,best.z+best.uz*1.38]}}
-  // lanterns: inside both loop gates and by the shortcut gate
-  MSPOTS.push({r,id,x:3.8,z:z0+1.9,face:[0,1]},{r,id,x:3.8,z:zBot-1.9,face:[0,-1]},{r,id,x:XW-1.9,z:zg+3.2,face:[-1,0],short:1})}
+  // lanterns: inside both loop gates
+  MSPOTS.push({r,id,x:3.8,z:z0+1.9,face:[0,1]},{r,id,x:3.8,z:zBot-1.9,face:[0,-1]})}
 /* ---------- the hilltop ----------
    the Finish Meadow and the launch pad, walled in white stone, high on the hill's flat top. the only way up is the lift
    from the cavern below. on the island's middle line (the Prime Meridian, marked in brass) stands the Meridian Spire,
@@ -4129,7 +4136,8 @@ function layCables(){
     const bl2=bl.slice(),mb=0.6;colliders.forEach(c=>{if(!c.dyn&&!c.panel&&c.t==='box')span(c.minX-mb,c.maxX+mb,c.minZ-mb,c.maxZ+mb,k=>bl2[k]=1)});
     for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++)hh[j*NX+i]=heightAt(X(i),Z(j));
     // end points; a free-standing panel's cable leaves from behind it, a wall panel's from in front of the wall
-    const E=[[0,z0-0.6,null]];L.forEach(p=>E.push([p.cablePt[0],p.cablePt[1],p.wall?[p.normal.x,p.normal.z]:[-p.normal.x,-p.normal.z]]));E.push(room.towerPt?[room.towerPt[0],room.towerPt[1],null]:[0,zBot+0.35,null]);
+    // (no cable runs in to a place's first panel: its cables start there and lead on from panel to panel, then to the tower)
+    const E=[];L.forEach(p=>E.push([p.cablePt[0],p.cablePt[1],p.wall?[p.normal.x,p.normal.z]:[-p.normal.x,-p.normal.z]]));E.push(room.towerPt?[room.towerPt[0],room.towerPt[1],null]:[0,zBot+0.35,null]);
     const cellOf=(x,z)=>Math.max(0,Math.min(NZ-1,Math.round((zT-z)/CG)))*NX+Math.max(0,Math.min(NX-1,Math.round((x-x0)/CG)));
     // cells right by a cable's own end point are always usable. (the end point's grid cell is always allowed: rounding
     // it to the 0.5 m grid can land it on the far side of its panel, which used to make the route impossible, so the
@@ -4178,14 +4186,14 @@ function layCables(){
       legs.push(cable(pts));legPts.push(pts);legLv.push(lv);legCells.push(cells);
       // keep scattered bushes and trees off the cable
       for(let s=0;s<pts.length-1;s++){const A=pts[s],B=pts[s+1],len=Math.hypot(B[0]-A[0],B[1]-A[1]);for(let u=0;u<=len;u+=1)reserve(A[0]+(B[0]-A[0])*u/(len||1),A[1]+(B[1]-A[1])*u/(len||1),0.3)}}
-    entryCables[r]=legs[0];L.forEach((p,i)=>{p.cables=legs[i+1];p.cablePts=legPts[i+1]});room.entryPts=legPts[0];room.legPts=legPts;room.legLv=legLv;
+    entryCables[r]=[];L.forEach((p,i)=>{p.cables=legs[i];p.cablePts=legPts[i]});room.entryPts=null;room.legPts=[null,...legPts];room.legLv=[0,...legLv];   // (leg i leads into panel i; none into the first)
   });
 }
 layCables();
-// the five challenges' cables: from the cave path to each challenge in turn, and on to the lift
-{const cx=CAVE.x,cz=SUMMIT.z0+CAVE.z,E=[[cx-13.6,cz+3],...SUMMIT.list.map(p=>p.cablePt),[cx+1.25,cz+0.9]],legs=[],pts=[];BCTX='fin';
+// the five challenges' cables: from each challenge to the next, and from the last one on to the lift
+{const cx=CAVE.x,cz=SUMMIT.z0+CAVE.z,E=[...SUMMIT.list.map(p=>p.cablePt),[cx+1.25,cz+0.9]],legs=[],pts=[];BCTX='fin';
  for(let q=0;q<E.length-1;q++){const a=E[q],b=E[q+1],P=[a,[a[0],b[1]],b];const L=cable(P);L.forEach(m=>{m.position.y-=H_TOP});legs.push(L);pts.push(P)}BCTX=null;
- SUMMIT.entryCable=legs[0];SUMMIT.legPts=pts;SUMMIT.list.forEach((p,i)=>{p.cables=legs[i+1];p.cablePts=pts[i+1]});SUMMIT.liftCable=legs[legs.length-1]}
+ SUMMIT.entryCable=[];SUMMIT.legPts=[null,...pts];SUMMIT.list.forEach((p,i)=>{p.cables=legs[i];p.cablePts=pts[i]});SUMMIT.liftCable=legs[legs.length-1]}
 
 /* ---------- scatter vegetation ---------- */
 function scatterArea(zTop,zBot,o){
@@ -4226,19 +4234,35 @@ function worldPath(pts,w,col,edge0){const P=[],I=[],step=0.8,hw=w/2;let first=tr
   const m=new THREE.Mesh(g,M(col||PATHC));m.receiveShadow=true;m.userData.world=1;m.userData.wpath=1;scene.add(m);WPATH.push({pts,w});return m}
 // the join from one piece's path to the next one's, across the open ground between the two pieces: a strip whose ends
 // lie exactly along each piece's path end (so no round ends show under the gates) and as wide as the path it meets there
-function joinPath(A,B,col){
+function joinPath(A,B,col,bl){
   const wAt=(P,z)=>{const r=PATHR.find(r=>r.seg&&Math.abs(r.seg.a[0])<0.05&&Math.abs(r.seg.b[0])<0.05&&Math.min(r.seg.a[1],r.seg.b[1])-1.6<=z&&Math.max(r.seg.a[1],r.seg.b[1])+1.6>=z&&pieceOfS(z)===P);return r?r.seg.w:3.2};
   const wa=wAt(A,A.zb+0.8),wb=wAt(B,B.zt-0.8),qa=[S2W(-wa/2,A.zb+0.3,A,{}),S2W(wa/2,A.zb+0.3,A,{})],qb=[S2W(-wb/2,B.zt-0.3,B,{}),S2W(wb/2,B.zt-0.3,B,{})];   // (a little over each path's end, so no crack shows at the step)
-  const ax=(qa[0].x+qa[1].x)/2,az=(qa[0].z+qa[1].z)/2,bx=(qb[0].x+qb[1].x)/2,bz=(qb[0].z+qb[1].z)/2,n=Math.max(1,Math.ceil(Math.hypot(bx-ax,bz-az)/0.8)),P=[],I=[];
-  for(let i=0;i<=n;i++){const t=i/n;for(let k=0;k<2;k++){const x=qa[k].x+(qb[k].x-qa[k].x)*t,z=qa[k].z+(qb[k].z-qa[k].z)*t;P.push(x,hillY(x,z)+0.03,z)}
-    if(i){const b=(i-1)*2;I.push(b,b+1,b+2,b+1,b+3,b+2)}wReserve(ax+(bx-ax)*t,az+(bz-az)*t,Math.max(wa,wb)/2+0.5)}
-  // face up whichever way round the corners came out
-  {const e1x=P[3]-P[0],e1z=P[5]-P[2],e2x=P[6]-P[0],e2z=P[8]-P[2];if(e1z*e2x-e1x*e2z<0)for(let t=0;t<I.length;t+=3){const q=I[t+1];I[t+1]=I[t+2];I[t+2]=q}}
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);g.computeVertexNormals();
-  const m=new THREE.Mesh(g,M(col||PATHC));m.receiveShadow=true;m.userData.world=1;m.userData.wpath=1;scene.add(m);WPATH.push({pts:[[ax,az],[bx,bz]],w:Math.max(wa,wb)});return m}
+  const ax=(qa[0].x+qa[1].x)/2,az=(qa[0].z+qa[1].z)/2,bx=(qb[0].x+qb[1].x)/2,bz=(qb[0].z+qb[1].z)/2,L=Math.hypot(bx-ax,bz-az)||1,n=Math.max(1,Math.ceil(L/0.8));
+  const at=(t,k)=>[qa[k].x+(qb[k].x-qa[k].x)*t,qa[k].z+(qb[k].z-qa[k].z)*t];
+  const strip=(t0,t1,c)=>{const P=[],I=[],m=Math.max(1,Math.ceil(n*(t1-t0)));
+    for(let i=0;i<=m;i++){const t=t0+(t1-t0)*i/m;for(let k=0;k<2;k++){const [x,z]=at(t,k);P.push(x,hillY(x,z)+0.03,z)}if(i){const b=(i-1)*2;I.push(b,b+1,b+2,b+1,b+3,b+2)}}
+    // face up whichever way round the corners came out
+    {const e1x=P[3]-P[0],e1z=P[5]-P[2],e2x=P[6]-P[0],e2z=P[8]-P[2];if(e1z*e2x-e1x*e2z<0)for(let q=0;q<I.length;q+=3){const w=I[q+1];I[q+1]=I[q+2];I[q+2]=w}}
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);g.computeVertexNormals();
+    const me=new THREE.Mesh(g,M(c));me.receiveShadow=true;me.userData.world=1;me.userData.wpath=1;scene.add(me);return me};
+  for(let i=0;i<=n;i++){const t=i/n;wReserve(ax+(bx-ax)*t,az+(bz-az)*t,Math.max(wa,wb)/2+0.5)}
+  let m;if(!bl)m=strip(0,1,col||PATHC);
+  else{// one path gives way to another (dirt to packed snow): the change is at bl.at, softened by patches of each lying over
+    // the other either side of it, thinning out with distance, so it reads as snow drifting over the end of the dirt
+    m=strip(0,bl.at,col);strip(bl.at,1,bl.to);
+    const R=mulberry32(Math.round(ax*13+az*7)),dx=(bx-ax)/L,dz=(bz-az)/L,nx=-dz,nz=dx,span=Math.min(0.45,2.6/L),G={};
+    for(let k=0;k<70;k++){const t=bl.at+(R()*2-1)*span;if(t<0.02||t>0.98)continue;const f=Math.abs(t-bl.at)/span;if(R()>1-f*0.85)continue;
+      const c=t<bl.at?bl.to:col,w=wa+(wb-wa)*t,r=0.12+0.3*R(),s2=(R()-0.5)*Math.max(0,w-2*r-0.1),cx=ax+(bx-ax)*t+nx*s2,cz=az+(bz-az)*t+nz*s2,y=hillY(cx,cz)+0.036+0.0007*(k%7);
+      const P=[cx,y,cz],I=[],sg=12,ph=R()*6;for(let q=0;q<=sg;q++){const a=q/sg*Math.PI*2,rr=r*(0.78+0.22*Math.sin(a*3+ph)+0.1*Math.sin(a*5+ph*2));P.push(cx+Math.cos(a)*rr,y,cz+Math.sin(a)*rr);if(q)I.push(0,q+1,q)}
+      const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);g.computeVertexNormals();(G[c]=G[c]||[]).push(g)}
+    for(const c in G){const me=new THREE.Mesh(mergeGeos(G[c]),M(+c));me.receiveShadow=true;me.userData.world=1;me.userData.wpath=1;scene.add(me)}}
+  WPATH.push({pts:[[ax,az],[bx,bz]],w:Math.max(wa,wb)});return m}
 (function islandPaths(){const R=PIECES.ring,n=R.length,q={};
   // joins in the loop path, from the end of each piece's path to the start of the next one's
-  for(let k=0;k<n;k++){const A=R[k],B=R[(k+1)%n];joinPath(A,B,B.kind==='room'&&B.i===SNOWR||A.kind==='room'&&A.i===SNOWR?SNOWPATH:PATHC)}
+  // (packed snow on and between the snowy pieces; where a snowy piece meets a dirt one, the dirt gives way to snow right at
+  // the dirt side's gate, so no dirt runs out over the snow)
+  {const snowy=P=>P.kind==='room'&&P.i===SNOWR||P.kind==='link'&&CONN[P.i]&&CONN[P.i].kind==='frost';
+   for(let k=0;k<n;k++){const A=R[k],B=R[(k+1)%n],sa=snowy(A),sb=snowy(B);if(sa===sb)joinPath(A,B,sa?SNOWPATH:PATHC);else joinPath(A,B,sa?SNOWPATH:PATHC,{to:sb?SNOWPATH:PATHC,at:sb?0.16:0.84})}}
   // from the Welcome Gate up to the loop path
   {const g=PIECES.byId.start.gate,A=R[n-1],B=R[0],a=S2W(0,A.zb,A,{}),b=S2W(0,B.zt,B,{}),S=PIECES.byId.start,zg=z0s[0]-AREA,w0=(PATHR.find(r=>r.seg&&Math.abs(r.seg.a[0])<0.05&&Math.abs(r.seg.b[0])<0.05&&Math.min(r.seg.a[1],r.seg.b[1])-1.6<=zg+0.8&&Math.max(r.seg.a[1],r.seg.b[1])+1.6>=zg+0.8)||{seg:{w:3.2}}).seg.w;
    worldPath([[g[0],g[1]],[(a.x+b.x)/2,(a.z+b.z)/2]],3.2,PATHC,[-1,1].map(sd=>{const q=S2W(sd*w0/2,zg+0.3,S,{});return [q.x,q.z]}))}
@@ -4264,7 +4288,12 @@ function joinPath(A,B,col){
     let lo=0,hi=dl;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(mesaD(a.x+ux*m,a.z+uz*m)<0)hi=m;else lo=m}
     const ex=a.x+ux*hi,ez=a.z+uz*hi,dC=1/Math.hypot(ux/CAVE.rx,uz/CAVE.rz),toC=Math.hypot(CAVE.x-ex,CAVE.z-ez),sx=ex-ux*1.6,sz=ez-uz*1.6;
     CAVE.tunnels.push({r,link:L.id,ax:sx,az:sz,ux,uz,len:1.6+(toC-dC)+2.5,ex,ez});
-    worldPath([[a.x,a.z],[ex-ux*0.35,ez-uz*0.35]],3,r===SNOWR?SNOWPATH:PATHC);PIECES.spokes.push({r,L:L.id,zs,a:[a.x,a.z],b:[ex,ez]});
+    // the path swings round out of the stub in a smooth curve (no sharp kink, so no wedge of grass inside the bend): it starts
+    // 3 m back along the stub and bends through the stub's end towards the cave mouth
+    {const a0=S2W(-X_IN+2.6,zs,L,{}),dE=Math.hypot(ex-a.x,ez-a.z),lr=Math.min(5,dE*0.35),a1x=a.x+ux*lr,a1z=a.z+uz*lr,pts=[];
+     for(let k=0;k<=10;k++){const t=k/10,u0=(1-t)*(1-t),u1=2*t*(1-t),u2=t*t;pts.push([u0*a0.x+u1*a.x+u2*a1x,u0*a0.z+u1*a.z+u2*a1z])}
+     pts.push([ex-ux*0.35,ez-uz*0.35]);worldPath(pts,3,r===SNOWR?SNOWPATH:PATHC)}
+    PIECES.spokes.push({r,L:L.id,zs,a:[a.x,a.z],b:[ex,ez]});
     for(let t=-6;t<=0;t+=1.5)wReserve(ex+ux*t,ez+uz*t,4.2)}
   // the laser receivers: one for each place, standing at the foot of the cliff between the two cave mouths either side of
   // the line from the cavern to that place (so each faces its own place's laser tower)
@@ -4947,7 +4976,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     else if(V.includes('wide')){cap([s*0.17,0.43,0.05],[s*0.37,0.5,0.05],0.066,0.05,B,0.05);e([s*0.41,0.52,0.05],[0.055,0.055,0.055],B,0.02)}
     else if(V.includes('hold')){cap([s*0.17,0.43,0.05],[s*0.11,0.44,0.24],0.066,0.05,B,0.05);e([s*0.1,0.44,0.272],[0.05,0.05,0.048],B,0.02)}
     else if(V.includes('lick')&&s>0){cap([s*0.17,0.43,0.05],[s*0.08,0.5,0.24],0.066,0.05,B,0.05);e([s*0.065,0.51,0.27],[0.05,0.05,0.048],B,0.02)}
-    else if(V.includes('aim')){if(s>0){cap([0.17,0.43,0.05],[0.3,0.53,0.135],0.066,0.05,B,0.05);e([0.34,0.545,0.15],[0.05,0.05,0.048],B,0.02)}else splitArm(AIMA,AIMB,0.066,0.05,AIMQ,[0.05,0.05,0.048])}
+    else if(V.includes('aim')){if(s>0){cap([0.17,0.43,0.06],[0.215,0.45,0.29],0.066,0.05,B,0.05);e([0.235,0.46,0.32],[0.05,0.05,0.048],B,0.02)}else splitArm(AIMA,AIMB,0.066,0.05,AIMQ,[0.05,0.05,0.048])}
     else if(V.includes('front')){if(SPLIT&&s>0)splitArm([0.17,0.43,0.05],[0.16,0.42,0.23],0.066,0.05,[0.155,0.42,0.265],[0.055,0.052,0.05]);else{cap([s*0.17,0.43,0.05],[s*0.16,0.42,0.23],0.066,0.05,B,0.05);e([s*0.155,0.42,0.265],[0.055,0.052,0.05],B,0.02)}}
     else if(V.includes('reach')&&s>0){cap([s*0.17,0.43,0.05],[s*0.29,0.66,0.1],0.066,0.05,B,0.05);e([s*0.31,0.71,0.11],[0.056,0.056,0.056],B,0.02)}
     else if(!K.claws){if(SPLIT&&s>0)splitArm([0.17,0.43,0.05],[0.25,0.27,0.13],0.068,0.05,[0.255,0.255,0.145],[0.055,0.05,0.06])
@@ -4957,7 +4986,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   // where each arm and paw ended up, so clothes can be painted on the sleeves and stop at the paws
   const V0=variant||'',PAW=[],ARM=[];[-1,1].forEach(s=>{const a=[s*0.17,0.43,0.05];let b,q;
     if(V0.includes('up2')){b=[s*0.25,0.68,0.07];q=[s*0.26,0.72,0.08]}else if(V0.includes('wide')){b=[s*0.37,0.5,0.05];q=[s*0.41,0.52,0.05]}else if(V0.includes('hold')){b=[s*0.11,0.44,0.24];q=[s*0.1,0.44,0.272]}else if(V0.includes('lick')&&s>0){b=[s*0.08,0.5,0.24];q=[s*0.065,0.51,0.27]}
-    else if(V0.includes('aim')){b=s>0?[0.3,0.53,0.135]:AIMB;q=s>0?[0.34,0.545,0.15]:AIMQ}else if(V0.includes('front')){b=[s*0.16,0.42,0.23];q=[s*0.155,0.42,0.265]}else if(V0.includes('reach')&&s>0){b=[s*0.29,0.66,0.1];q=[s*0.31,0.71,0.11]}else if(!K.claws){b=[s*0.25,0.27,0.13];q=[s*0.255,0.255,0.145]}else{b=[s*0.29,0.38,0.11];q=[s*0.31,0.4,0.13]}
+    else if(V0.includes('aim')){b=s>0?[0.215,0.45,0.29]:AIMB;q=s>0?[0.235,0.46,0.32]:AIMQ}else if(V0.includes('front')){b=[s*0.16,0.42,0.23];q=[s*0.155,0.42,0.265]}else if(V0.includes('reach')&&s>0){b=[s*0.29,0.66,0.1];q=[s*0.31,0.71,0.11]}else if(!K.claws){b=[s*0.25,0.27,0.13];q=[s*0.255,0.255,0.145]}else{b=[s*0.29,0.38,0.11];q=[s*0.31,0.4,0.13]}
     ARM.push([a,b]);PAW.push(q)});
   const OUT=['farmer','fisher','beekeeper','shop','skates','mayor','princess','maid','archer','lifeguard'].find(t=>V0.includes(t))||(knight?'knight':undefined),HAT=OUT&&OUT!=='skates',SHADES=V0.includes('shades'),TC=parseInt((V0.match(/#([0-9a-f]{6})/)||[0,'d8202a'])[1],16);
   if(K.ear==='round'&&OUT!=='mayor')[-1,1].forEach(s=>e([s*0.185,0.91,-0.01],[0.085,0.085,0.045],E,0.04,[0,0,-s*0.3]));
@@ -5125,7 +5154,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
 function critterMesh(kind,variant){const key=kind+(variant||''),P=CRITG[key]||(CRITG[key]=critterParts(CRIT[kind],variant)),m=new THREE.Mesh(P.body,critMat);m.castShadow=true;
   const EY=[];[[P.extra,partMat],[P.gloss,glossMat],[P.eyes,eyeMat],[P.hi,hiMat],[P.veil,veilMat]].forEach(([g,mt])=>{if(g){const c=new THREE.Mesh(g,mt);c.castShadow=mt!==hiMat;m.add(c);if(g===P.eyes||g===P.hi)EY.push(c)}});
   const V=variant||'';if(P.armU){const J=P.aj,ag=new THREE.Group();ag.position.set(...J.a);m.add(ag);const am=new THREE.Mesh(P.armU,critMat);am.castShadow=true;ag.add(am);
-    const fg=new THREE.Group();fg.position.set(J.m[0]-J.a[0],J.m[1]-J.a[1],J.m[2]-J.a[2]);ag.add(fg);const fm=new THREE.Mesh(P.armF,critMat);fm.castShadow=true;fg.add(fm);m.userData.arm=ag;m.userData.fore=fg;
+    const fg=new THREE.Group();fg.position.set(J.m[0]-J.a[0],J.m[1]-J.a[1],J.m[2]-J.a[2]);ag.add(fg);const fm=new THREE.Mesh(P.armF,critMat);fm.castShadow=true;fg.add(fm);m.userData.arm=ag;m.userData.fore=fg;m.userData.aj=J;
     m.userData.wru=new THREE.Vector3(J.m[0]-J.a[0],J.m[1]-J.a[1],J.m[2]-J.a[2]).normalize();m.userData.wrf=new THREE.Vector3(J.q[0]-J.m[0],J.q[1]-J.m[1],J.q[2]-J.m[2]).normalize();WAVERS.push(m)}
   if(P.eyes&&P.smile){const sm=new THREE.Mesh(SMILEG(),eyeMat);sm.visible=false;m.add(sm);m.userData.smile=sm;m.userData.eyes=EY;SMILERS.push(m)}
   if(P.crown){const c=new THREE.Mesh(P.crown,crownMat);c.castShadow=true;m.add(c)}
@@ -5170,14 +5199,21 @@ function kingCape(m){const g=new THREE.CylinderGeometry(0.285,0.4,0.52,36,16,tru
     for(let i=0;i<p.count;i++){const x=b[i*3],y=b[i*3+1],z=b[i*3+2],f=Math.max(0,(0.26-y)/0.52),a=Math.atan2(x,z),ca=Math.max(0,-Math.cos(a));
       const wave=0.5+0.5*Math.sin(t*2.6+a*5.0-f*5.0),ripple=0.5+0.5*Math.sin(t*4.1-a*9.0+f*7.0),out=Math.pow(f,1.2)*(0.02+0.045*wave+0.015*ripple+0.05*gust*ca+0.09*spd);
       p.setXYZ(i,x+Math.sin(a)*out,y+f*f*(0.015+0.03*spd)*ca,z+Math.cos(a)*out-f*f*(0.03*gust+0.07*spd)*ca)}p.needsUpdate=true;g.computeVertexNormals()})}
-// a pinwheel held up in the raised paw: a striped stick and four folded paper blades that turn slowly
-function pinwheel(m){const g=new THREE.Group();g.position.set(0.32,0.71,0.11);m.add(g);const st=new THREE.Mesh(new _G.Cyl(0.008,0.008,0.62,8),M(0xfffaf0));st.position.y=0.15;g.add(st);
-  const w=new THREE.Group();w.position.set(0,0.47,0.03);g.add(w);const C=[0xff4f6a,0xffd23f,0x3d9be0,0x7cc35a];
+// a pinwheel: a striped stick and four folded paper blades that turn slowly. a pet with a jointed arm holds it in its paw
+// down by its side, the stick upright and the wheel out in front of its shoulder (clear of its face and body); when it
+// greets you its wave lifts the pinwheel up, and the stick stays upright all the while. (a pet with a raised arm holds it up)
+const PINH=[];
+function pinwheel(m){const u=m.userData,jointed=!!u.fore,g=new THREE.Group();
+  if(jointed){const J=u.aj;g.position.set(J.q[0]-J.m[0]+0.03,J.q[1]-J.m[1],J.q[2]-J.m[2]+0.06);u.fore.add(g);PINH.push({g,m})}
+  else{g.position.set(0.32,0.71,0.11);m.add(g)}
+  const st=new THREE.Mesh(new _G.Cyl(0.008,0.008,jointed?0.42:0.62,8),M(0xfffaf0));st.position.y=jointed?0:0.15;g.add(st);
+  const w=new THREE.Group();w.position.set(0,jointed?0.21:0.47,0.03);g.add(w);const C=[0xff4f6a,0xffd23f,0x3d9be0,0x7cc35a];
   for(let k=0;k<4;k++){const s=new THREE.Shape();s.moveTo(0,0);s.lineTo(0.13,0);s.quadraticCurveTo(0.12,0.08,0.02,0.11);s.closePath();const bg=new THREE.ShapeGeometry(s,6),pp=bg.attributes.position;for(let i=0;i<pp.count;i++)pp.setZ(i,-0.05*pp.getX(i)*pp.getY(i)/0.013*0.1);bg.computeVertexNormals();
     const bl=new THREE.Mesh(bg,dbl(C[k],{roughness:0.6}));bl.rotation.z=k*Math.PI/2;bl.castShadow=true;w.add(bl)}
   w.add(new THREE.Mesh(new _G.Sph(0.018,10,8),M(0xffd23f)));PINW.push(w)}
 const PINW=[],WAVERS=[],SMILERS=[],happy=m=>{m.userData.sa=true;return m},IDQ=new THREE.Quaternion(),WREST=new THREE.Vector3(0.085,-0.175,0.095).normalize();
-anims.push((t,dt)=>{for(const w of PINW)w.rotation.z-=dt*1.4});
+anims.push((t,dt)=>{for(const w of PINW)w.rotation.z-=dt*1.4;
+  for(const h of PINH){if(!h.m.visible)continue;const u=h.m.userData;h.g.quaternion.copy(u.arm.quaternion).multiply(u.fore.quaternion).invert()}});   // (the stick stays upright whatever the arm does)
 // happy closed eyes: a little upturned arc over each eye, lying on the face (every pet's head is the same shape there)
 const SMILEG=(()=>{let g=null;return()=>{if(g)return g;const P=[],a=partAdder(P);[-1,1].forEach(s=>{const pts=[];for(let k=0;k<=12;k++){const an=Math.PI*(0.12+0.76*k/12),x=s*0.105+0.048*Math.cos(an),y=0.733+0.034*Math.sin(an);
     pts.push([x,y,0.02+0.255*Math.sqrt(Math.max(0,1-(x/0.275)**2-((y-0.71)/0.245)**2))+0.012])}a(tube(pts,0.0095,24,8),0x17110d);[0,12].forEach(k=>a(new _G.Sph(0.0095,8,6),0x17110d,...pts[k]))});return g=partsGeo(P)}})();
@@ -5223,7 +5259,7 @@ function addScarf(m){const mat=new THREE.MeshStandardMaterial({map:stripeFlat(pi
   const e=new THREE.Mesh(new THREE.BoxGeometry(0.11,0.28,0.04),mat);e.position.set(0.09,0.38,0.2);e.rotation.set(0.2,0,0.25);e.castShadow=true;m.add(e)}
 function critters(kind,n,zTop,zBot,sc,scarf,variant){const a={x0:-AW+1.5,x1:AW-1.5,z0:zTop-1.5,z1:zBot+1.5};let made=0;
   for(let k=0;k<200&&made<n;k++){const x=a.x0+RS()*(a.x1-a.x0),z=a.z1+RS()*(a.z0-a.z1);if(!critOK(x,z,a)||!flatAt(x,z,0.5))continue;critter(kind,x,z,a,sc*(0.85+RS()*0.3),scarf,variant);made++}}
-[[['sprout',4],['puffle',3]],[['embertail',3],['hopbun',2,0,undefined,'farmer #3d7cc9'],['sprout',2,0,undefined,'farmer #2f9d6a']],[['splashy',5],['sprout',2]],[],[['hopbun',4,0,undefined,'reach pinwheel'],['embertail',2,0,undefined,'reach pinwheel']],[['pincher',4,0,undefined,'shades'],['splashy',3,0,undefined,'shades']],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown']],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]],[['sprout',3],['hopbun',2],['petalpip',2]]]
+[[['sprout',4],['puffle',3]],[['embertail',3],['hopbun',2,0,undefined,'farmer #3d7cc9'],['sprout',2,0,undefined,'farmer #2f9d6a']],[['splashy',5],['sprout',2]],[],[['hopbun',4,0,undefined,'pinwheel'],['embertail',2,0,undefined,'pinwheel']],[['pincher',4,0,undefined,'shades'],['splashy',3,0,undefined,'shades']],[['drakelet',3,0,-37,'clown'],['starbit',2,0,-37,'clown']],[['petalpip',4],['sprout',3]],[['frostbun',5],['puffle',2]],[['sprout',3],['hopbun',2],['petalpip',2]]]
   .forEach((list,o)=>{const r=ROOMS.findIndex(q=>q.orig===o);list.forEach(([k,n,zt,zb,v])=>critters(k,n,z0s[r]+(zt||0),z0s[r]+(zb!=null?zb:-AREA),1,r===SNOWR,v))});   // the castle's field pets wear clown make-up
 // pets having a swim at Number Bond Beach, each in a stripy rubber ring, paddling slow loops in the sea
 function swimmer(kind,cx,cz,rx,rz,ph,col){const g=new THREE.Group();scene.add(g);const m=happy(critterMesh(kind));m.userData.noWave=true;m.position.y=-0.36;g.add(m);
@@ -5433,7 +5469,10 @@ function pondFish(cx,cz,rx,rz,n){for(let i=0;i<n;i++){const m=fishMesh(i%3?'koi'
 function lookAbout(m,ry,ph,near){return(t,dt)=>{const dx=camera.position.x-m.position.x,dz=camera.position.z-m.position.z,d2=dx*dx+dz*dz;let want=ry+Math.sin(t*0.45+ph)*0.35;
   if(d2<(near||16)){let d=Math.atan2(dx,dz)-ry;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;want=ry+Math.max(-1.2,Math.min(1.2,d))}
   let df=want-m.rotation.y;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;m.rotation.y+=df*Math.min(1,dt*2.5)}}
-const near2=(m,r)=>{const dx=m.position.x-camera.position.x,dz=m.position.z-camera.position.z;return dx*dx+dz*dz<r*r};
+// (while the world is being put together every animation runs once as if you were beside it, so that things which only get
+// their place from their animation, like the skaters and the polar bear cub, have one before they are sorted into places)
+let SETUP_PASS=false;
+const near2=(m,r)=>{if(SETUP_PASS)return true;const dx=m.position.x-camera.position.x,dz=m.position.z-camera.position.z;return dx*dx+dz*dz<r*r};
 // Times Table Village: a farmer in dungarees and a straw hat tends the cabbage patch by the gate. it walks down the
 // furrow between the two rows, stops at each cabbage, waters the row on one side and then the other with its green
 // watering can (a fine sprinkle of drops falls from the rose), then moves on, turning round at the end of the patch
@@ -5602,33 +5641,38 @@ KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMes
 // stands side-on with the bow held out towards the target and the string drawn back to its chin; it looses, the arrow
 // flies to the target and sticks there for a while, and it nocks the next one
 {const zc=z0s[RI('castle')],ax=-16.4,az=zc-21,m=critterMesh('hopbun','archer aim busy');m.scale.setScalar(0.95);m.position.set(ax,0,az);m.rotation.y=Math.PI;scene.add(m);colCirc(ax,az,0.4);
- // the bow is held out to the side at shoulder height; the arrow lies at chin height and points through the grip
- const W=0x7a4a2c,bp=[],GY=0.545,GRIP=new THREE.Vector3(0.34,GY,0.15);for(let k=0;k<=16;k++){const y=GY+(k/16-0.5)*0.78,q=(y-GY)/0.39;bp.push([0.34-0.13*q*q,y,0.15])}
+ // the bow is held out in front of the chest, towards the target; the arrow lies at chest height, well in front of the
+ // face and body, and points through the grip
+ const W=0x7a4a2c,bp=[],GY=0.46,GZ=0.33,GRIP=new THREE.Vector3(0.235,GY,GZ);for(let k=0;k<=16;k++){const y=GY+(k/16-0.5)*0.66,q=(y-GY)/0.33;bp.push([0.235-0.12*q*q,y,GZ])}
  const bow=new THREE.Mesh(tube(bp,0.011,32,6),M(W));bow.castShadow=true;m.add(bow);const grip=new THREE.Mesh(new _G.Cyl(0.016,0.016,0.1,8),M(0x3a2414));grip.position.copy(GRIP);m.add(grip);
- // the drawing arm, with shoulder and elbow joints, follows the string like a real archer's: it hooks the string, draws it
- // straight back to the chin with the elbow rising up and back in line with the arrow, holds at the anchor while aiming,
- // lets go (the hand flicks on back past the cheek), relaxes down by the hip, and comes back up to nock the next arrow
+ // the drawing arm, with shoulder and elbow joints, follows the string: the paw reaches forward to hook the string, draws
+ // it straight back along the arrow in front of the chest with the elbow out to the side, holds while aiming, lets go (the
+ // paw carries on back a little), relaxes down by the hip, and swings round in front of the body to nock the next arrow.
+ // (the arrow line is at chest height because the head is too big for the arm to reach round to the chin)
  const ag=m.userData.arm,fg=m.userData.fore,wru=m.userData.wru,wrf=m.userData.wrf;{const i=WAVERS.indexOf(m);if(i>=0)WAVERS.splice(i,1)}
- const SA=new THREE.Vector3(...AIMA),la=fg.position.length(),lb=new THREE.Vector3(...AIMQ).distanceTo(SA.clone().add(fg.position)),pole=new THREE.Vector3(-0.8,0.3,-0.52).normalize();
+ const SA=new THREE.Vector3(...AIMA),la=fg.position.length(),lb=new THREE.Vector3(...AIMQ).distanceTo(SA.clone().add(fg.position)),pole=new THREE.Vector3(),P1=new THREE.Vector3(-0.68,0.27,0.68).normalize(),PH=new THREE.Vector3(-0.94,0.31,-0.16).normalize();
  const ht=new THREE.Vector3(),u=new THREE.Vector3(),w=new THREE.Vector3(),el=new THREE.Vector3(),hp=new THREE.Vector3(),dF=new THREE.Vector3(),qU=new THREE.Quaternion(),qi=new THREE.Quaternion(),fol=new THREE.Vector3();
  const reach=(x,y,z)=>{ht.set(x,y,z);u.subVectors(ht,SA);let d=u.length();u.multiplyScalar(1/d);d=Math.min(la+lb-0.002,Math.max(Math.abs(la-lb)+0.01,d));
    const ca=(la*la+d*d-lb*lb)/(2*la*d),sa=Math.sqrt(Math.max(0,1-ca*ca));w.copy(pole).addScaledVector(u,-pole.dot(u)).normalize();
    el.copy(SA).addScaledVector(u,la*ca).addScaledVector(w,la*sa);hp.copy(SA).addScaledVector(u,d);
    qU.setFromUnitVectors(wru,dF.subVectors(el,SA).normalize());ag.quaternion.copy(qU);dF.subVectors(hp,el).normalize();qi.copy(qU).invert();dF.applyQuaternion(qi);fg.quaternion.setFromUnitVectors(wrf,dF)};
- const tipT=new THREE.Vector3(0.21,GY+0.39,0.15),tipB=new THREE.Vector3(0.21,GY-0.39,0.15),nock=new THREE.Vector3(),sg=new THREE.BufferGeometry().setFromPoints([tipT,new THREE.Vector3(),tipB]);const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf0e8d8}));m.add(str);
+ const tipT=new THREE.Vector3(0.115,GY+0.33,GZ),tipB=new THREE.Vector3(0.115,GY-0.33,GZ),nock=new THREE.Vector3(),sg=new THREE.BufferGeometry().setFromPoints([tipT,new THREE.Vector3(),tipB]);const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf0e8d8}));m.add(str);
  const mkArrow=()=>{const g=new THREE.Group();const sh=new THREE.Mesh(new _G.Cyl(0.006,0.006,0.62,6),M(0x9a7a4a));sh.rotation.z=Math.PI/2;sh.position.x=0.31;g.add(sh);const hd=new THREE.Mesh(new _G.Cone(0.016,0.05,8),M(0xb8bec4));hd.rotation.z=-Math.PI/2;hd.position.x=0.64;g.add(hd);
    [0,2.09,4.19].forEach(a=>{const f=new THREE.Mesh(new THREE.PlaneGeometry(0.08,0.025),dbl(a?0xffffff:0xd8202a));f.position.set(0.04,Math.cos(a)*0.014,Math.sin(a)*0.014);f.rotation.x=a;g.add(f)});return g};
  const held=mkArrow();m.add(held);const fly=mkArrow();fly.scale.setScalar(0.95);fly.visible=false;scene.add(fly);
  const tgt=new THREE.Vector3(-23.76,1.36,az),start=new THREE.Vector3(),aim=new THREE.Vector3(),P3=sg.attributes.position,X1=new THREE.Vector3(1,0,0),ad=new THREE.Vector3();let lastT=0,hit=new THREE.Vector3();
- // key points (archer's own space): the string at rest, the anchor under the chin, the hand's follow-through and rest
- const REST=new THREE.Vector3(0.21,GY,0.155),ANCH=new THREE.Vector3(0.0,0.575,0.235),FOLW=new THREE.Vector3(-0.09,0.6,0.17),HIP=new THREE.Vector3(-0.2,0.33,0.14),HOFF=new THREE.Vector3(-0.03,-0.012,0),sm=v=>{v=Math.min(1,Math.max(0,v));return v*v*(3-2*v)};
+ // key points (archer's own space): the string at rest, full draw, the paw's follow-through, its rest by the hip, and a
+ // point out in front that it swings round through on the way back up
+ const REST=new THREE.Vector3(0.115,GY,GZ+0.005),ANCH=new THREE.Vector3(-0.1,GY,GZ),FOLW=new THREE.Vector3(-0.2,0.47,0.31),HIP=new THREE.Vector3(-0.27,0.33,0.16),FRONT=new THREE.Vector3(-0.05,0.4,0.38),HOFF=new THREE.Vector3(-0.03,-0.012,0),sm=v=>{v=Math.min(1,Math.max(0,v));return v*v*(3-2*v)};
  anims.push((t,dt)=>{if(!near2(m,60))return;const T=t%4.2,draw=Math.min(1,Math.max(0,(T-0.3)/1.1)),e=draw*draw*(3-2*draw);
    if(T<1.9){nock.lerpVectors(REST,ANCH,e);if(T>1.4)nock.y+=Math.sin(T*37)*0.0015}else nock.copy(REST);   // (a faint tremble while holding at full draw)
    P3.setXYZ(1,nock.x,nock.y,nock.z);P3.needsUpdate=true;held.visible=T<1.9||T>3.45;held.position.copy(nock);held.quaternion.setFromUnitVectors(X1,ad.subVectors(GRIP,nock).normalize());
+   pole.copy(P1);
    if(T<1.9)fol.copy(nock).add(HOFF);
    else if(T<2.05)fol.copy(ANCH).add(HOFF).lerp(FOLW,sm((T-1.9)/0.15));
-   else if(T<2.75)fol.copy(FOLW).lerp(HIP,sm((T-2.05)/0.7));
-   else if(T<3.5)fol.copy(HIP).lerp(ht.copy(REST).add(HOFF),sm((T-2.75)/0.75));
+   else if(T<2.75){const k=sm((T-2.05)/0.7);fol.copy(FOLW).lerp(HIP,k);pole.lerp(PH,k).normalize()}
+   else if(T<3.15){const k=sm((T-2.75)/0.4);fol.copy(HIP).lerp(FRONT,k);pole.copy(PH).lerp(P1,k).normalize()}
+   else if(T<3.5)fol.copy(FRONT).lerp(ht.copy(REST).add(HOFF),sm((T-3.15)/0.35));
    else fol.copy(REST).add(HOFF);
    reach(fol.x,fol.y,fol.z);
    if(lastT<1.9&&T>=1.9){start.copy(GRIP).addScaledVector(ad,0.22);m.localToWorld(start);hit.set(tgt.x+0.01,tgt.y+(Math.random()-0.5)*0.35,tgt.z+(Math.random()-0.5)*0.35);fly.visible=true}
@@ -5667,7 +5711,11 @@ KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMes
 // playground in Adding Garden: pets on the swings, the roundabout, both ends of the seesaw and the spring rider
 {const ride=(parent,kind,v,x,y,z,ry,sc)=>{const m=happy(critterMesh(kind,v));m.scale.setScalar(sc||0.8);m.position.set(x,y,z);m.rotation.y=ry||0;parent.add(m);return m};
  if(PLAY.swings[0])ride(PLAY.swings[0],'puffle','up2',0,-1.8,0.02,Math.PI,0.82);
- if(PLAY.rg){const m=ride(PLAY.rg,'embertail','reach',0.78,0.34,0,Math.PI,0.8);anims.push(t=>{m.position.y=0.34+Math.abs(Math.sin(t*3))*0.02})}
+ // the roundabout rider stands on the deck with its raised paw holding one of the hand rails (rail 0 runs out at angle a;
+ // at the height of the paw it is 0.955 m from the middle), and a soft shadow under its feet
+ if(PLAY.rg){const a=0.4,ux=Math.cos(a),uz=Math.sin(a),fx=-Math.sin(a),fz=Math.cos(a),sc=0.8,R=0.955,px0=ux*R-ux*0.31*sc-fx*0.11*sc,pz0=uz*R-uz*0.31*sc-fz*0.11*sc;
+   const m=ride(PLAY.rg,'embertail','reach',px0,0.336,pz0,-a,sc);const sh=new THREE.Mesh(critBlobGeo,critBlob);sh.renderOrder=1;sh.scale.setScalar(sc*0.9);sh.position.set(px0,0.343,pz0);PLAY.rg.add(sh);
+   anims.push(t=>{m.rotation.z=Math.sin(t*1.3)*0.025})}
  if(PLAY.seesaw){ride(PLAY.seesaw,'hopbun','front busy',-1.35,0.07,0,Math.PI/2,0.78);ride(PLAY.seesaw,'splashy','front busy',1.35,0.07,0,-Math.PI/2,0.78)}
  const hr=PLAY.riders.find(q=>q.kind==='horse');if(hr)ride(hr.r,'sprout','front busy',0,0.31,-0.08,0,0.72)}
 // a pet holding the end of the red maypole ribbon in its raised paw, skipping round the pole as the ribbons turn.
@@ -5854,7 +5902,16 @@ const SHOT={
     b1.type='bandpass';b1.frequency.value=1000;b1.Q.value=3.5;b2.type='bandpass';b2.frequency.value=2600;b2.Q.value=5;os.connect(b1);os.connect(b2);b1.connect(mix);b2.connect(mix);mix.connect(g);g.connect(o);
     g.gain.setValueAtTime(0.0001,tt);g.gain.exponentialRampToValueAtTime(1,tt+0.012);g.gain.setValueAtTime(0.85,tt+0.06);g.gain.exponentialRampToValueAtTime(0.0001,tt+0.16);os.start(tt);os.stop(tt+0.19);am.start(tt);am.stop(tt+0.19);
     hiss(o,tt,0.1,'bandpass',1900,1.6,0.22)}},
-  baa:(o,t)=>blip(o,'sawtooth',200+Math.random()*30,175,t,0.75,['bandpass',1000,2],[7,14]),
+  // a sheep's bleat: a voiced 'meh-eh-eh' with the quaver of a real sheep (the voice wobbles in pitch and loudness six to
+  // eight times a second), shaped by vowel-like resonances near 700, 1800 and 2700 Hz, a soft breathy onset, a pitch that
+  // lifts then sinks, and now and then a second, shorter bleat. lambs are higher and shorter
+  baa:(o,t)=>{const once=(tt,f0,dur,vol)=>{const os=AC.createOscillator(),os2=AC.createOscillator(),vb=AC.createOscillator(),vbg=AC.createGain(),am=AC.createOscillator(),amg=AC.createGain(),mix=AC.createGain(),g=AC.createGain(),q=6+Math.random()*2;
+      os.type='sawtooth';os2.type='triangle';os2.detune.value=8;[os,os2].forEach(x=>{x.frequency.setValueAtTime(f0*0.9,tt);x.frequency.linearRampToValueAtTime(f0*1.06,tt+0.16);x.frequency.exponentialRampToValueAtTime(f0*0.88,tt+dur)});
+      vb.frequency.value=q;vbg.gain.value=f0*0.04;vb.connect(vbg);vbg.connect(os.frequency);vbg.connect(os2.frequency);am.frequency.value=q;amg.gain.value=0.42;am.connect(amg);amg.connect(mix.gain);mix.gain.value=0.58;
+      [[700,5,1],[1800,7,0.55],[2700,9,0.22]].forEach(([f,Q,v])=>{const b=AC.createBiquadFilter(),bg=AC.createGain();b.type='bandpass';b.frequency.value=f*(0.95+Math.random()*0.1);b.Q.value=Q;bg.gain.value=v;os.connect(b);os2.connect(b);b.connect(bg);bg.connect(mix)});
+      mix.connect(g);g.connect(o);g.gain.setValueAtTime(0.0001,tt);g.gain.exponentialRampToValueAtTime(vol,tt+0.06);g.gain.setValueAtTime(vol*0.85,tt+dur*0.7);g.gain.exponentialRampToValueAtTime(0.0001,tt+dur);
+      [os,os2,vb,am].forEach(x=>{x.start(tt);x.stop(tt+dur+0.05)});hiss(o,tt,dur*0.8,'bandpass',1500,1.1,0.06*vol)};
+    const lamb=Math.random()<0.3,f0=(lamb?430:235)*(0.92+Math.random()*0.16),dur=(lamb?0.5:0.75)+Math.random()*0.3;once(t,f0,dur,1.6);if(Math.random()<0.35)once(t+dur+0.18,f0*1.03,dur*0.6,1.1)},
   tweet:(o,t)=>{const n=2+Math.floor(Math.random()*3),b=2400+Math.random()*800;for(let i=0;i<n;i++)blip(o,'sine',b,b*1.5,t+i*0.11,0.07)},
   gull:(o,t)=>{for(let i=0;i<2+Math.floor(Math.random()*2);i++)blip(o,'triangle',1400,780,t+i*0.42,0.34,null,[16,40])},
   creak:(o,t)=>{blip(o,'sawtooth',62+Math.random()*10,78,t,0.55,['bandpass',380,7]);hiss(o,t,0.9,'lowpass',420,1,0.6)},
@@ -6444,7 +6501,8 @@ function refreshFeedback(){MARKERS.forEach(drawMarker);let n=0;
   FJETS.forEach(f=>f.j.visible=PROG.isComplete(f.id));if(SPIRE.core){SPIRE.core.material.emissiveIntensity=0.2+n*0.35}}
 ['puzzleSolved','areaCompleted','reset'].forEach(e=>PROG.on(e,()=>refreshFeedback()));
 PROG.on('reset',()=>{XGATES.forEach(closeG);for(const id in SHORTCUTS){const S=SHORTCUTS[id];S.open=false;S.col.on=true;S.t=0;poseShortcut(S)}});
-PROG.on('areaCompleted',(id,quiet)=>{if(quiet)return;sfx.gate();const a=PROG.area(id);toast(a.start?'The Welcome Gate is open. Every area on the island is open to you now!':a.bonus?'You solved all five final challenges!':a.displayName+' is complete!','good')});
+PROG.on('areaCompleted',(id,quiet)=>{if(quiet)return;const a=PROG.area(id);if(a.start)sfx.gate();   // (only the Welcome Gate opens when a place is finished; elsewhere the laser tower's charge is the sound of it)
+  toast(a.start?'The Welcome Gate is open. Every area on the island is open to you now!':a.bonus?'You solved all five final challenges!':a.displayName+' is complete!','good')});
 
 PROG.on('bonusUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Every place is complete! When all nine beams reach Meridian Hill, the barrier in its caves falls.','good'),4500)});
 PROG.on('areaCompleted',(id,quiet)=>{if(id==='summit'&&!quiet)setTimeout(()=>toast('The lift under the launch pad has power: step inside and ride up to the rocket!','good'),3500)});
@@ -6507,7 +6565,7 @@ const PGROUP={};
 (function assemble(){
   PIECES.forEach(P=>{const g=new THREE.Group();g.position.set(P.ox,P.y,P.oz);g.rotation.y=P.phi;g.userData.piece=P.id;g.userData.world=1;scene.add(g);PGROUP[P.id]=g;P.g=g});
   // one quiet pass of every animation, so things that only get a position from their animation have one
-  {const cp=camera.position.clone();camera.position.set(0,EYE,z0s[1]);for(const a of anims){try{a(0,0.016)}catch(e){}}camera.position.copy(cp)}
+  {const cp=camera.position.clone();camera.position.set(0,EYE,z0s[1]);SETUP_PASS=true;for(const a of anims){try{a(0,0.016)}catch(e){}}SETUP_PASS=false;camera.position.copy(cp)}
   const box=new THREE.Box3(),v=new THREE.Vector3(),lost=[];
   scene.children.slice().forEach(o=>{if(WORLD_EARLY.has(o)||o.userData.world||o===camera||o===sun||o===sun.target||o===hemi)return;
     let id=o.userData.pc;
@@ -6526,6 +6584,45 @@ const PGROUP={};
   BENCHES.forEach(b=>{const P=pieceOfS(b.z);S2W(b.x,b.z,P,q);b.P=P;b.wx=q.x;b.wz=q.z;b.wy=(b.y||0)+P.y});
   {const B=ROCKET.button,P=PIECES.byId.fin;S2W(B.x,B.z,P,q);B.wx=q.x;B.wz=q.z}
   CULL.forEach(c=>{const pid=c.o.parent&&c.o.parent.userData.piece;c.P=pid?PIECES.byId[pid]:null});
+  // no gaps between paths: wherever a strip of grass under a metre wide is left between path surfaces (a path's rounded end
+  // stopping just short of the next path, a wedge where two paths meet at an angle), it is paved in the nearest path's own
+  // material. found on a 12 cm grid of each piece's paving: everything the paving would cover if it were grown by half a
+  // metre and shrunk back again, but doesn't cover now
+  {const tfill=performance.now(),cols=new Set([PATHC,SNOWPATH,...PATHR.map(r=>r.col),...FILLR.map(r=>r.col)].filter(c=>c!=null)),PM=[...cols].map(c=>MATS[c]).filter(Boolean),S=0.12,R=4;
+   PIECES.forEach(P=>{if(!P.g||P.kind==='fin')return;const zt=P.kind==='start'?z0s[0]+3:P.zt+1,zb=P.kind==='start'?z0s[0]-AREA-3:P.zb-1,x0=-AW-3,NX=Math.ceil((2*AW+6)/S),NZ=Math.ceil((zt-zb)/S),N=NX*NZ;
+     const own=new Uint8Array(N),cov=new Uint8Array(N),tris=[];
+     // (every flat thing at ground level counts as something a path can run up to, such as a pond's rim or a building's floor;
+     // only the paths themselves give the gap its material)
+     P.g.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||o.userData.pathFill)return;const mi=PM.indexOf(o.material);const g=o.geometry,pa=g.attributes.position;if(!pa||!pa.array||(g.index&&!g.index.array))return;
+       if(!g.boundingBox)g.computeBoundingBox();const bb=g.boundingBox;if(bb.max.y-bb.min.y>0.08||bb.max.y>0.09||bb.min.y<0.004)return;if(mi<0&&bb.max.x-bb.min.x>45&&bb.max.z-bb.min.z>45)return;
+       o.updateMatrix();const m=o.matrix.clone();for(let a=o.parent;a&&a!==P.g;a=a.parent){a.updateMatrix();m.premultiply(a.matrix)}
+       const v=new THREE.Vector3(),pt=new Float32Array(pa.count*2);for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m);pt[i*2]=v.x;pt[i*2+1]=v.z}
+       const ix=g.index,n=ix?ix.count:pa.count;for(let t=0;t<n;t+=3){const a=ix?ix.getX(t):t,b2=ix?ix.getX(t+1):t+1,c=ix?ix.getX(t+2):t+2;tris.push(pt[a*2],pt[a*2+1],pt[b2*2],pt[b2*2+1],pt[c*2],pt[c*2+1],mi+1)}});   // (0: not a path)
+     if(!tris.length)return;
+     for(let k=0;k<tris.length;k+=7){const ax=tris[k],az=tris[k+1],bx=tris[k+2],bz=tris[k+3],cx=tris[k+4],cz=tris[k+5],d=(bx-ax)*(cz-az)-(bz-az)*(cx-ax);if(Math.abs(d)<1e-9)continue;
+       const i0=Math.max(0,Math.floor((Math.min(ax,bx,cx)-x0)/S)),i1=Math.min(NX-1,Math.floor((Math.max(ax,bx,cx)-x0)/S)),j0=Math.max(0,Math.floor((Math.min(az,bz,cz)-zb)/S)),j1=Math.min(NZ-1,Math.floor((Math.max(az,bz,cz)-zb)/S));
+       for(let j=j0;j<=j1;j++){const z=zb+(j+0.5)*S;for(let i=i0;i<=i1;i++){const x=x0+(i+0.5)*S,w1=((bx-x)*(cz-z)-(bz-z)*(cx-x))/d,w2=((cx-x)*(az-z)-(cz-z)*(ax-x))/d;if(w1>=-1e-6&&w2>=-1e-6&&w1+w2<=1+1e-6){const q=j*NX+i;cov[q]=1;if(tris[k+6])own[q]=tris[k+6]}}}}
+     // two-pass chamfer distance (and, growing outwards, which material is nearest)
+     const chamfer=(D,lab)=>{const t=(k,kk,w)=>{const dd=D[kk]+w;if(dd<D[k]){D[k]=dd;if(lab)lab[k]=lab[kk]}};
+       for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const k=j*NX+i;if(i>0)t(k,k-1,1);if(j>0){t(k,k-NX,1);if(i>0)t(k,k-NX-1,1.414);if(i<NX-1)t(k,k-NX+1,1.414)}}
+       for(let j=NZ-1;j>=0;j--)for(let i=NX-1;i>=0;i--){const k=j*NX+i;if(i<NX-1)t(k,k+1,1);if(j<NZ-1){t(k,k+NX,1);if(i<NX-1)t(k,k+NX+1,1.414);if(i>0)t(k,k+NX-1,1.414)}}};
+     const D1=new Float32Array(N);for(let k=0;k<N;k++)D1[k]=cov[k]?0:1e9;chamfer(D1,null);
+     const D2=new Float32Array(N);for(let k=0;k<N;k++)D2[k]=D1[k]<=R?1e9:0;chamfer(D2,null);
+     const Dp=new Float32Array(N),lab=new Uint8Array(N);for(let k=0;k<N;k++){Dp[k]=own[k]?0:1e9;lab[k]=own[k]}chamfer(Dp,lab);
+     const gap=k=>!cov[k]&&D2[k]>R&&Dp[k]<=2*R+1&&lab[k]>0;
+     // the outline follows the smooth contour of the grown-and-shrunk paving (marching squares over the cell centres), so the
+     // filled edges curve cleanly instead of stepping cell by cell; it is drawn just under the paths it joins
+     const near=new Uint8Array(N);let any=false;for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++)if(gap(j*NX+i)){any=true;for(let b=-2;b<=2;b++)for(let a=-2;a<=2;a++){const ii=i+a,jj=j+b;if(ii>=0&&jj>=0&&ii<NX&&jj<NZ)near[jj*NX+ii]=1}}
+     if(!any)return;
+     const G={},sv=k=>D2[k]-R-0.5,cx=i=>x0+(i+0.5)*S,cz=j=>zb+(j+0.5)*S;
+     for(let j=0;j<NZ-1;j++)for(let i=0;i<NX-1;i++){const K=[j*NX+i,j*NX+i+1,(j+1)*NX+i+1,(j+1)*NX+i];if(!K.some(k=>near[k]))continue;
+       const V=K.map(sv);if(V.every(v=>v<=0))continue;let L=0,best=-1e9;K.forEach((k,q)=>{if(lab[k]&&V[q]>best){best=V[q];L=lab[k]}});if(!L)continue;
+       const C=[[cx(i),cz(j)],[cx(i+1),cz(j)],[cx(i+1),cz(j+1)],[cx(i),cz(j+1)]],poly=[];
+       for(let q=0;q<4;q++){const a=V[q],b=V[(q+1)%4];if(a>0)poly.push(C[q]);if((a>0)!==(b>0)){const t=a/(a-b),A=C[q],B=C[(q+1)%4];poly.push([A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t])}}
+       if(poly.length<3)continue;const o=G[L]||(G[L]={P:[],I:[]}),b0=o.P.length/3;poly.forEach(([x,z])=>o.P.push(x,0.0135,z));for(let q=1;q<poly.length-1;q++)o.I.push(b0,b0+q+1,b0+q)}
+     for(const L in G){const {P:P3,I}=G[L];
+       const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P3,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(new Float32Array(P3.length).map((_,q)=>q%3===1?1:0),3));g.setIndex(I);
+       const me=new THREE.Mesh(g,PM[L-1]);me.receiveShadow=true;me.userData.pathFill=1;P.g.add(me)}});console.log('Prime Meridian: gaps between paths filled in '+Math.round(performance.now()-tfill)+' ms')}
   scene.updateMatrixWorld(true);
   // each piece's bounds, so a whole piece that is out of sight (and not close by) can be skipped at once
   PIECES.forEach(P=>{const b=new THREE.Box3().setFromObject(P.g);P.sphere=b.isEmpty()?null:b.getBoundingSphere(new THREE.Sphere())});
@@ -6604,7 +6701,7 @@ function towerBody(id,grp,H,k,bd,fd){const S=TSTYLE[id]||TSTYLE.castle,y0=0.9,y1
     mesh(new _G.Cone(1.05*k,0.7,16,1,true),0xe8c766,0,H-0.75,0,grp)}
   else if(id==='adding'){   // bright balls round the collar, like a climbing frame's
     around(6,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.2*k,16,12),[0xff6b57,0xffd23f,0x4a86c8,0x6fb35a,0xb48cff,0xff9ecf][i],c*0.95*k,H+0.12,s*0.95*k,grp));
-    around(4,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.18,14,10),[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a][i],c*1.05,0.95,s*1.05,grp))}
+    if(!grp.userData.rx)around(4,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.18,14,10),[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a][i],c*1.05,0.95,s*1.05,grp))}   // (a tower's own four foot balls are built with its moving parts)
   else if(id==='times'){   // terracotta bands, a clock face (in times-table hours) and a little tiled roof over the lens
     for(let y=y0+2.5;y<y1-0.5;y+=3)mesh(new _G.Cyl(rAt(y)+0.06,rAt(y)+0.06,0.18,20),0xb5523b,0,y,0,grp);
     {const cy=y0+sh*0.7,r=rAt(cy)+0.03,cl=new THREE.Group();cl.position.set(fd[0]*r,cy,fd[1]*r);cl.rotation.y=Math.atan2(fd[0],fd[1]);grp.add(cl);
@@ -6642,6 +6739,46 @@ function towerBody(id,grp,H,k,bd,fd){const S=TSTYLE[id]||TSTYLE.castle,y0=0.9,y1
 // tree, the cliffs), and never under 12 m, so it is easy to pick out from the ground. once the place is complete it charges
 // for ten seconds, with a rising hum, a pulse of light climbing it faster and faster and sparks circling its lens, and then
 // fires; the receiver lights up when the beam arrives
+// ---- towers with moving parts. Windmill Hill's has sails behind its lens (never in the beam's way) that stand still until
+// it charges, then turn faster and faster until, as it fires, they turn as fast as the windmills in the fields. Place Value
+// Castle's great sigil rides up on two iron rails into the line of its beam, and slides back down when the tower charges
+// (iron scraping down stone). Adding Garden's four coloured balls rise from the foot as it charges and orbit the tower
+// between its first two rings, each at its own height and distance, one going the other way round, so they never meet.
+// Times Table Village's tower stands folded down inside a little house: when it charges the roof opens, then it rises
+function towerExtras(Tw,g,H,k,bd,fd,lw,TG){const fx={};
+  if(Tw.id==='windmill'){const off=1.05*k+0.3,hub=new THREE.Group();hub.position.set(-bd[0]*off,H-0.75,-bd[1]*off);hub.rotation.y=Math.atan2(bd[0],bd[1]);g.add(hub);
+    const L=off-0.45,boss=mesh(new _G.Cyl(0.09,0.12,L,10),0x7a4a2c,0,0,L/2,hub);boss.rotation.x=Math.PI/2;mesh(new _G.Sph(0.15,12,10),0x6b4226,0,0,0,hub);
+    const sails=new THREE.Group();hub.add(sails);
+    for(let i=0;i<4;i++){const arm=new THREE.Group();arm.rotation.z=i*Math.PI/2;sails.add(arm);blk(0.07,1.75,0.05,0,0.92,0,0x7a4a2c,arm);blk(0.44,1.28,0.02,0.23,1.08,-0.03,0xf3ecdc,arm);
+      for(let q=0;q<4;q++)blk(0.44,0.025,0.03,0.23,0.52+q*0.38,-0.045,0x8a5a3b,arm)}
+    sails.traverse(c=>{if(c.isMesh)c.castShadow=true});mergeDeep(sails,true);fx.sails=sails}
+  if(Tw.id==='adding'){const n=Math.max(4,Math.round((H-1.4)/2.4)),r1=1.8,r2=r1+((H-1.4)-1.7)/(n-1),C=[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a],R=[1.25,1.55,1.85,2.15],Wd=[0.5,-0.42,0.36,0.31];
+    fx.balls=C.map((c,i)=>{const a0=i*Math.PI/2,m=mesh(new _G.Sph(0.18,16,12),c,Math.cos(a0)*1.05,0.95,Math.sin(a0)*1.05,g);m.castShadow=true;return{m,a0,ang:a0,r:R[i],y:r1+(r2-r1)*(0.2+0.2*i),w:Wd[i]}})}
+  if(Tw.id==='castle'&&SIGIL.mesh){const P=PIECES.byId['r'+Tw.r],z0=z0s[Tw.r],w=S2W(-10.8,z0-57,P,{}),d=TG.clone().sub(lw),hh=d.x*d.x+d.z*d.z,tt=((w.x-lw.x)*d.x+(w.z-lw.z)*d.z)/hh;
+    const cx=lw.x+d.x*tt,cz=lw.z+d.z*tt,cy=lw.y+d.y*tt,hd=Math.hypot(cx-w.x,cz-w.z);
+    if(tt>0&&tt<1&&hd<3&&cy>SIGIL.y0+P.y+1){const rise=cy-(SIGIL.y0+P.y),top=SIGIL.y0+rise+4.4;fx.sig={rise,low:-1,wx:w.x,wz:w.z,snd:false};
+      [-2,2].forEach(dz=>{const q=S2W(-11.7,z0-57+dz,P,{}),r=mesh(new _G.Cyl(0.11,0.11,top-13,10),0x33383d,q.x,(top+13)/2,q.z,scene);r.userData.world=1;r.castShadow=true});
+      const a=S2W(-11.7,z0-59.2,P,{}),b=S2W(-11.7,z0-54.8,P,{}),bar=rod([a.x,top,a.z],[b.x,top,b.z],0.13,0x33383d,scene);if(bar)bar.userData.world=1}}
+  if(Tw.id==='times'){const s0=Math.min(1,3.0/(H+2.0)),hs=new THREE.Group();hs.position.copy(g.position);hs.rotation.y=Math.atan2(fd[0],fd[1]);hs.userData.world=1;scene.add(hs);
+    const st=new THREE.Group();hs.add(st);const W=1.65,WH=2.7,RH=1.35,OV=1.85,PL=0xf6e3c6;
+    [-1,1].forEach(s=>blk(0.14,WH,2*W,s*W,WH/2,0,PL,st));
+    [1,-1].forEach(s=>{const sh=new THREE.Shape();sh.moveTo(-W,0);sh.lineTo(W,0);sh.lineTo(W,WH);sh.lineTo(0,WH+RH);sh.lineTo(-W,WH);sh.closePath();
+      const ho=new THREE.Path();if(s>0){ho.moveTo(-0.45,0.02);ho.lineTo(0.45,0.02);ho.lineTo(0.45,1.95);ho.lineTo(-0.45,1.95)}else{ho.moveTo(-0.4,1.2);ho.lineTo(0.4,1.2);ho.lineTo(0.4,1.9);ho.lineTo(-0.4,1.9)}ho.closePath();sh.holes.push(ho);
+      const ge=new THREE.ExtrudeGeometry(sh,{depth:0.14,bevelEnabled:false});ge.translate(0,0,-0.07);const m=new THREE.Mesh(ge,M(PL));m.position.z=s*W;m.castShadow=m.receiveShadow=true;st.add(m);
+      if(s>0){blk(0.88,1.92,0.05,0,0.98,W-0.03,0x7a4a2c,st);mesh(new _G.Sph(0.035,8,6),0xc8a24a,0.3,1.0,W+0.02,st)}else blk(0.78,0.68,0.03,0,1.55,-W,0x355c7d,st)});
+    blk(2*W+0.3,0.16,2*W+0.3,0,0.08,0,0xb9ad96,st);st.traverse(c=>{if(c.isMesh)c.castShadow=true});mergeDeep(st,true);
+    const flaps=[-1,1].map(s=>{const pv=new THREE.Group();pv.position.set(s*OV,WH-0.02,0);hs.add(pv);const L=Math.hypot(OV,RH)+0.06,a=Math.atan2(RH,OV);
+      const sl=blk(L,0.1,2*W+0.5,-s*(L/2)*Math.cos(a),(L/2)*Math.sin(a),0,0xb5523b,pv);sl.rotation.z=-s*a;sl.castShadow=true;return[pv,s]});
+    COLW.push({t:'circ',x:g.position.x,z:g.position.z,r:2.0,on:true});fx.house={s0,flaps};g.scale.y=s0}
+  return fx}
+// the sigil scraping down its rails: a gritty band of noise that judders (stick and slip) and slowly drops in pitch over a
+// low grind of stone, and a dull clunk as it comes to rest. quiet, and quieter with distance
+function sigilSound(S){if(!AC||!AMB.ready||muted)return;const d=Math.hypot(S.wx-camera.position.x,S.wz-camera.position.z),v=0.3*Math.pow(Math.max(0,1-d/90),1.5);if(v<0.02)return;
+  const o=shotOut(v,0),t=AC.currentTime+0.02,D=6.0,ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=4;bp.frequency.setValueAtTime(2600,t);bp.frequency.exponentialRampToValueAtTime(1500,t+D);
+  const jud=AC.createGain();jud.gain.value=0.5;const lfo=AC.createOscillator(),lg=AC.createGain();lfo.type='sawtooth';lfo.frequency.setValueAtTime(26,t);lfo.frequency.linearRampToValueAtTime(18,t+D);lg.gain.value=0.45;lfo.connect(lg);lg.connect(jud.gain);
+  const g=AC.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.6,t+0.5);g.gain.setValueAtTime(0.55,t+D-0.8);g.gain.exponentialRampToValueAtTime(0.0001,t+D);
+  ns.connect(bp);bp.connect(jud);jud.connect(g);g.connect(o);ns.start(t,Math.random());ns.stop(t+D+0.1);lfo.start(t);lfo.stop(t+D+0.1);
+  hiss(o,t,D,'lowpass',260,0.8,0.5);ping(o,90,t+D-0.05,0.5,0.4);hiss(o,t+D-0.05,0.25,'lowpass',500,1,0.5)}
 const HR=9;   // the receivers' height: their dishes are about 10 m up, above the trees round the foot of the hill
 {const TG=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),rc=new THREE.Raycaster(),q={},t0=performance.now();
  scene.updateMatrixWorld(true);const solids=[];
@@ -6694,7 +6831,7 @@ const HR=9;   // the receivers' height: their dishes are about 10 m up, above th
    for(let i=0;i<4;i++){const an=i*Math.PI/2+Math.PI/4;strut(Math.cos(an)*0.74*k,H+0.06,Math.sin(an)*0.74*k,Math.cos(an)*0.42,H+LY-0.1,Math.sin(an)*0.42,0.045,body)}
    // a focusing ring in front of the lens, square to the beam
    {const fr=mesh(new _G.Tor(0.44,0.05,8,28),matBrass,dir.x*0.78,H+LY+dir.y*0.78,dir.z*0.78,body);fr.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir)}
-   mergeDeep(body,true);
+   mergeDeep(body,true);Tw.fx=towerExtras(Tw,g,H,k,[dir.x/bh,dir.z/bh],wu,lw,TG);
    // the lamp rings: one mesh; each ring knows how far up the tower it is (rf), and the shader works out how brightly it glows
    const n=Math.max(4,Math.round(sh/2.4)),RU={uThr:{value:-1},uLit:{value:0.06},uDim:{value:0.06},uP:{value:0},uPh:{value:0},uW:{value:40}};
    {const parts=[];for(let i=0;i<n;i++){const y=y0+0.9+(sh-1.7)*i/(n-1),tg=new _G.Tor(rAt(y)+0.04,0.075,8,36);tg.rotateX(Math.PI/2);tg.translate(0,y,0);
@@ -6725,7 +6862,7 @@ const HR=9;   // the receivers' height: their dishes are about 10 m up, above th
  // the receivers: a shorter tower in the same place's style at the foot of the cliffs, with a brass dish turned to face its
  // tower's lens and a glowing collector in it; its rings light up when the beam arrives
  TWL.forEach(T=>{const R=CAVE.receivers[T.r];if(!R)return;const gy=heightW(R.x,R.z),g=new THREE.Group();g.position.set(R.x,gy,R.z);g.userData.world=1;scene.add(g);
-   const to=new THREE.Vector3(T.wx-R.x,0,T.wz-R.z).normalize(),body=new THREE.Group();g.add(body);
+   const to=new THREE.Vector3(T.wx-R.x,0,T.wz-R.z).normalize(),body=new THREE.Group();body.userData.rx=1;g.add(body);
    const rb=towerBody(T.id,body,HR,0.85,[to.x,to.z],[to.x,to.z]);mesh(new _G.Tor(0.74,0.05,8,32),matBrass,0,HR+0.07,0,body).rotation.x=Math.PI/2;
    const yk=new THREE.Vector3(0,HR+0.95,0),aim=new THREE.Vector3(T.wx-R.x,T.H+T.LY+heightW(T.wx,T.wz)-(gy+HR+0.95),T.wz-R.z).normalize();
    for(let i=0;i<3;i++){const an=i/3*Math.PI*2,x0=Math.cos(an)*0.62,z0=Math.sin(an)*0.62;strut(x0,HR+0.06,z0,aim.x*0.15,HR+0.95+aim.y*0.15,aim.z*0.15,0.04,body)}
@@ -6770,6 +6907,14 @@ animsW.push((t,dt)=>{for(const T of TWL){if(T.st===0)continue;
     if(T.rx){T.rx.rm.emissiveIntensity=1.3+0.5*Math.sin(t*3+T.r);T.rx.cm.emissiveIntensity=2.6+0.6*Math.sin(t*7+T.r)}}
   T.mspin+=dt*0.9;T.moteArr.forEach((m,i)=>{const an=T.mspin+i*2.094;m.position.set(Math.cos(an)*0.95,T.H+T.LY+Math.sin(t*1.3+i*2)*0.12,Math.sin(an)*0.95)})}});
 PROG.on('areaCompleted',(id,quiet)=>{const T=TOWERS[id];if(!T||!T.bm)return;if(quiet)towerOn(T);else if(T.st===0)towerCharge(T)});
+// the towers' moving parts follow the tower's state: still and folded while it is off, moving through the charge, and at
+// rest (sails turning, balls orbiting, roof open, tower up, sigil down) once it is on
+animsW.push((t,dt)=>{const sm=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)};for(const T of TWL){const fx=T.fx;if(!fx)continue;const ct=T.st===0?0:T.st===1?Math.min(10,T.t):10;
+  if(fx.sails)fx.sails.rotation.z-=dt*0.6*(ct/10);
+  if(fx.sig){const low=sm(ct/6);if(T.st===1&&!fx.sig.snd){fx.sig.snd=true;sigilSound(fx.sig)}if(T.st!==1)fx.sig.snd=T.st!==0;
+    if(low!==fx.sig.low){fx.sig.low=low;SIGIL.mesh.position.y=SIGIL.y0+fx.sig.rise*(1-low);if(SIGIL.halo)SIGIL.halo.position.y=SIGIL.hy0+fx.sig.rise*(1-low)}}
+  if(fx.balls){const f=sm(ct/4);fx.balls.forEach((b,i)=>{if(T.st===0)b.ang=b.a0;else b.ang+=dt*b.w*f;const r=1.05+(b.r-1.05)*f,y=0.95+(b.y-0.95)*f+0.05*f*Math.sin(t*1.4+i*1.7);b.m.position.set(Math.cos(b.ang)*r,y,Math.sin(b.ang)*r)})}
+  if(fx.house){const op=sm(ct/2.5),ex=sm((ct-2.5)/6);fx.house.flaps.forEach(([pv,s])=>{pv.rotation.z=-s*1.95*op});T.g.scale.y=fx.house.s0+(1-fx.house.s0)*ex}}});
 PROG.on('reset',()=>TWL.forEach(towerOff));
 TWL.forEach(T=>{if(PROG.isComplete(T.id))towerOn(T)});
 // ---- the barrier falls when every receiver has its beam (at once, without fuss, when a saved game is loaded)
@@ -6828,7 +6973,7 @@ animsW.push((t,dt)=>{const E=ELEV,sm=v=>v*v*(3-2*v);E.powered=PROG.isComplete('s
   if(E.ride){px=Math.max(E.cx-0.95,Math.min(E.cx+0.95,px));pz=Math.max(E.cz-0.95,Math.min(E.cz+0.95,pz));ph=E.floor()}
   liftPose()});
 liftPose();
-// the lanterns stand just outside each place's two gates, and outside its shortcut gate on the meadow, facing whoever walks
+// the lanterns stand just outside each place's two gates, facing whoever walks
 // up to them, on the first spot close by where nothing else stands and no path runs
 {const q={},onPathW=(x,z)=>{for(const r of piecesAtW(x,z,0.5).slice())if(onWalk(r.x,r.z,0.35))return true;
    return WPATH.some(p=>{for(let k=0;k<p.pts.length-1;k++){const [ax,az]=p.pts[k],[bx,bz]=p.pts[k+1],dx=bx-ax,dz=bz-az,L2=dx*dx+dz*dz||1e-9,t=Math.max(0,Math.min(1,((x-ax)*dx+(z-az)*dz)/L2));if(Math.hypot(x-ax-dx*t,z-az-dz*t)<p.w/2+0.4)return true}return false})};
