@@ -131,10 +131,10 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
   </div>
   <section id="mSub" class="msub" hidden aria-live="polite">
     <button id="mBack" type="button" class="mback">‹ Back</button>
-    <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">Once the Welcome Garden is done, every place is open: play them in any order. Six finished places open the launch on Meridian Hill; all nine open the Summit Garden.</p><ol id="placeList" class="places"></ol></div>
+    <div id="pgPlaces" class="mpage" hidden><h2>Places</h2><p class="msubintro">Once the Welcome Garden is done, every place is open: play them in any order. Each finished place sends a laser beam to Meridian Hill. When all nine have arrived, the barrier in the caves under the hill comes down, and the five final challenges there power the lift up to the rocket.</p><ol id="placeList" class="places"></ol></div>
     <div id="pgHow" class="mpage" hidden><h2>How to play</h2>
       <canvas id="demo" class="demo" width="520" height="150" aria-label="A line drawn from a circle to a rounded end, passing numbers 2, 3 and 4 to make 9"></canvas>
-      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables from panel to panel. Finish the Welcome Garden and every place on the island opens: play them in any order, and if one is too tricky, try another. Each finished place charges its laser tower, which fires a beam to the spire on Meridian Hill; six beams open the launch there.</p>
+      <p>Draw one line from the big circle to the rounded end so the numbers follow the panel's rule. Follow the yellow cables from panel to panel. Finish the Welcome Garden and every place on the island opens: play them in any order, and if one is too tricky, try another. Each finished place charges its laser tower, which fires a beam to a receiver at the foot of Meridian Hill. When all nine beams arrive, the barrier in the caves inside the hill falls: solve the five challenges behind it and the lift takes you up to the rocket.</p>
       <dl class="how">
         <dt>Walk</dt><dd>W A S D keys (Shift to run), or your left thumb on a tablet</dd>
         <dt>Look</dt><dd>Move the mouse (arrow keys turn), or drag on a tablet</dd>
@@ -174,7 +174,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
       <dt>Look</dt><dd>Mouse, or the arrow keys to turn. Tablet: drag.</dd>
       <dt>Solve</dt><dd>Look at a panel and click. Click once to start your line at the big circle, move the mouse to trace it, then click again when you reach the rounded end. Tablet: press the big circle and drag.</dd>
       <dt>Power</dt><dd>A dark panel has no power. Follow the yellow cable from the last panel you solved.</dd>
-      <dt>Gates</dt><dd>The Welcome Gate opens when you finish the Welcome Garden, and from then on every place's gates are open. A place's shortcut gate onto the meadow opens when you finish it. The launch gate opens at six finished places, the Summit Garden at all nine.</dd><dt>Lanterns</dt><dd>A lantern by each place's gates shows how far you have got: dark, amber or green.</dd>
+      <dt>Gates</dt><dd>The Welcome Gate opens when you finish the Welcome Garden, and from then on every place's gates are open. A place's shortcut gate onto the meadow opens when you finish it.</dd><dt>Meridian Hill</dt><dd>Every spoke path leads into a cave under the hill. A finished place's laser tower fires at its receiver at the foot of the cliff. All nine beams bring down the barrier round the five final challenges in the middle of the cave. Solve those and the lift takes you up to the launch pad.</dd><dt>Lanterns</dt><dd>A lantern by each place's gates shows how far you have got: dark, amber or green.</dd>
       <dt>Owl</dt><dd>The owl flies to the next panel with power near you, and a yellow glow runs along the cable to it.</dd>
     </dl>
     <div class="row"><button id="helpClose" type="button" class="sun">Back to the garden</button><button id="solveAllBtn" type="button" class="ghost">Solve all puzzles</button><button id="helpReset" type="button" class="ghost">Start over</button></div>
@@ -207,7 +207,7 @@ body.menu-open #hud,body.menu-open #tools,body.menu-open #crosshair,body.menu-op
   {"id":"glass","displayName":"Glasshouse Gardens","theme":"Doubles and halves","openerPuzzleIds":["glass_1","glass_2"],"finalePuzzleIds":["glass_8"],"completionRule":"all_finales","rewardTargetId":"beacon_glass","shortcutDoorIds":["shortcut_glass"]},
   {"id":"match","displayName":"Match Maker Market","theme":"Adding, taking away, times","openerPuzzleIds":["match_1","match_2"],"finalePuzzleIds":["match_8"],"completionRule":"all_finales","rewardTargetId":"beacon_match","shortcutDoorIds":["shortcut_match"]},
   {"id":"beach","displayName":"Number Bond Beach","theme":"Number bonds","openerPuzzleIds":["beach_1","beach_2"],"finalePuzzleIds":["beach_8"],"completionRule":"all_finales","rewardTargetId":"beacon_beach","shortcutDoorIds":["shortcut_beach"]},
-  {"id":"summit","displayName":"Summit Garden","theme":"Advanced challenges","openerPuzzleIds":["summit_1","summit_2"],"finalePuzzleIds":["summit_5"],"completionRule":"all_finales","rewardTargetId":"beacon_summit","shortcutDoorIds":[],"bonus":true}
+  {"id":"summit","displayName":"The Five Challenges","theme":"Final challenges","openerPuzzleIds":["summit_1","summit_2"],"finalePuzzleIds":["summit_5"],"completionRule":"all_finales","rewardTargetId":"beacon_summit","shortcutDoorIds":[],"bonus":true}
  ],
  "puzzles":[
   {"id":"start_1","areaId":"start","legacyId":"9-0","requires":null,"optional":false,"advanced":false,"unlocks":[]},
@@ -651,7 +651,7 @@ const NR=ROOMS.length, z0s=ROOMS.map((_,r)=>-r*(AREA+GAP)), zF0=z0s[NR-1]-AREA, 
    world north is -z. walking a place from its entrance to its exit goes anticlockwise round the ring, so every place's
    strip +x side (where its sea always was) faces out to the ocean and its -x side faces the hill.
    PIECES lists them; S2W / W2S convert between strip and world for a piece; pieceOfS finds the piece a strip point is in */
-const X_IN=38.5,H_TOP=12,PIECES=[];
+const X_IN=38.5,H_TOP=24,PIECES=[];   // (H_TOP: the height of Meridian Hill's flat top, where the launch pad stands)
 const PCID=(kind,i)=>kind==='room'?'r'+i:kind==='link'?'l'+i:kind;
 (function layout(){
   // strip bands: a room owns [z0s[r]-AREA, z0s[r]] (its walls on both ends), a link the open stretch between two rooms
@@ -696,16 +696,19 @@ function pieceAtW(x,z,m){m=m||0;for(const P of PIECES){if(P.kind==='fin')continu
   if(_w2s.z<=P.zt+m&&_w2s.z>=P.zb-m&&(P.kind==='start'?Math.abs(_w2s.x)<X_IN+40:_w2s.x>=-X_IN-m&&_w2s.x<X_IN+120))return P}return null}
 
 const PANELS=[];
-// the Summit Garden on top of Meridian Hill: five optional, advanced challenges that open once every area is complete.
+// the five final challenges, in the cavern under Meridian Hill behind a barrier that falls when all nine beams arrive.
+// solving them powers the lift up to the launch pad.
 // each takes one of the island's rules to its hardest (so it needs what the areas teach), on the biggest grid
-const SUMMIT={name:'Summit Garden',topic:'Advanced challenges',key:'summit',orig:10,
+const SUMMIT={name:'The Five Challenges',topic:'Final challenges',key:'summit',orig:10,
   spots:[[-8.5,-6,'e'],[8.5,-11,'w'],[-8.5,-16,'e'],[8.5,-21,'w'],[0,-27.5,'s']],panels:[
     {type:'rank',W:7,H:7,count:10,lo:100,hi:999,down:true,wind:0.6},
     {type:'order',W:7,H:7,k:9,count:9,from:99,down:true,hide:true,wind:0.6},
     {type:'sep',W:7,H:7,minRegions:6,fill:0.6,maxN:999,wind:0.62},
     {type:'grp',W:7,H:7,ops:'+-x',vmin:12,vmax:60,minRegions:6,fill:0.6,minTiles:20,wind:0.6},
     {type:'bond',W:7,H:7,target:100,minRegions:6,maxPer:3,minTiles:14,wind:0.6}]};
-SUMMIT.z0=zF0-76;   // its entrance wall, on the hilltop behind the launch pad and the spire
+// the five challenges stand in the cavern under the launch pad, in a ring round the lift (CAVE.x, CAVE.z in the world is
+// strip (CAVE.x, zF0-52+CAVE.z) on the hilltop piece; they stand on the cave floor, H_TOP below the hilltop)
+SUMMIT.z0=zF0-52;SUMMIT.spots=[[-9-9,5,'w','',-H_TOP],[-9-9,-5,'w','',-H_TOP],[-9,-9.5,'n','',-H_TOP],[-9+9,-5,'e','',-H_TOP],[-9+9,5,'e','',-H_TOP]];
 function genPlace(room,r){room.list=[];room.panels.forEach((def0,i)=>{
   let p=null;
   // if a strict level can't be built, relax its extra rules a step at a time instead of failing
@@ -1097,7 +1100,7 @@ const KIND={},KSPEC={plaster:[0.5,0.92,0.006],tiles:[0.85,0.75,0.035],wood:[0.55
  [[0xc9573f,0x3f6fa8,0x6d4a8f,0xb5683a,0x3f8f6a,0x3f5f7a,0xb5523b,0xd0574a],'tiles'],
  [[0x8a5a3b,0x7a4a2c,0xb5773e,0xb98a5a,0xa8784e,0xcfa477,0xc58a3a,0xe8604c,0x4a86c8,0xf2c84b,0x6fb35a,0xa98be0,0xf095c0],'wood'],
  [[0xd9cfb8,0xcfc3a8,0xb9ad96,0xe8dcc4,0xe9e0cc,0xbca57f,0xd8cbb0,0xa48d68,0xd9c49c,0x9c5b44],'stone'],
- [[0xcdb991,0xe6d2a0,0xf0dca0],'gravel'],[[0x4a9446],'leaf'],[[0x79c05a,0x6aa84f],'grass'],[[0xe8c766],'straw'],[[0x7a5236],'bark'],[[0x6b4a2f],'rock'],[[0x355c7d],'glass'],[[0x2b3a42],'metal']
+ [[0xcdb991,0xe6d2a0,0xf0dca0,0xe8dcb4,0xd4bf8e,0x2a2a28],'gravel'],[[0xdde6ec],'plaster'],[[0x6b5a40],'rock'],[[0x4a9446],'leaf'],[[0x79c05a,0x6aa84f],'grass'],[[0xe8c766],'straw'],[[0x7a5236],'bark'],[[0x6b4a2f],'rock'],[[0x355c7d],'glass'],[[0x2b3a42],'metal']
 ].forEach(([cs,k])=>cs.forEach(c=>KIND[c]=k));
 const MATS={};
 function M(c){if(MATS[c])return MATS[c];const k=KIND[c],sp=KSPEC[k]||[0,0.85];
@@ -1209,8 +1212,10 @@ IG.d=(()=>{const {nx,nz,x0,z0}=IG,N=nx*nz,land=new Uint8Array(N),dI=new Float32A
   pass(dO,k=>land[k]===1);pass(dI,k=>land[k]===0);const d=new Float32Array(N);for(let k=0;k<N;k++)d[k]=land[k]?0.5-dI[k]:dO[k]-0.5;IG.land=land;return d})();
 // a water (or river-bed) material that fades out at both ends of a river: into the sea past the coast, and into the
 // spring at the foot of the hill. measured along the mesh's own x (rivers lie along strip x)
-function fadeAtSea(base,c,isWater){const m=base.clone(),xl=X_IN-3,xr=coastX(1,c);m.transparent=true;if(!isWater)m.depthWrite=false;m.customProgramCacheKey=()=>(isWater?'water':'bed')+'fade';
-  m.onBeforeCompile=sh=>{if(isWater)matWater.onBeforeCompile(sh);
+// (a textured base keeps its texture: its own shader changes are applied first, then the fade)
+function fadeAtSea(base,c,isWater){const m=base.clone(),xl=X_IN-3,xr=coastX(1,c),tri=!isWater&&base.userData&&base.userData.u&&base.userData.u.triMap;m.transparent=true;if(!isWater)m.depthWrite=false;m.customProgramCacheKey=()=>(isWater?'water':'bed')+'fade'+(tri?'tri':'');
+  if(tri)m.userData=base.userData;
+  m.onBeforeCompile=sh=>{if(isWater)matWater.onBeforeCompile(sh);else if(tri)base.onBeforeCompile(sh);
     sh.vertexShader='varying float vSX;\n'+sh.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvSX=position.x;');
     sh.uniforms.uXL={value:xl};sh.uniforms.uXR={value:xr};
     sh.fragmentShader='uniform float uXL,uXR;varying float vSX;\n'+sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.a*=(1.0-smoothstep(uXL-2.0,uXL+3.0,-vSX))*(1.0-smoothstep(uXR-1.5,uXR+2.0,vSX));')};return m}
@@ -1221,12 +1226,21 @@ const _sw={};function shoreD(x,z){S2W(x,z,null,_sw);return shoreDW(_sw.x,_sw.z)}
 function hillHW(x,z){const d=shoreDW(x,z);if(d<=0)return 0;return -Math.min(7,0.12*d+0.025*d*d)}
 function hillH(x,z){S2W(x,z,null,_sw);return hillHW(_sw.x,_sw.z)}
 const groundAt=(x,z)=>Math.max(heightAt(x,z),hillH(x,z));
-// Meridian Hill: a broad hill filling the middle of the ring, rising to a flat summit that holds the launch pad and the
-// Summit Garden. hillY gives the ground height in world coordinates (0 out on the ring)
-const HILL={x0:-34,x1:34,z0:-60,z1:62,base:116};
-function hillY(x,z){const dx=Math.max(HILL.x0-x,0,x-HILL.x1),dz=Math.max(HILL.z0-z,0,z-HILL.z1);if(dx===0&&dz===0)return H_TOP;
-  const r=Math.hypot(x,z),a=Math.atan2(x,z),s=Math.sin(a),c=Math.cos(a),re=Math.min(Math.abs(s)>1e-6?(s>0?HILL.x1:-HILL.x0)/Math.abs(s):1e9,Math.abs(c)>1e-6?(c>0?HILL.z1:-HILL.z0)/Math.abs(c):1e9);
-  const k=Math.max(0,Math.min(1,(r-re)/(HILL.base-re)));if(k>=1)return 0;return H_TOP*(1-k*k*(3-2*k))}
+// Meridian Hill: a mesa in the middle of the ring. sheer rock cliffs rise from the meadow to a flat top 24 m up that holds
+// the launch pad; nothing climbs it. caves lead in from the meadow to a cavern under the launch pad, and a lift goes up.
+// MESA is its footprint (a rectangle with rounded corners); mesaD the signed distance to its edge (negative inside);
+// hillY the height of the ground outside and of its top (in world coordinates)
+const MESA={x0:-36,x1:36,z0:-62,z1:64,r:12};
+function mesaD(x,z){const cx=(MESA.x0+MESA.x1)/2,cz=(MESA.z0+MESA.z1)/2,hx=(MESA.x1-MESA.x0)/2-MESA.r,hz=(MESA.z1-MESA.z0)/2-MESA.r,qx=Math.abs(x-cx)-hx,qz=Math.abs(z-cz)-hz;
+  return Math.hypot(Math.max(qx,0),Math.max(qz,0))+Math.min(Math.max(qx,qz),0)-MESA.r}
+const inMesa=(x,z,m)=>mesaD(x,z)<(m||0);
+function hillY(x,z){return mesaD(x,z)<0?H_TOP:0}
+const hillYW=hillY;
+// the caves inside it (filled in when the paths are laid): the cavern, an ellipse round the lift, and a straight tunnel
+// from each cave mouth on the cliff to the cavern. inCave says whether a point is inside them (m: keep this far from the walls)
+const CAVE={x:-9,z:0,rx:20,rz:28,tunnels:[],receivers:[],hw:2.1};
+function inCave(x,z,m){m=m||0;const ex=(x-CAVE.x)/(CAVE.rx-m),ez=(z-CAVE.z)/(CAVE.rz-m);if(ex*ex+ez*ez<1)return true;
+  for(const T of CAVE.tunnels){const dx=x-T.ax,dz=z-T.az,t=dx*T.ux+dz*T.uz;if(t<-0.5||t>T.len)continue;if(Math.abs(dx*T.uz-dz*T.ux)<CAVE.hw-m)return true}return false}
 // the snowy part of the world: the frosty path and Snowflake Hollow, fading out over 14 m on either side
 const SNOWR=RI('snow'),SNOW_TOP=z0s[SNOWR-1]-AREA,SNOW_BOT=z0s[SNOWR]-AREA;
 function snowAmt(z){const d=Math.max(z-SNOW_TOP,SNOW_BOT-z,0);return Math.max(0,1-d/14)}
@@ -1255,23 +1269,30 @@ const COLW=[],PLATW=[],_pa=[],_pq=[];for(let i=0;i<24;i++)_pq.push({});
 function piecesAtW(x,z,m){_pa.length=0;let n=0;for(const P of PIECES){const q=W2S(x,z,P,_pq[n]);
     if(P.kind==='fin'?(q.z<zF0+m&&q.z>zF0-118&&Math.abs(q.x)<46):P.kind==='start'?(q.z<=P.zt&&q.z>=P.zb-m&&Math.abs(q.x)<X_IN+40):(q.z<=P.zt+m&&q.z>=P.zb-m&&q.x>=-X_IN-m&&q.x<X_IN+120)){_pa.push(q);n++}}
   return _pa}
-function heightAtP(x,z,pc){let h=0;for(const p of platforms){if(p.pc!==pc||!inP(p,x,z))continue;
+function heightAtP(x,z,pc,low){let h=0;for(const p of platforms){if(p.pc!==pc||!inP(p,x,z)||!!p.low!==!!low)continue;
   if(p.t==='ramp'){const f=p.axis==='x'?(x-p.minX)/(p.maxX-p.minX):(z-p.minZ)/(p.maxZ-p.minZ);h=Math.max(h,p.hA+(p.hB-p.hA)*f)}else h=Math.max(h,p.h)}return h}
-function heightW(x,z){let h=hillY(x,z);for(const q of piecesAtW(x,z,0.4)){const v=heightAtP(q.x,q.z,q.P.id);if(v>0||q.P.y)h=Math.max(h,v+q.P.y)}
-  for(const p of PLATW)if(inP(p,x,z))h=Math.max(h,p.h);return h}
+// (refH: the height of whoever is asking. down in the caves under the hill, the floor is the cave floor, not the hilltop
+// far overhead)
+const LOW=H_TOP-6;
+function heightW(x,z,refH){if(refH!=null&&refH<LOW&&mesaD(x,z)<0.6){let h=0;for(const p of PLATW)if(p.low&&inP(p,x,z))h=Math.max(h,p.h);return h}
+  let h=hillY(x,z);const off=mesaD(x,z)>0;for(const q of piecesAtW(x,z,0.4)){if(off&&q.P.kind==='fin')continue;const v=heightAtP(q.x,q.z,q.P.id,refH!=null&&refH<LOW);if(v>0||q.P.y)h=Math.max(h,v+q.P.y)}
+  for(const p of PLATW)if(!p.low&&inP(p,x,z))h=Math.max(h,p.h);return h}
 function onDeckW(x,z){for(const q of piecesAtW(x,z,0.4))if(platforms.some(p=>p.pc===q.P.id&&p.deck&&!p.cableOnly&&inP(p,q.x,q.z)))return true;return false}
 function blockedW(x,z,curH){
   const r=0.32;if(!onIsland(x,z,0.6)&&!onDeckW(x,z))return true;   // an invisible wall keeps you out of the sea
-  for(const c of COLW){if(!c.on)continue;if(c.t==='box'?(x>c.minX-r&&x<c.maxX+r&&z>c.minZ-r&&z<c.maxZ+r):((x-c.x)**2+(z-c.z)**2<(c.r+r)**2))return true}
+  // the hill: from the meadow the only way in is through a cave mouth; on its top there is no stepping off the edge
+  const low=curH<LOW;if(low){if(mesaD(x,z)<r+0.25&&!inCave(x,z,r+0.12))return true}else if(mesaD(x,z)>-1.2&&mesaD(px,pz)<0)return true;
+  for(const c of COLW){if(!c.on)continue;if(c.y0!=null&&(curH<c.y0||curH>c.y1))continue;if(c.t==='box'?(x>c.minX-r&&x<c.maxX+r&&z>c.minZ-r&&z<c.maxZ+r):((x-c.x)**2+(z-c.z)**2<(c.r+r)**2))return true}
   if(COLG.n!==colliders.length)colCells();
   const qs=piecesAtW(x,z,1.2).slice();
   for(const q of qs){const pc=q.P.id,xs=q.x,zs=q.z,me=W2S(px,pz,q.P,{}),near=COLG.cells.get(Math.floor(xs/COLG.S)*4096+Math.floor(zs/COLG.S))||COL_EMPTY;
-    for(const list of [near,COLG.dyn])for(const c of list){if(!c.on||c.pc!==pc)continue;
+    const fin=q.P.kind==='fin';
+    for(const list of [near,COLG.dyn])for(const c of list){if(!c.on||c.pc!==pc)continue;if(fin&&!!c.low!==low)continue;   // (on the hill: the caves' things below, the launch pad's above)
       if(c.t==='box'){if(xs>c.minX-r&&xs<c.maxX+r&&zs>c.minZ-r&&zs<c.maxZ+r)return true}
       else if(c.t==='circ'){if(c.dyn&&(me.x-c.x)**2+(me.z-c.z)**2<(c.r+r)**2)continue;if((xs-c.x)**2+(zs-c.z)**2<(c.r+r)**2)return true}
       else if(c.t==='water'){if(((xs-c.x)/c.rx)**2+((zs-c.z)/c.rz)**2<1&&!onDeck(xs,zs))return true}
       else if(c.t==='wbox'){if(xs>c.minX&&xs<c.maxX&&zs>c.minZ&&zs<c.maxZ&&!onDeck(xs,zs))return true}}}
-  return heightW(x,z)-curH>0.55;
+  return heightW(x,z,curH)-curH>0.55;
 }
 
 /* ---------- instanced scenery lists ---------- */
@@ -1320,7 +1341,7 @@ function nearPieceW(x,z,out){out=out||{};const P0=pieceAtW(x,z,0);if(P0)return W
   const st=PIECES.byId.start;W2S(x,z,st,out);if(out.z>st.zb-12&&Math.abs(out.x)<X_IN+30&&Math.hypot(x,z)>PIECES.jr+40)return out;
   const a=Math.atan2(x,z);let best=PIECES.ring[0],bd=9;for(const P of PIECES.ring){let d=Math.abs(a-P.ang);if(d>Math.PI)d=Math.PI*2-d;if(d<bd){bd=d;best=P}}return W2S(x,z,best,out)}
 {const x0=IG.x0,x1=IG.x0+IG.nx-1,zB=IG.z0,zA=IG.z0+IG.nz-1,W=x1-x0,D=zA-zB,g=new THREE.PlaneGeometry(W,D,Math.round(W/2.5),Math.round(D/2.5));g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],cx=(x0+x1)/2,cz=(zA+zB)/2,c=new THREE.Color(),SAND=new THREE.Color(0xe8d4a0),WET=new THREE.Color(0xc9b383),DEEP=new THREE.Color(0x2f6f86),q={};
- for(let i=0;i<pos.count;i++){const x=pos.getX(i)+cx,z=pos.getZ(i)+cz,d=shoreDW(x,z);pos.setY(i,d>0?hillHW(x,z):hillY(x,z));
+ for(let i=0;i<pos.count;i++){const x=pos.getX(i)+cx,z=pos.getZ(i)+cz,d=shoreDW(x,z);pos.setY(i,d>0?hillHW(x,z):0);
    const n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5,m=Math.sin(x*0.021+1.3)*Math.sin(z*0.017);c.setHSL(0.262+n*0.02+m*0.02,0.45+m*0.08,0.315+n*0.03);
    nearPieceW(x,z,q);const ring=q.P.ring,sn=ring?snowAmt(q.z)*(q.x<-X_IN?Math.max(0,1-(-X_IN-q.x)/14):1):0;
    if(sn>0)c.lerp(SNOWC,sn*0.92);
@@ -1397,7 +1418,7 @@ function ribbonPath(pts,w,col){const D=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1]);
   WALK.push(bb(P,w/2));const tail=P.filter((_,i)=>cum[i]>L-1.5);if(tail.length>1)WALK.push(bb(tail,w/2+0.8));
   P.forEach((p,i)=>{if(i%3===0){reserve(p[0],p[1],HW[i]+0.2);RIBR.push({minX:p[0]-HW[i],maxX:p[0]+HW[i],minZ:p[1]-HW[i],maxZ:p[1]+HW[i]})}})}
 function hedge(cx,cz,w,d){blk(w,2.2,d,cx,1.1,cz,0x4a9446);colBox(cx-w/2,cx+w/2,cz-d/2,cz+d/2);
-  const L=Math.max(w,d),alongX=w>d;for(let s=-L/2+0.6;s<L/2;s+=1.3)INST.bush.push({x:alongX?cx+s:cx+(RS()-0.5)*0.2,y:2.15,z:alongX?cz+(RS()-0.5)*0.2:cz+s,s:0.72+RS()*0.15,sy:0.5,c:pick([0x4a9446,0x55a24c,0x438a40]),ry:RS()*6})}
+  const L=Math.max(w,d),alongX=w>d,pc=BCTX||pieceOfS(cz).id;for(let s=-L/2+0.6;s<L/2;s+=1.3)INST.bush.push({x:alongX?cx+s:cx+(RS()-0.5)*0.2,y:2.15,z:alongX?cz+(RS()-0.5)*0.2:cz+s,s:0.72+RS()*0.15,sy:0.5,c:pick([0x4a9446,0x55a24c,0x438a40]),ry:RS()*6,pc})}
 // a big roadside sign; ry turns it so its face points back down the road at people walking up
 function signPost(x,z,lines,ry){
   const g=sgroup(x,heightAt(x,z),z,ry);
@@ -2145,7 +2166,7 @@ function buildArea2(z0){
     INST.lily.push({x,y:0.075,z,s:0.7+RS()*0.6,ry:RS()*6,c:i%7===0?0xff9ecf:0x4f9a3f})}
   for(let i=0;i<120;i++){const a=RS()*6.28,x=Math.cos(a)*12.3,z=pz+Math.sin(a)*10.3;if(Math.abs(x)<2.5&&z>pz)continue;if(x>6&&Math.abs(z-(z0-27))<2.4)continue;
     for(let k=0;k<3;k++){const xx=x+(RS()-0.5)*0.6,zz=z+(RS()-0.5)*0.6,h=0.8+RS()*0.8;INST.reed.push({x:xx,y:0,z:zz,s:1,sy:h});if(RS()<0.4)INST.cattail.push({x:xx,y:h,z:zz,s:1})}}
-  paths([[[0,z0-1],[0,z0-10.5]],[[-17,z0-9],[16,z0-9]],[[15,z0-9],[15,z0-39.5]],[[13.6,z0-27],[15,z0-27]],[[15,z0-39.5],[-12.5,z0-39.5]],[[-17,z0-9],[-17,z0-33.6]],[[0,z0-39.5],[0,z0-43.5]]],2.6);
+  paths([[[0,z0-1],[0,z0-10.5]],[[-17,z0-9],[16,z0-9]],[[15,z0-9],[15,z0-39.5]],[[13.6,z0-27],[15,z0-27]],[[15,z0-39.5],[-12.5,z0-39.5]],[[-17,z0-9],[-17,z0-33.6]],[[0,z0-39.5],[0,z0-43.5]]],3);
   addTree(-15,z0-15,{type:'round',c:0x7cb35a,big:1.2,s:1.4});addTree(15.5,z0-17,{type:'round',c:0x7cb35a,big:1.2,s:1.3});addTree(-13,z0-31.5,{type:'round',c:0x7cb35a,s:1.2});
   bench(-9,z0-11.3,'n');bench(9,z0-11.3,'n');lamp(2,z0-8);lamp(14,z0-30);lamp(-14.5,z0-11);
   annex2(z0);
@@ -2166,7 +2187,7 @@ function triFlag(len,t0,t1,b0,b1,nx,ny){const P=[],I=[];for(let i=0;i<=nx;i++){c
 const flagGeo=withW((()=>{const s=new THREE.Shape();s.moveTo(-0.2,0);s.lineTo(0.2,0);s.lineTo(0,-0.38);s.closePath();return new THREE.ShapeGeometry(s)})(),(x,y)=>Math.min(1,-y/0.38));
 const flagMats=[0xff6b57,0xffd23f,0x3d7cc9,0x7cc35a].map(c=>clothPatch(new THREE.MeshStandardMaterial({color:lin(c),side:THREE.DoubleSide,roughness:0.9}),0.08));
 function buildArea3(z0){
-  paths([[[0,z0-1],[0,z0-20.5]],[[0,z0-19],[11,z0-19]],[[11,z0-19],[11,z0-41]],[[11,z0-41],[0,z0-41]],[[0,z0-41],[0,z0-43.5]]],4);
+  paths([[[0,z0-1],[0,z0-20.5]],[[0,z0-19],[11,z0-19]],[[11,z0-19],[11,z0-41]],[[11,z0-41],[0,z0-41]],[[0,z0-41],[0,z0-43.5]]],3);   // (every place's walkway is 3 m wide, so the paths are even all round the ring)
   stall(-8,z0-9,'e',0xff6b57,'apple');stall(-8,z0-16,'e',0x3d7cc9,'orange');stall(8,z0-9,'w',0x2f9d6a,'banana');stall(8,z0-16,'w',0x8a5ad6,'grape');
   // hall
   platforms.push({t:'box',minX:-8,maxX:8,minZ:z0-33,maxZ:z0-21,h:0.3});
@@ -2405,7 +2426,7 @@ function annex1(z0){const c=z0-56;
   chickenFlock(4,{x0:-12,x1:-5,z0:z0-44.8,z1:z0-47.5});birds(0,c,4);
 }
 function annex2(z0){
-  paths([[[0,z0-43.5],[0,z0-67.5]]],2.6);
+  paths([[[0,z0-43.5],[0,z0-67.5]]],3);
   pond(-10,z0-56,6.5,5.5,[['mallard',0,1.1],['duckling',0.3,0.55],['duckling',0.45,0.5]]);
   pond(12,z0-58,5.5,4.8,[['white',1,1],['white',2.5,1]]);
   signPost(-4.8,z0-52,['Odd Pond','1, 3, 5, 7, 9 ...'],0.5);signPost(4.6,z0-51.5,['Even Pond','2, 4, 6, 8, 10 ...'],-0.5);
@@ -2413,7 +2434,7 @@ function annex2(z0){
   bench(-2.4,z0-57,'w');bench(2.4,z0-59,'e');lamp(2,z0-46);lamp(2,z0-64.5);
 }
 function annex3(z0){
-  paths([[[0,z0-43.5],[0,z0-67.5]]],4);
+  paths([[[0,z0-43.5],[0,z0-67.5]]],3);
   stall(-7,z0-49.5,'e',0xffd23f,'apple');stall(-7,z0-60.5,'e',0xff9ecf,'grape');stall(7,z0-53,'w',0x7cc35a,'orange');stall(7,z0-63,'w',0xff6b57,'banana');
   flat(new THREE.RingGeometry(3.5,5,64),PATHC,-18,0.021,z0-50);walkRing(-18,z0-50,3.5,5);fountain(-18,z0-50);
   bunting(-6,z0-46.5,6,z0-46.5,3.1,0.5,[1,1]);bunting(-6,z0-57,6,z0-57,3.1,0.5,[1,1]);
@@ -3427,7 +3448,7 @@ function buildGardenLink(gz,o){const c=gz-GAP/2;
       for(let f=0;f<27;f++){const u=0.05+RS()*0.9,th=RS()*Math.PI*2,rr=0.07;let x,y,zz;
         if(u<0.2||u>0.8){const t=u<0.2?u/0.2:(1-u)/0.2;x=(u<0.2?-1.9:1.9)+Math.cos(th)*rr;y=0.3+t*0.8;zz=z+Math.sin(th)*rr}
         else{const a=Math.PI*(1-(u-0.2)/0.6);x=Math.cos(a)*(1.9+Math.cos(th)*rr);y=1.1+Math.sin(a)*(1.9+Math.cos(th)*rr);zz=z+Math.sin(th)*rr}
-        INST.flower.push({x,y,z:zz,s:1.25+RS()*0.3,c:pick(RC),ry:RS()*6,rx:(RS()-0.5)*2,k:'rose'})}}
+        INST.flower.push({x,y,z:zz,s:1.25+RS()*0.3,c:pick(RC),ry:RS()*6,rx:(RS()-0.5)*2,k:'rose',arch:1})}}
     // thin climbing-rose vines twine up each post and round the arch, with small leaves along them (the roses stay in full view)
     {const parts=[],arches=[...new Set(ARCHZ)],lf=new THREE.Shape();lf.moveTo(0,0);lf.quadraticCurveTo(0.035,0.03,0,0.085);lf.quadraticCurveTo(-0.035,0.03,0,0);
      arches.forEach(z=>[0,1].forEach(w=>{const pts=[];for(let i=0;i<=90;i++){const u=i/90;let cx,cy,rx,ry;if(u<0.2){const t=u/0.2;cx=-1.9;cy=t*1.1;rx=1;ry=0}else if(u>0.8){const t=(u-0.8)/0.2;cx=1.9;cy=1.1-t*1.1;rx=1;ry=0}
@@ -3830,9 +3851,10 @@ function straightRun(ax,az,dx,dz,max,cols){const PW2=0.8,isT=(x,z)=>onWalk(x,z,-
   for(let t=0;t<=max;t+=0.25){const x=ax+dx*t,z=az+dz*t;if(t>0.5&&isT(x,z))return t;
     for(let o=-PW2;o<=PW2+1e-6;o+=PW2/2){const qx=x-dz*o,qz=z+dx*o;if(!ok(qx,qz)||(heightAt(qx,qz)>0.03&&!isT(x,z)))return -1}}return -1}
 function buildPanel(p,spot,z0){
-  const x=spot[0],z=z0+spot[1],wall=spot[3]==='wall',base=heightAt(x,z);let n=FACES[spot[2]];
-  // a free-standing panel that has a walkway beside it (but not in front) turns to face that walkway
-  if(!wall){const ok=m=>onWalk(x+m[0]*1.9,z+m[1]*1.9,0.3)||heightAt(x+m[0]*1.9,z+m[1]*1.9)>0.05;if(!ok(n)){let f=null;for(const k of ['s','n','e','w'])if(ok(FACES[k])){f=FACES[k];break}
+  const x=spot[0],z=z0+spot[1],wall=spot[3]==='wall',low=spot[4]!=null,base=low?spot[4]:heightAt(x,z);let n=FACES[spot[2]];
+  // a free-standing panel that has a walkway beside it (but not in front) turns to face that walkway (not in the caves,
+  // where each faces out from the lift as placed)
+  if(!wall&&!low){const ok=m=>onWalk(x+m[0]*1.9,z+m[1]*1.9,0.3)||heightAt(x+m[0]*1.9,z+m[1]*1.9)>0.05;if(!ok(n)){let f=null;for(const k of ['s','n','e','w'])if(ok(FACES[k])){f=FACES[k];break}
     // otherwise it faces the way a straight side path can run from its front to a walkway, keeping its own facing if it can
     if(!f){const cols=colliders.filter(c=>!c.dyn&&(c.t==='box'?c.maxZ>z-28&&c.minZ<z+28:c.t==='circ'?Math.abs(c.z-z)<30:false));let bl=1e9;
       for(const m of [n,...['s','n','e','w'].map(k=>FACES[k])]){const t=straightRun(x+m[0]*0.55,z+m[1]*0.55,m[0],m[1],25,cols);if(t>0&&(m===n?t-6:t)<bl){bl=m===n?t-6:t;f=m}}}
@@ -3842,7 +3864,7 @@ function buildPanel(p,spot,z0){
   p.cablePt=wall?[x+n[0]*0.2,z+n[1]*0.2]:[x-n[0]*0.15,z-n[1]*0.15];
   const g=sgroup(x,base,z,Math.atan2(n[0],n[1]));
   if(!wall){blk(0.12,PY,0.12,0,PY/2,-0.085,0x2b3a42,g);blk(0.6,0.08,0.4,0,0.04,-0.06,0x2b3a42,g);
-    (n[0]===0?colBox(x-0.8,x+0.8,z-0.22,z+0.22):colBox(x-0.22,x+0.22,z-0.8,z+0.8)).panel=true}
+    const pc=(n[0]===0?colBox(x-0.8,x+0.8,z-0.22,z+0.22):colBox(x-0.22,x+0.22,z-0.8,z+0.8));pc.panel=true;if(low)pc.low=1}
   blk(PW+0.14,PH+0.14,0.1,0,PY,-0.06,0x2b3a42,g);
   const cv=document.createElement('canvas');cv.width=CW;cv.height=CH;p.ctx=cv.getContext('2d');
   p.tex=new THREE.CanvasTexture(cv);p.tex.anisotropy=maxAniso;p.tex.encoding=THREE.sRGBEncoding;
@@ -3868,7 +3890,7 @@ ROOMS.forEach((room,r)=>{
 /* ---------- each place's hill side: wall and shortcut gate; its laser tower; and lanterns at its gates ----------
    every place is walled, in its own style, along the side that faces Meridian Hill. near its last puzzle a shortcut gate
    in that wall opens once the place is complete, straight out onto the meadow. near the last panel stands the place's
-   laser tower: when the place is complete it charges and fires a beam of its colour up to the Meridian Spire on the hilltop. a lantern by each of its gates shows how far
+   laser tower: when the place is complete it charges and fires a beam of its colour to its receiver at the foot of Meridian Hill. a lantern by each of its gates shows how far
    you have got: dark (not started), amber (under way) or green (complete), with a board of pips beneath it */
 const AREA_COL={castle:0xe04a3a,windmill:0xf0b62e,adding:0xff8a3a,times:0x2fb3a6,oddeven:0x3d8be0,snow:0x7fd0ff,glass:0x4fc46e,match:0xb06ad8,beach:0xff6f8a};
 const XW=-(X_IN-0.5),TOWERS={},TWL=[],MARKERS=[],SHORTCUTS={},XGATES=[],MSPOTS=[];
@@ -3923,15 +3945,14 @@ function innerWall(r){const id=AREA_OF_ROOM[r],th=WALLTHEME[ROOMS[r].key]||'hedg
   // lanterns: inside both loop gates and by the shortcut gate
   MSPOTS.push({r,id,x:3.8,z:z0+1.9,face:[0,1]},{r,id,x:3.8,z:zBot-1.9,face:[0,-1]},{r,id,x:XW-1.9,z:zg+3.2,face:[-1,0],short:1})}
 /* ---------- the hilltop ----------
-   the Finish Meadow and the launch pad are walled in white stone; their gate opens once six places are complete.
-   behind them, on the island's middle line (the Prime Meridian, marked in brass), stands the Meridian Spire that every
-   finished place's laser tower fires its beam at, and beyond it the walled Summit Garden with its five advanced challenges, open
-   once all nine places are complete. the meadow's fountain gains a jet for every finished place */
+   the Finish Meadow and the launch pad, walled in white stone, high on the hill's flat top. the only way up is the lift
+   from the cavern below. on the island's middle line (the Prime Meridian, marked in brass) stands the Meridian Spire,
+   which glows brighter for every finished place, as the meadow's fountain gains a jet */
 const SPIRE={x:0,z:zF0-69,y:28},FJETS=[];let LAUNCHGATE=null,SUMMITGATE=null;
 function buildHilltop(){const R=mulberry32(77),W=(x0,z0,x1,z1)=>{const len=Math.hypot(x1-x0,z1-z0),g=sgroup((x0+x1)/2,0,(z0+z1)/2,Math.atan2(z0-z1,x1-x0));wallSeg(g,len,'observ',R);colBox(Math.min(x0,x1)-0.35,Math.max(x0,x1)+0.35,Math.min(z0,z1)-0.35,Math.max(z0,z1)+0.35)};
   // the launch enclosure
-  const zs=zF0-0.7,zb=zF0-62;W(1.6,zs,30,zs);W(-30,zs,-1.6,zs);W(30,zs,30,zb);W(-30,zs,-30,zb);W(-30,zb,30,zb);
-  LAUNCHGATE=makeGate(zs,'fin','Launch Pad','Six finished places open this gate');XGATES.push(LAUNCHGATE);
+  // (it is walled all round: the only way in is the lift up from the caves under the hill)
+  const zs=zF0-0.7,zb=zF0-62;W(-30,zs,30,zs);W(30,zs,30,zb);W(-30,zs,-30,zb);W(-30,zb,30,zb);
   // the spire: stepped plinth, a tall obelisk, and a brass armillary sphere that catches the laser towers' beams
   {const x=SPIRE.x,z=SPIRE.z;mesh(lathe([[3.2,0],[3.2,0.3],[2.6,0.3],[2.6,0.6],[2.0,0.6],[2.0,0.9],[0,0.9]],48),0xf2ede2,x,0,z);colCirc(x,z,3.1);
    const ob=new THREE.CylinderGeometry(0.42,1.15,23,4,1);ob.rotateY(Math.PI/4);mesh(ob,0xf6f2e8,x,0.9+11.5,z);const tip=new THREE.ConeGeometry(0.42*1.414,1.4,4);tip.rotateY(Math.PI/4);mesh(tip,matBrass,x,24.6,z);
@@ -3940,12 +3961,6 @@ function buildHilltop(){const R=mulberry32(77),W=(x0,z0,x1,z1)=>{const len=Math.
    const pq=new THREE.Mesh(new THREE.PlaneGeometry(2.2,0.7),new THREE.MeshBasicMaterial({map:signTex(['Prime Meridian','Longitude 0°'],512,160),toneMapped:false}));pq.position.set(x,0.9+0.6,z+1.0);scene.add(pq);
    // the meridian itself: a brass line along the island's middle, from the launch wall to the Summit Garden's far wall
    flat(new THREE.PlaneGeometry(0.22,zb-(zF0-105.7)),matBrass,0,0.035,(zb+zF0-105.7)/2);paths([[[-31.5,z+4.5],[31.5,z+4.5]],[[-31.5,z-4.5],[31.5,z-4.5]]],2.6,0,0xe8dcb4);walkRect(-6,6,zF0-75.5,zb-0.4)}
-  // the Summit Garden
-  const gz=SUMMIT.z0,gb=zF0-105.7;W(1.6,gz,20,gz);W(-20,gz,-1.6,gz);W(20,gz,20,gb);W(-20,gz,-20,gb);W(-20,gb,20,gb);
-  SUMMITGATE=makeGate(gz,'glass','Summit Garden','Five advanced challenges');XGATES.push(SUMMITGATE);
-  paths([[[0,gz-0.6],[0,gz-27]]],2.4,0,0xe8dcb4);flat(new THREE.CircleGeometry(4.2,48),0xe8dcb4,0,0.022,gz-27.5);walkRing(0,gz-27.5,0,4.3);
-  SUMMIT.spots.forEach(([x,z])=>{if(x)paths([[[Math.sign(x)*1.2,gz+z],[x-Math.sign(x)*1.3,gz+z]]],1.6,0,0xe8dcb4)});
-  [[-14,gz-6],[14,gz-6],[-14,gz-22],[14,gz-22]].forEach(([x,z])=>flowerBed(x,z,1.4));bench(-4.6,gz-25,'e');bench(4.6,gz-25,'w');
   // a jet in the fountain for every finished place
   {const fz=zF0-25.5;AREA_OF_ROOM.slice(1).forEach((id,k)=>{const a=k/9*Math.PI*2,x=Math.cos(a)*2.25,z=fz+Math.sin(a)*2.25,j=new THREE.Group();j.position.set(x,0.6,z);j.visible=false;scene.add(j);
     mesh(new _G.Cyl(0.035,0.06,1.3,8),new THREE.MeshStandardMaterial({color:0xeaf6ff,transparent:true,opacity:0.55,roughness:0.1}),0,0.65,0,j);mesh(new _G.Sph(0.09,10,8),new THREE.MeshStandardMaterial({color:0xeaf6ff,transparent:true,opacity:0.6}),0,1.32,0,j);
@@ -4028,7 +4043,25 @@ const SIDEP=[],PPLOG=[];
       const bs=(a,v)=>{let lo=0,hi=a.length-1;v=q(v);while(lo<hi){const m=(lo+hi)>>1;if(a[m]<v)lo=m+1;else hi=m}return lo},NX=xs.length-1,NZ=zs.length-1,cov=new Uint8Array(NX*NZ);
       rects.forEach(r=>{const i0=bs(xs,r.minX),i1=bs(xs,r.maxX),j0=bs(zs,r.minZ),j1=bs(zs,r.maxZ);for(let j=j0;j<j1;j++)for(let i=i0;i<i1;i++)cov[j*NX+i]=1});
       const vid=new Int32Array((NX+1)*(NZ+1)).fill(-1),P=[],N=[],I=[],V=(i,j)=>{const kk=j*(NX+1)+i;if(vid[kk]<0){vid[kk]=P.length/3;P.push(xs[i],0.014,zs[j]);N.push(0,1,0)}return vid[kk]};
-      for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++)if(cov[j*NX+i]){const a=V(i,j),b=V(i+1,j),c=V(i,j+1),d=V(i+1,j+1);I.push(a,c,b,b,c,d)}
+      // every corner of the paving is rounded: an outside corner (a cell with none of its three neighbours round that corner
+      // paved) is cut into a quarter circle, and an inside corner (three of the four cells round a point paved) gets a
+      // curved fillet into the open cell, so path ends, bends and junctions all come out smooth
+      const R0=0.9,isC=(i,j)=>i>=0&&j>=0&&i<NX&&j<NZ&&cov[j*NX+i]===1,PT=(x,z)=>{P.push(x,0.014,z);N.push(0,1,0);return P.length/3-1};
+      const tri=(o,p,q)=>{const ox=P[o*3],oz=P[o*3+2],cr=(P[p*3]-ox)*(P[q*3+2]-oz)-(P[p*3+2]-oz)*(P[q*3]-ox);if(cr>0)I.push(o,q,p);else I.push(o,p,q)};
+      const arc=(out,cx,cz,r,a0,a1)=>{let sw=a1-a0;while(sw>Math.PI)sw-=Math.PI*2;while(sw<-Math.PI)sw+=Math.PI*2;for(let k=0;k<=6;k++){const a=a0+sw*k/6;out.push([cx+Math.cos(a)*r,cz+Math.sin(a)*r])}};
+      for(let j=0;j<NZ;j++)for(let i=0;i<NX;i++){const x0=xs[i],x1=xs[i+1],z0=zs[j],z1=zs[j+1];
+        if(cov[j*NX+i]){const r=Math.min(R0,(x1-x0)*0.5,(z1-z0)*0.5);
+          // corners in order round the cell: (x0,z0) (x0,z1) (x1,z1) (x1,z0), each with the direction into the cell
+          const C=[[x0,z0,1,1,!isC(i-1,j)&&!isC(i,j-1)&&!isC(i-1,j-1)],[x0,z1,1,-1,!isC(i-1,j)&&!isC(i,j+1)&&!isC(i-1,j+1)],[x1,z1,-1,-1,!isC(i+1,j)&&!isC(i,j+1)&&!isC(i+1,j+1)],[x1,z0,-1,1,!isC(i+1,j)&&!isC(i,j-1)&&!isC(i+1,j-1)]];
+          if(r<0.06||!C.some(c=>c[4])){const a=V(i,j),b=V(i+1,j),c=V(i,j+1),d=V(i+1,j+1);I.push(a,c,b,b,c,d);continue}
+          const poly=[];C.forEach(([x,z,sx,sz,cv],k)=>{if(!cv){poly.push([x,z]);return}const pr=C[(k+3)%4],nx=C[(k+1)%4],cx=x+sx*r,cz=z+sz*r;
+            const ex=x+Math.sign(pr[0]-x)*r,ez=z+Math.sign(pr[1]-z)*r,fx=x+Math.sign(nx[0]-x)*r,fz=z+Math.sign(nx[1]-z)*r;
+            arc(poly,cx,cz,r,Math.atan2(ez-cz,ex-cx),Math.atan2(fz-cz,fx-cx))});
+          const o=PT((x0+x1)/2,(z0+z1)/2),ids=poly.map(([x,z])=>PT(x,z));for(let k=0;k<ids.length;k++)tri(o,ids[k],ids[(k+1)%ids.length])}}
+      for(let vj=1;vj<NZ;vj++)for(let vi=1;vi<NX;vi++){const c00=isC(vi-1,vj-1),c10=isC(vi,vj-1),c01=isC(vi-1,vj),c11=isC(vi,vj);if(c00+c10+c01+c11!==3)continue;
+        const ui=c10&&c11?vi-1:vi,uj=c01&&c11?vj-1:vj,sx=ui===vi?1:-1,sz=uj===vj?1:-1,vx=xs[vi],vz=zs[vj],r=Math.min(R0,(xs[ui+1]-xs[ui])*0.5,(zs[uj+1]-zs[uj])*0.5);if(r<0.06)continue;
+        const cx=vx+sx*r,cz=vz+sz*r,poly=[];arc(poly,cx,cz,r,Math.atan2(vz-cz,vx+sx*r-cx),Math.atan2(vz+sz*r-cz,vx-cx));
+        const o=PT(vx,vz),ids=poly.map(([x,z])=>PT(x,z));for(let k=0;k<ids.length-1;k++)tri(o,ids[k],ids[k+1])}
       if(I.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setIndex(I);out.push(g)}}
     (caps.get(k)||[]).forEach(([x,z,r])=>{const c=new THREE.CircleGeometry(r,20);c.rotateX(-Math.PI/2);c.translate(x,0.0141,z);c.deleteAttribute('uv');out.push(c)});
     if(!out.length)return;out.forEach(g=>{if(!g.index){const n=g.attributes.position.count,ix=[];for(let i=0;i<n;i++)ix.push(i);g.setIndex(ix)}});
@@ -4149,10 +4182,10 @@ function layCables(){
   });
 }
 layCables();
-// the Summit Garden's cables: from its gate to each challenge in turn
-{const E=[[1.9,SUMMIT.z0-1.2],...SUMMIT.list.map(p=>p.cablePt)],legs=[],pts=[];BCTX='fin';
- for(let q=0;q<E.length-1;q++){const a=E[q],b=E[q+1],P=[a,[a[0],b[1]],b];legs.push(cable(P));pts.push(P)}BCTX=null;
- SUMMIT.entryCable=legs[0];SUMMIT.legPts=pts;SUMMIT.list.forEach((p,i)=>{p.cables=legs[i+1];p.cablePts=pts[i+1]})}
+// the five challenges' cables: from the cave path to each challenge in turn, and on to the lift
+{const cx=CAVE.x,cz=SUMMIT.z0+CAVE.z,E=[[cx-13.6,cz+3],...SUMMIT.list.map(p=>p.cablePt),[cx+1.25,cz+0.9]],legs=[],pts=[];BCTX='fin';
+ for(let q=0;q<E.length-1;q++){const a=E[q],b=E[q+1],P=[a,[a[0],b[1]],b];const L=cable(P);L.forEach(m=>{m.position.y-=H_TOP});legs.push(L);pts.push(P)}BCTX=null;
+ SUMMIT.entryCable=legs[0];SUMMIT.legPts=pts;SUMMIT.list.forEach((p,i)=>{p.cables=legs[i+1];p.cablePts=pts[i+1]});SUMMIT.liftCable=legs[legs.length-1]}
 
 /* ---------- scatter vegetation ---------- */
 function scatterArea(zTop,zBot,o){
@@ -4180,7 +4213,7 @@ function wFree(x,z,m){const a=WRES.get(Math.floor(x/WRC)*10000+Math.floor(z/WRC)
 const WPATH=[];   // world path ribbons: {pts:[[x,z]...], w}
 // a paved ribbon that follows the ground (the hill's slope included) along a world polyline
 // (edge0: the two corners of a strip path's end that the ribbon starts from exactly, with no round end there)
-function worldPath(pts,w,col,edge0){const P=[],I=[],step=0.8,hw=w/2;let first=true;
+function worldPath(pts,w,col,edge0){const P=[],I=[],step=0.8,hw=w/2;let first=true;const hillY=(x,z)=>inCave(x,z,0.3)?0:hillYW(x,z);   // (where a spoke meets a cave mouth, the ground is the tunnel's floor, not the hilltop)
   for(let k=0;k<pts.length-1;k++){const [ax,az]=pts[k],[bx,bz]=pts[k+1],L=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.ceil(L/step)),tx=(bx-ax)/L,tz=(bz-az)/L,nx=-tz,nz=tx;
     for(let i=first?0:1;i<=n;i++){const x=ax+(bx-ax)*i/n,z=az+(bz-az)*i/n;
       for(const sd of [-1,1]){let qx=x+nx*hw*sd,qz=z+nz*hw*sd;
@@ -4203,7 +4236,6 @@ function joinPath(A,B,col){
   {const e1x=P[3]-P[0],e1z=P[5]-P[2],e2x=P[6]-P[0],e2z=P[8]-P[2];if(e1z*e2x-e1x*e2z<0)for(let t=0;t<I.length;t+=3){const q=I[t+1];I[t+1]=I[t+2];I[t+2]=q}}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);g.computeVertexNormals();
   const m=new THREE.Mesh(g,M(col||PATHC));m.receiveShadow=true;m.userData.world=1;m.userData.wpath=1;scene.add(m);WPATH.push({pts:[[ax,az],[bx,bz]],w:Math.max(wa,wb)});return m}
-const HILLWALK={x0:-32,x1:32,z0:-58,z1:60};   // the path round the summit (world)
 (function islandPaths(){const R=PIECES.ring,n=R.length,q={};
   // joins in the loop path, from the end of each piece's path to the start of the next one's
   for(let k=0;k<n;k++){const A=R[k],B=R[(k+1)%n];joinPath(A,B,B.kind==='room'&&B.i===SNOWR||A.kind==='room'&&A.i===SNOWR?SNOWPATH:PATHC)}
@@ -4226,15 +4258,187 @@ const HILLWALK={x0:-32,x1:32,z0:-58,z1:60};   // the path round the summit (worl
     if(zs==null){const L2=PIECES.byId['l'+(r<NR-1?r:0)],top=L2.zt,d=DS.find(d=>clearable(L2,top-d));if(d!=null){L=L2;zs=top-d}else zs=z0s[r]+2.3}
     clearLine(L,zs);
     BCTX=L.id;paths([[[-1.6,zs],[-X_IN-0.4,zs]]],3,0,r===SNOWR?SNOWPATH:PATHC);BCTX=null;
-    const a=S2W(-X_IN-0.4,zs,L,{}),H=HILLWALK,cx=Math.max(H.x0,Math.min(H.x1,a.x*0.25)),cz=Math.max(H.z0,Math.min(H.z1,a.z*0.25));
-    // aim at the nearest point of the summit path, entering square to its edge
-    let ex=a.x,ez=a.z;const k=Math.min(Math.abs(H.x1/(a.x||1e-6)),Math.abs(H.z1/(a.z||1e-6)));ex=a.x*k;ez=a.z*k;ex=Math.max(H.x0,Math.min(H.x1,ex));ez=Math.max(H.z0,Math.min(H.z1,ez));
-    worldPath([[a.x,a.z],[ex,ez]],3);PIECES.spokes.push({r,L:L.id,zs,a:[a.x,a.z],b:[ex,ez]})}
-  {const H=HILLWALK;worldPath([[H.x0,H.z0],[H.x1,H.z0],[H.x1,H.z1],[H.x0,H.z1],[H.x0,H.z0]],3,0xe8dcb4)}
+    // straight on across the meadow to a cave mouth in the hill's cliff, on the line to the cavern under the launch pad;
+    // the tunnel carries on along the same line into the cavern
+    const a=S2W(-X_IN-0.4,zs,L,{}),dx=CAVE.x-a.x,dz=CAVE.z-a.z,dl=Math.hypot(dx,dz),ux=dx/dl,uz=dz/dl;
+    let lo=0,hi=dl;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(mesaD(a.x+ux*m,a.z+uz*m)<0)hi=m;else lo=m}
+    const ex=a.x+ux*hi,ez=a.z+uz*hi,dC=1/Math.hypot(ux/CAVE.rx,uz/CAVE.rz),toC=Math.hypot(CAVE.x-ex,CAVE.z-ez),sx=ex-ux*1.6,sz=ez-uz*1.6;
+    CAVE.tunnels.push({r,link:L.id,ax:sx,az:sz,ux,uz,len:1.6+(toC-dC)+2.5,ex,ez});
+    worldPath([[a.x,a.z],[ex-ux*0.35,ez-uz*0.35]],3,r===SNOWR?SNOWPATH:PATHC);PIECES.spokes.push({r,L:L.id,zs,a:[a.x,a.z],b:[ex,ez]});
+    for(let t=-6;t<=0;t+=1.5)wReserve(ex+ux*t,ez+uz*t,4.2)}
+  // the laser receivers: one for each place, standing at the foot of the cliff between the two cave mouths either side of
+  // the line from the cavern to that place (so each faces its own place's laser tower)
+  for(let r=1;r<NR;r++){const P=PIECES.byId['r'+r],m=S2W(0,(P.zt+P.zb)/2,P,{}),dx=m.x-CAVE.x,dz=m.z-CAVE.z,dl=Math.hypot(dx,dz),ux=dx/dl,uz=dz/dl;
+    let lo=0,hi=dl;for(let k=0;k<40;k++){const t=(lo+hi)/2;if(mesaD(CAVE.x+ux*t,CAVE.z+uz*t)<0)lo=t;else hi=t}
+    const bx=CAVE.x+ux*hi,bz=CAVE.z+uz*hi,e=0.05,gx=(mesaD(bx+e,bz)-mesaD(bx-e,bz))/(2*e),gz=(mesaD(bx,bz+e)-mesaD(bx,bz-e))/(2*e),gl=Math.hypot(gx,gz)||1;
+    const R={r,id:AREA_OF_ROOM[r],nx:gx/gl,nz:gz/gl};R.x=bx+R.nx*3.6;R.z=bz+R.nz*3.6;CAVE.receivers[r]=R;wReserve(R.x,R.z,3.4)}
   // all those ribbons, joins and spokes become one mesh per colour (a few draw calls instead of dozens)
   {const by=new Map();scene.children.slice().forEach(o=>{if(!o.userData.wpath)return;let L=by.get(o.material);if(!L)by.set(o.material,L=[]);L.push(o.geometry);scene.remove(o)});
    by.forEach((gs,mat)=>{const g=mergeGeos(gs);g.computeVertexNormals();const m=new THREE.Mesh(g,mat);m.receiveShadow=true;m.userData.world=1;scene.add(m)})}
 })();
+/* ---------- Meridian Hill: the mesa, its caves, the barrier and the lift (world coordinates) ----------
+   sheer rock cliffs all round, with nine cave mouths where the paths from the ring arrive, each dressed in the style of
+   the walk it comes from. tunnels lead in to a domed cavern lit by glowing crystals, right under the launch pad. in its
+   middle, behind an energy barrier, stand the five final challenges round the lift. the barrier falls once every place's
+   laser beam has reached its receiver at the foot of the cliffs; the lift, a glass cabin, gets its power from the last
+   challenge and carries you up through a hatch in the launch pad */
+const ELEV={st:'bottom',y:0.02,t:0,door:0,hatch:0,ride:false,stay:0,out:true,cx:CAVE.x,cz:CAVE.z,TOPY:H_TOP+0.12,UPY:H_TOP+0.55,floor(){return this.y+0.15},powered:false};
+const BARRIER={up:true,fade:1,cols:[]};
+const CAVEG=new THREE.Group();CAVEG.userData.world=1;
+(function buildMesa(){
+  const ROCKM=triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.95}),TX.rock,0.45,0.03),ROCKD=ROCKM.clone();ROCKD.side=THREE.DoubleSide;ROCKD.onBeforeCompile=ROCKM.onBeforeCompile;ROCKD.userData=ROCKM.userData;ROCKD.customProgramCacheKey=()=>'tri';
+  const nz=(x,y,z)=>Math.sin(x*0.31+Math.sin(z*0.19)*2.1)*0.5+Math.sin(z*0.37+y*0.29+1.7)*0.3+Math.sin((x-z)*0.83+y*0.61)*0.2;
+  const C=new THREE.Color(),rockCol=(x,y,z,dark)=>{const b=0.5+0.5*Math.sin(y*0.9+nz(x*0.5,y,z*0.5)*2.2),v=nz(x*1.7,y*1.3,z*1.7),k=dark?0.72:1;C.setRGB((0.34+0.09*b+0.05*v)*k,(0.3+0.08*b+0.045*v)*k,(0.25+0.06*b+0.04*v)*k);return C};
+  const geo=(P,Cl,I)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));if(Cl)g.setAttribute('color',new THREE.Float32BufferAttribute(Cl,3));
+    const U=[];for(let i=0;i<P.length/3;i++)U.push(0,0);g.setAttribute('uv',new THREE.Float32BufferAttribute(U,2));g.setIndex(I);g.computeVertexNormals();return g};
+  // a quad facing the given way (the winding is chosen from the direction it should face)
+  const quad=(I,P,a,b,c,d,fx,fy,fz)=>{const ax=P[a*3],ay=P[a*3+1],az=P[a*3+2],ux=P[b*3]-ax,uy=P[b*3+1]-ay,uz=P[b*3+2]-az,vx=P[c*3]-ax,vy=P[c*3+1]-ay,vz=P[c*3+2]-az;
+    const nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nnz=ux*vy-uy*vx;if(nx*fx+ny*fy+nnz*fz>=0)I.push(a,b,c,b,d,c);else I.push(a,c,b,b,c,d)};
+  const hw=CAVE.hw,ARCH=2.6,archTop=l=>ARCH+Math.sqrt(Math.max(0,hw*hw-l*l));
+  const tl=(T,x,z)=>{const dx=x-T.ax,dz=z-T.az;return[dx*T.ux+dz*T.uz,dx*T.uz-dz*T.ux]};   // along, across a tunnel
+  const inProfile=(T,x,y,z,pad)=>{const [t,l]=tl(T,x,z);if(t<-1.6||t>T.len+0.6)return false;return Math.abs(l)<hw+pad&&y<archTop(Math.min(hw,Math.abs(l)))+pad};
+  // ---- the cliffs, round the footprint, with an arched opening at every cave mouth
+  const per=[];{const {x0,x1,z0,z1,r}=MESA,add=(x,z,nx,nzz)=>per.push([x,z,nx,nzz]);
+    const L=(ax,az,bx,bz,nx,nzz)=>{const len=Math.hypot(bx-ax,bz-az),n=Math.max(1,Math.round(len/0.6));for(let i=0;i<n;i++){const t=i/n;add(ax+(bx-ax)*t,az+(bz-az)*t,nx,nzz)}};
+    const A=(cx,cz,a0,a1)=>{const n=Math.max(2,Math.round(r*Math.abs(a1-a0)/0.6));for(let i=0;i<n;i++){const a=a0+(a1-a0)*i/n;add(cx+Math.cos(a)*r,cz+Math.sin(a)*r,Math.cos(a),Math.sin(a))}};
+    L(x0+r,z1,x1-r,z1,0,1);A(x1-r,z1-r,Math.PI/2,0);L(x1,z1-r,x1,z0+r,1,0);A(x1-r,z0+r,0,-Math.PI/2);L(x1-r,z0,x0+r,z0,0,-1);A(x0+r,z0+r,-Math.PI/2,-Math.PI);L(x0,z0+r,x0,z1-r,-1,0);A(x0+r,z1-r,Math.PI,Math.PI/2)}
+  const ys=[-0.6];for(let y=0;y<=6.5;y+=0.5)ys.push(y);for(let y=8;y<=H_TOP;y+=2)ys.push(y);
+  {const P=[],Cl=[],I=[],R=ys.length,N=per.length;
+   per.forEach(([x,z,nx,nzz])=>{let f=1;for(const T of CAVE.tunnels){const [t,l]=tl(T,x,z);if(Math.abs(t-1.6)<5)f=Math.min(f,Math.max(0,Math.min(1,(Math.abs(l)-hw-0.6)/1.8)))}
+     ys.forEach(y=>{const top=y>=H_TOP-0.01,d=(y<=0.05||top?0.12:1)*(0.75*nz(x,y,z)+0.38*nz(x*2.1,y*1.7,z*2.1))*(y<6.5?Math.max(f,y>5.4?1:0):1);P.push(x+nx*d,y,z+nzz*d);const c=rockCol(x,y,z);Cl.push(c.r,c.g,c.b)})});
+   for(let i=0;i<N;i++){const i2=(i+1)%N,[x,z,nx,nzz]=per[i],[x2,z2]=per[i2];for(let j=0;j<R-1;j++){const cx=(x+x2)/2,cz=(z+z2)/2,cy=(ys[j]+ys[j+1])/2;
+     if(CAVE.tunnels.some(T=>inProfile(T,cx,cy,cz,0.02)))continue;quad(I,P,i*R+j,i2*R+j,i*R+j+1,i2*R+j+1,nx,0,nzz)}}
+   const m=new THREE.Mesh(geo(P,Cl,I),ROCKM);m.castShadow=m.receiveShadow=true;m.userData.world=1;scene.add(m);
+   // boulders and scree along the foot
+   for(let i=0;i<per.length;i+=3){const [x,z,nx,nzz]=per[i];if(CAVE.tunnels.some(T=>Math.abs(tl(T,x,z)[1])<hw+2.2&&Math.abs(tl(T,x,z)[0]-1.6)<6))continue;if(CAVE.receivers.some(R=>R&&Math.hypot(R.x-x,R.z-z)<3.4))continue;
+     if(RS()<0.55){const s=0.5+RS()*1.1;INST.rock.push({x:x+nx*(0.5+RS()*1.4),y:0.1*s,z:z+nzz*(0.5+RS()*1.4),s,sy:s*0.6,ry:RS()*6,c:pick([0xa9a59c,0x9a968c,0x8a8478,0xb9b4a8]),w:1})}}}
+  // ---- the flat top, with a square hole for the lift shaft under the launch pad's hatch
+  {const sh=new THREE.Shape();per.forEach(([x,z],i)=>i?sh.lineTo(x,-z):sh.moveTo(x,-z));const hs=1.62,h=new THREE.Path();h.moveTo(ELEV.cx-hs,-(ELEV.cz-hs));h.lineTo(ELEV.cx-hs,-(ELEV.cz+hs));h.lineTo(ELEV.cx+hs,-(ELEV.cz+hs));h.lineTo(ELEV.cx+hs,-(ELEV.cz-hs));h.closePath();sh.holes.push(h);
+   const g=new THREE.ShapeGeometry(sh,2);g.rotateX(-Math.PI/2);const pos=g.attributes.position,cols=[],c=new THREE.Color();
+   for(let i=0;i<pos.count;i++){const x=pos.getX(i),z=pos.getZ(i),n=Math.sin(x*0.3)*Math.cos(z*0.27)*0.5+Math.sin(x*0.07+z*0.11)*0.5;c.setHSL(0.262+n*0.02,0.45,0.315+n*0.03).convertSRGBToLinear();cols.push(c.r,c.g,c.b)}
+   g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+   const m=new THREE.Mesh(g,triPatch(new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.96}),TX.grass,0.2,0.014));m.position.y=H_TOP;m.receiveShadow=m.castShadow=true;m.userData.world=1;scene.add(m)}
+  // ---- the cave: tunnels, cavern, floors, crystals (all in one group, only drawn when you are near or inside)
+  scene.add(CAVEG);CAVEG.renderOrder=0;
+  const PROF=[[hw,-0.15],[hw,0.9],[hw,1.8],[hw,ARCH]];for(let k=1;k<10;k++){const a=k/10*Math.PI;PROF.push([hw*Math.cos(a),ARCH+hw*Math.sin(a)])}PROF.push([-hw,ARCH],[-hw,1.8],[-hw,0.9],[-hw,-0.15]);
+  const floorP=[],floorI=[],pathP=[],pathI=[];
+  const strip=(PP,II,T,t0,t1,w,y)=>{const n=PP.length/3,a=[T.ax+T.ux*t0,T.az+T.uz*t0],b=[T.ax+T.ux*t1,T.az+T.uz*t1],sx=T.uz*w/2,sz=-T.ux*w/2;
+    PP.push(a[0]+sx,y,a[1]+sz,a[0]-sx,y,a[1]-sz,b[0]+sx,y,b[1]+sz,b[0]-sx,y,b[1]-sz);quad(II,PP,n,n+1,n+2,n+3,0,1,0)};
+  CAVE.tunnels.forEach(T=>{const P=[],Cl=[],I=[],K=PROF.length,steps=Math.ceil(T.len/1.0);
+    for(let s=0;s<=steps;s++){const t=T.len*s/steps,cx=T.ax+T.ux*t,cz=T.az+T.uz*t;PROF.forEach(([l,y])=>{const free=t>2.4&&t<T.len-2.2&&y>0.2,d=free?0.28*nz(cx+l,y,cz):0,ry=y-2.3,rl=Math.hypot(l,ry)||1;
+      const L=l+l/rl*d,Y=y+(y>0.2?ry/rl*d:0),x=cx+T.uz*L,z=cz-T.ux*L;P.push(x,Y,z);const c=rockCol(x,Y,z,true);Cl.push(c.r,c.g,c.b)})}
+    for(let s=0;s<steps;s++)for(let k=0;k<K-1;k++){const a=s*K+k,b=(s+1)*K+k,c=s*K+k+1,d=(s+1)*K+k+1,l=(PROF[k][0]+PROF[k+1][0])/2,y=(PROF[k][1]+PROF[k+1][1])/2-2.3;quad(I,P,a,b,c,d,-(T.uz*l),-y,T.ux*l)}
+    const m=new THREE.Mesh(geo(P,Cl,I),ROCKD);m.castShadow=true;m.receiveShadow=true;CAVEG.add(m);
+    // the floor: rock wall to wall, a gravel path down the middle that carries on to the path round the barrier
+    strip(floorP,floorI,T,0,T.len,hw*2,0.02);const rx=CAVE.x-(T.ax),rz=CAVE.z-(T.az),tc=rx*T.ux+rz*T.uz;strip(pathP,pathI,T,-0.6,Math.max(T.len,tc-16.4),3,0.035);
+    // torches on brackets, every seven metres on alternate walls
+    const tor=[];for(let t=3.5,sd=1;t<T.len-1;t+=7,sd=-sd)tor.push([t,sd]);T.torches=tor.map(([t,sd])=>[T.ax+T.ux*t+T.uz*sd*(hw-0.12),T.az+T.uz*t-T.ux*sd*(hw-0.12),sd])});
+  {const g=new THREE.Mesh(geo(floorP,null,floorI),M(0x6b4a2f));g.receiveShadow=true;CAVEG.add(g);const p=new THREE.Mesh(geo(pathP,null,pathI),M(PATHC));p.receiveShadow=true;CAVEG.add(p)}
+  // the cavern: a dome on an oval floor, holes where the tunnels come in and for the lift shaft in its crown
+  {const RY=13,TH=120,PH=14,P=[],Cl=[],I=[];
+   for(let i=0;i<=TH;i++)for(let j=0;j<=PH;j++){const th=i/TH*Math.PI*2,ph=j/PH*Math.PI/2,x0=CAVE.x+CAVE.rx*Math.cos(ph)*Math.cos(th),z0=CAVE.z+CAVE.rz*Math.cos(ph)*Math.sin(th),y0=RY*Math.sin(ph)-0.2;
+     const d=j>0&&j<PH?0.8*nz(x0,y0,z0)+0.3*nz(x0*2.3,y0*2,z0*2.3):0,nxx=(x0-CAVE.x)/CAVE.rx,nyy=y0/RY,nzz=(z0-CAVE.z)/CAVE.rz,nl=Math.hypot(nxx,nyy,nzz)||1;
+     const x=x0+nxx/nl*d,y=y0+nyy/nl*d,z=z0+nzz/nl*d;P.push(x,y,z);const c=rockCol(x,y,z,true);Cl.push(c.r,c.g,c.b)}
+   for(let i=0;i<TH;i++)for(let j=0;j<PH;j++){const a=i*(PH+1)+j,b=(i+1)*(PH+1)+j,c=a+1,d=b+1,cx=(P[a*3]+P[d*3])/2,cy=(P[a*3+1]+P[d*3+1])/2,cz=(P[a*3+2]+P[d*3+2])/2;
+     if(CAVE.tunnels.some(T=>inProfile(T,cx,cy,cz,0.15)))continue;if(Math.abs(cx-ELEV.cx)<1.75&&Math.abs(cz-ELEV.cz)<1.75&&cy>9)continue;quad(I,P,a,b,c,d,CAVE.x-cx,RY*0.5-cy,CAVE.z-cz)}
+   const m=new THREE.Mesh(geo(P,Cl,I),ROCKM);m.castShadow=true;m.receiveShadow=true;CAVEG.add(m);
+   const fl=new THREE.Mesh(new THREE.CircleGeometry(1,72),M(0x6b4a2f));fl.rotation.x=-Math.PI/2;fl.scale.set(CAVE.rx,CAVE.rz,1);fl.position.set(CAVE.x,0.015,CAVE.z);fl.receiveShadow=true;CAVEG.add(fl);
+   const ring=new THREE.Mesh(new THREE.RingGeometry(14.2,17.2,96),M(PATHC));ring.rotation.x=-Math.PI/2;ring.position.set(CAVE.x,0.03,CAVE.z);ring.receiveShadow=true;CAVEG.add(ring);
+   const inner=new THREE.Mesh(new THREE.CircleGeometry(13.2,96),M(0xd8cbb0));inner.rotation.x=-Math.PI/2;inner.position.set(CAVE.x,0.028,CAVE.z);inner.receiveShadow=true;CAVEG.add(inner)}
+  // glowing crystals in clusters round the cavern wall and up in its roof, and stalactites hanging from it
+  {const parts={},add=(col,g)=>{(parts[col]=parts[col]||[]).push(g)},cols=[0x7fe6ff,0xc39bff,0xffd27a,0x8dffb8];
+   for(let k=0;k<26;k++){const th=k/26*Math.PI*2+RS()*0.15,up=k%3===0,ph=up?0.9+RS()*0.4:0.05+RS()*0.12,rx=CAVE.rx*Math.cos(ph)*0.97,rz=CAVE.rz*Math.cos(ph)*0.97,x=CAVE.x+rx*Math.cos(th),z=CAVE.z+rz*Math.sin(th),y=13*Math.sin(ph)*0.97;
+     if(CAVE.tunnels.some(T=>Math.abs(tl(T,x,z)[1])<hw+1.5&&tl(T,x,z)[0]>T.len-8))continue;const col=cols[k%4];
+     for(let q=0;q<5;q++){const h=0.5+RS()*1.1,g=new THREE.ConeGeometry(0.12+RS()*0.12,h,5);g.translate(0,h/2,0);g.rotateZ((RS()-0.5)*0.9);g.rotateX((RS()-0.5)*0.9);if(up)g.rotateX(Math.PI);g.translate(x+(RS()-0.5)*0.7,y,z+(RS()-0.5)*0.7);add(col,g)}}
+   Object.entries(parts).forEach(([col,gs])=>{const m=new THREE.Mesh(mergeGeos(gs),new THREE.MeshStandardMaterial({color:lin(+col),emissive:lin(+col),emissiveIntensity:1.6,roughness:0.25,transparent:true,opacity:0.92}));CAVEG.add(m)});
+   const st=[];for(let k=0;k<40;k++){const th=RS()*Math.PI*2,rr=0.2+RS()*0.75,x=CAVE.x+CAVE.rx*rr*Math.cos(th),z=CAVE.z+CAVE.rz*rr*Math.sin(th);if(Math.hypot(x-ELEV.cx,z-ELEV.cz)<3)continue;
+     const y=13*Math.sqrt(Math.max(0,1-rr*rr))-0.4,h=0.6+RS()*1.6,g=new THREE.ConeGeometry(0.15+RS()*0.2,h,6);g.rotateX(Math.PI);g.translate(x,y-h/2,z);st.push(g)}
+   const sm=new THREE.Mesh(mergeGeos(st),M(0x8a7d6a));sm.castShadow=true;CAVEG.add(sm)}
+  // the torches' brackets and flames (one mesh each for the whole cave)
+  {const br=[],fl=[];CAVE.tunnels.forEach(T=>T.torches.forEach(([x,z,sd])=>{const g=new THREE.BoxGeometry(0.12,0.5,0.12);g.translate(x,2.1,z);br.push(g);const f=new THREE.ConeGeometry(0.11,0.34,8);f.translate(x-T.uz*sd*0.18,2.52,z+T.ux*sd*0.18);fl.push(f);
+     const cup=new THREE.CylinderGeometry(0.13,0.08,0.16,10);cup.translate(x-T.uz*sd*0.18,2.32,z+T.ux*sd*0.18);br.push(cup)}));
+   if(br.length){CAVEG.add(new THREE.Mesh(mergeGeos(br),M(0x2b3a42)));const fm=new THREE.Mesh(mergeGeos(fl),new THREE.MeshBasicMaterial({color:lin(0xffb347),toneMapped:false}));CAVEG.add(fm);CAVE.flame=fm}}
+  // the cave is only drawn when you are inside or close to the hill
+  animsW.push(()=>{const near=mesaD(camera.position.x,camera.position.z)<14&&(camera.position.y<H_TOP-1||ELEV.ride);if(CAVEG.visible!==near)CAVEG.visible=near});
+  // ---- the barrier: a shimmering wall of light in a ring round the five challenges, with an emitter post every 30 degrees
+  {const R=13,H=4.4,mat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false,
+     uniforms:{uT:U_TIME,uF:{value:1}},vertexShader:'varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+     fragmentShader:`uniform float uT,uF;varying vec2 vU;void main(){vec2 p=vec2(vU.x*120.0,vU.y*9.0);vec2 h=abs(fract(p+vec2(0.0,floor(p.x)*0.5))-0.5);float hex=smoothstep(0.42,0.48,max(h.x,h.y));
+       float scan=smoothstep(0.0,0.08,fract(vU.y-uT*0.25))*smoothstep(0.2,0.08,fract(vU.y-uT*0.25));float fall=smoothstep(1.0,0.75,vU.y);
+       gl_FragColor=vec4(vec3(0.35,0.85,1.0)*(0.18+0.55*hex+0.6*scan)*fall*uF,1.0);}`});
+   const w=new THREE.Mesh(new THREE.CylinderGeometry(R,R,H,120,1,true),mat);w.position.set(CAVE.x,H/2,CAVE.z);w.renderOrder=6;CAVEG.add(w);BARRIER.wall=w;BARRIER.mat=mat;
+   const posts=[],caps=[];for(let k=0;k<12;k++){const a=k/12*Math.PI*2,x=CAVE.x+Math.cos(a)*R,z=CAVE.z+Math.sin(a)*R,g=new THREE.CylinderGeometry(0.16,0.24,H+0.4,10);g.translate(x,(H+0.4)/2,z);posts.push(g);
+     const c=new THREE.SphereGeometry(0.2,14,10);c.translate(x,H+0.55,z);caps.push(c)}
+   CAVEG.add(new THREE.Mesh(mergeGeos(posts),M(0x2b3a42)));const cm=lampMat(0x7fe6ff);cm.emissiveIntensity=2;BARRIER.capMat=cm;CAVEG.add(new THREE.Mesh(mergeGeos(caps),cm));
+   for(let k=0;k<120;k++){const a=k/120*Math.PI*2,c={t:'circ',x:CAVE.x+Math.cos(a)*R,z:CAVE.z+Math.sin(a)*R,r:0.42,on:true,y0:-1,y1:9};COLW.push(c);BARRIER.cols.push(c)}}
+  // ---- the lift: a frame of steel rails up to the cavern roof, a lined shaft through the rock, a glass cabin and the hatch
+  {const cx=ELEV.cx,cz=ELEV.cz,rails=[];[[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{const g=new THREE.CylinderGeometry(0.09,0.09,H_TOP-0.3,10);g.translate(cx+a*1.52,(H_TOP-0.3)/2,cz+b*1.52);rails.push(g)});
+   {const g=new THREE.BoxGeometry(3.4,0.12,3.4);g.translate(cx,0.06,cz);rails.push(g)}
+   CAVEG.add(new THREE.Mesh(mergeGeos(rails),new THREE.MeshStandardMaterial({color:lin(0x8a9097),metalness:0.7,roughness:0.35})));
+   // the shaft through the rock above the cavern: concrete walls with strip lights
+   const lin2=[];[[0,-1],[0,1],[-1,0],[1,0]].forEach(([a,b])=>{const g=new THREE.PlaneGeometry(3.24,H_TOP-8.5);if(a)g.rotateY(-a*Math.PI/2);else if(b>0)g.rotateY(Math.PI);g.translate(cx+a*1.62,8.5+(H_TOP-8.5)/2,cz+b*1.62);lin2.push(g)});
+   const sm=M(0xd9cfb8).clone();sm.side=THREE.DoubleSide;sm.onBeforeCompile=M(0xd9cfb8).onBeforeCompile;sm.userData=M(0xd9cfb8).userData;sm.customProgramCacheKey=()=>'tri';const shm=new THREE.Mesh(mergeGeos(lin2),sm);CAVEG.add(shm);
+   const strips=[];for(let y=10;y<H_TOP;y+=3)[[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{const g=new THREE.BoxGeometry(0.05,0.9,0.05);g.translate(cx+a*1.58,y,cz+b*1.58);strips.push(g)});
+   CAVEG.add(new THREE.Mesh(mergeGeos(strips),new THREE.MeshBasicMaterial({color:lin(0xfff2b3),toneMapped:false})));
+   // the cabin: a steel floor and roof, brass corner posts, and walls of mirrored glass you can see out through
+   const cab=new THREE.Group();cab.position.set(cx,ELEV.y,cz);cab.userData.world=1;scene.add(cab);ELEV.cab=cab;
+   const glass=new THREE.MeshStandardMaterial({color:lin(0xdff4ff),metalness:0.85,roughness:0.04,envMap:skyCube,envMapIntensity:1.5,transparent:true,opacity:0.3,depthWrite:false,side:THREE.DoubleSide});
+   const steel=new THREE.MeshStandardMaterial({color:lin(0x5c6670),metalness:0.6,roughness:0.4});
+   blk(2.8,0.15,2.8,0,0.075,0,steel,cab);blk(2.8,0.18,2.8,0,3.0,0,steel,cab);mesh(new THREE.PlaneGeometry(2.0,2.0),new THREE.MeshBasicMaterial({color:lin(0xfff6dc),toneMapped:false}),0,2.905,0,cab).rotation.x=Math.PI/2;
+   [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>blk(0.12,2.82,0.12,a*1.34,1.5,b*1.34,matBrass,cab));[[-1,1],[1,1]].forEach(([a,b])=>blk(0.08,2.82,0.08,a*0.72,1.5,b*1.34,matBrass,cab));
+   const gl=(w,x,z,ry)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,2.76),glass);m.position.set(x,1.53,z);m.rotation.y=ry;m.renderOrder=3;cab.add(m);return m};
+   gl(2.6,0,-1.33,0);gl(2.6,-1.33,0,Math.PI/2);gl(2.6,1.33,0,-Math.PI/2);gl(0.6,-1.02,1.33,0);gl(0.6,1.02,1.33,0);
+   blk(2.8,0.06,0.06,0,1.05,-1.36,matBrass,cab);blk(0.06,0.06,2.8,-1.36,1.05,0,matBrass,cab);blk(0.06,0.06,2.8,1.36,1.05,0,matBrass,cab);   // hand rails
+   ELEV.leaves=[-1,1].map(s=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(0.72,2.76),glass);m.position.set(s*0.36,1.53,1.28);m.renderOrder=3;cab.add(m);const f=blk(0.04,2.76,0.04,s*0.72,1.53,1.28,matBrass,cab);m.add(f);f.position.set(-s*0.34,0,0);return m});
+   const lampM=lampMat(0xff4a3a);lampM.emissiveIntensity=1.2;ELEV.lamp=mesh(new _G.Sph(0.08,14,10),lampM,0,3.18,1.36,cab,true);
+   // walls you can't walk through: three sides and the fixed panels by the door always, the doorway while the door is shut
+   const W=(x0,x1,z0,z1)=>{const c={t:'box',minX:cx+x0,maxX:cx+x1,minZ:cz+z0,maxZ:cz+z1,on:true,y0:-1,y1:4};COLW.push(c);return c};
+   ELEV.walls=[W(-1.42,1.42,-1.45,-1.3),W(-1.45,-1.3,-1.42,1.42),W(1.3,1.45,-1.42,1.42),W(-1.42,-0.7,1.3,1.45),W(0.7,1.42,1.3,1.45)];ELEV.doorCol=W(-0.72,0.72,1.3,1.45);
+   // the empty shaft (cabin away upstairs) is fenced off on the cave floor; the open hatch is fenced off on the launch pad
+   ELEV.pitCol={t:'box',minX:cx-1.5,maxX:cx+1.5,minZ:cz-1.5,maxZ:cz+1.5,on:false,y0:-1,y1:6};COLW.push(ELEV.pitCol);
+   ELEV.hatchCol={t:'box',minX:cx-1.7,maxX:cx+1.7,minZ:cz-1.7,maxZ:cz+1.7,on:false,y0:H_TOP-4,y1:H_TOP+6};COLW.push(ELEV.hatchCol);
+   // the hatch in the launch pad: two steel plates with yellow and black edges that slide apart
+   const ht=canvasTex(256,256,c=>{c.fillStyle='#6a7078';c.fillRect(0,0,256,256);for(let i=-8;i<16;i++){c.fillStyle=i%2?'#1d1f22':'#ffd23f';c.beginPath();c.moveTo(i*32,0);c.lineTo(i*32+32,0);c.lineTo(i*32-32,64);c.lineTo(i*32-64,64);c.closePath();c.fill()}
+     c.fillStyle='#6a7078';c.fillRect(0,64,256,192);c.strokeStyle='rgba(0,0,0,0.25)';c.lineWidth=3;for(let y=90;y<256;y+=36){c.beginPath();c.moveTo(14,y);c.lineTo(242,y);c.stroke()}});
+   const hm=new THREE.MeshStandardMaterial({map:ht,metalness:0.55,roughness:0.45});
+   ELEV.plates=[-1,1].map(s=>{const g=new THREE.Group();g.position.set(cx+s*0.81,H_TOP+0.06,cz);g.userData.world=1;scene.add(g);const p=blk(1.6,0.08,3.24,0,0,0,hm,g);p.rotation.y=s>0?Math.PI:0;return g});
+   const rim=[];[[0,-1],[0,1],[-1,0],[1,0]].forEach(([a,b])=>{const g=new THREE.BoxGeometry(a?0.14:3.6,0.1,a?3.6:0.14);g.translate(cx+a*1.73,H_TOP+0.05,cz+b*1.73);rim.push(g)});
+   const rm=new THREE.Mesh(mergeGeos(rim),new THREE.MeshStandardMaterial({color:lin(0xffd23f),roughness:0.5}));rm.userData.world=1;scene.add(rm)}
+})();
+// ---- the cave mouths: each dressed in the style of the walk whose path arrives there
+(function caveMouths(){const hw=CAVE.hw,AR=2.6;
+  const arcPts=(r,n)=>{const o=[];for(let k=0;k<=n;k++){const a=Math.PI*k/n;o.push([Math.cos(a)*r,AR+Math.sin(a)*r,a])}return o};
+  const stones=(g,r,n,col,w,d)=>arcPts(r,n).forEach(([x,y,a],k)=>{const b=blk(w||0.62,0.5,d||0.7,x,y,0.3,col,g);b.rotation.z=a-Math.PI/2;if(k===n/2)b.scale.set(1.25,1.25,1.15)});
+  const post=(g,x,col,w,h)=>blk(w||0.5,h||AR,w||0.55,x,(h||AR)/2,0.3,col,g);
+  const blob=(g,x,y,z,s,col,sy)=>{const m=mesh(new _G.Sph(1,14,10),col,x,y,z,g);m.scale.set(s,(sy||0.8)*s,s);return m};
+  const flowerHead=(g,x,y,z,col,r)=>{blob(g,x,y,z,r||0.12,col,1.2)};
+  const D={
+    tulips(g){[-1,1].forEach(s=>{post(g,s*2.42,0x2f7a4a,0.38,4.4);blk(1.2,0.5,0.7,s*3.4,0.25,0.65,0xb98a5a,g);for(let k=0;k<6;k++){const x=s*3.4+(k%3-1)*0.32,z=0.5+Math.floor(k/3)*0.3;mesh(new _G.Cyl(0.012,0.012,0.42,5),0x3f7f36,x,0.71,z,g);flowerHead(g,x,0.95,z,[0xff4f6a,0xffd23f,0xff8a3d,0xc04ad8][k%4],0.09)}});
+      arcPts(2.42,12).forEach(([x,y,a])=>{const b=blk(0.6,0.16,0.42,x,y,0.3,0x3f9a5a,g);b.rotation.z=a-Math.PI/2});return [[-3.4,0.65,0.6],[3.4,0.65,0.6]]},
+    river_Willow(g){[-1,1].forEach(s=>post(g,s*2.45,0xd9cfb8,0.6));stones(g,2.45,10,0xcfc3a8);
+      for(let k=0;k<16;k++){const x=-2.6+k*0.35,L=0.9+((k*7)%5)*0.35,y=AR+Math.sqrt(Math.max(0,2.9*2.9-x*x))-L/2+0.25;const m=mesh(new _G.Cyl(0.025,0.012,L,5),k%2?0x6fa84a:0x8cc063,x,y,0.75,g);m.rotation.x=0.08}return[]},
+    river_Kingfisher(g){[-1,1].forEach(s=>post(g,s*2.45,0x3f6fa8,0.6));const t=mesh(new _G.Tor(2.45,0.3,10,32,Math.PI),0x3f6fa8,0,AR,0.3,g);
+      blob(g,0,AR+2.95,0.35,0.22,0x2b9fd8,0.9);blob(g,0,AR+2.88,0.5,0.15,0xff8a3d,0.9);blob(g,0,AR+3.18,0.45,0.13,0x2b9fd8);const bk=mesh(new _G.Cone(0.04,0.24,8),0x1d1f22,0,AR+3.18,0.66,g);bk.rotation.x=Math.PI/2;return[]},
+    river_Otter(g){[-1,1].forEach(s=>{const m=mesh(new _G.Cyl(0.26,0.32,4.9,10),0x8a6a48,s*2.5,2.45,0.35,g);m.rotation.z=s*0.05;for(let k=0;k<4;k++)blob(g,s*(3.1+k*0.45),0.2,0.6+(k%2)*0.4,0.32+(k%3)*0.08,0x9a968c,0.6)});
+      const l=mesh(new _G.Cyl(0.3,0.26,6.4,10),0x7a5c3e,0,4.95,0.4,g);l.rotation.z=Math.PI/2;return[]},
+    river_Stepping(g){arcPts(2.75,9).forEach(([x,y],k)=>blob(g,x,y,0.4,0.55+(k%3)*0.12,[0xa9a59c,0x9a968c,0xb9b4a8][k%3],0.9));[-1,1].forEach(s=>{blob(g,s*2.9,0.45,0.5,0.8,0x8a8478,0.7);blob(g,s*2.75,1.55,0.45,0.62,0xa9a59c,0.9)});return[]},
+    roses(g){[-1,1].forEach(s=>{blk(0.14,AR,0.14,s*2.5,AR/2,0.35,0xfffaf0,g);for(let y=0.4;y<AR;y+=0.45)blk(0.6,0.05,0.05,s*2.5,y,0.42,0xfffaf0,g)});mesh(new _G.Tor(2.5,0.07,8,40,Math.PI),0xfffaf0,0,AR,0.35,g);
+      arcPts(2.5,14).forEach(([x,y],k)=>{blob(g,x,y,0.48,0.13,[0xd31e3c,0xf28aac,0xfaf4ea][k%3],1);blob(g,x+0.12,y-0.1,0.42,0.1,0x3f7f36)});for(let y=0.4;y<AR;y+=0.5)[-1,1].forEach(s=>blob(g,s*2.55,y,0.5,0.12,[0xd31e3c,0xf28aac][(y*4|0)%2],1));return[]},
+    sun(g){[-1,1].forEach(s=>{blk(0.5,4.6,0.5,s*2.45,2.3,0.35,0x8a5a3b,g);const br=blk(0.18,1.6,0.18,s*1.85,4.1,0.4,0x7a4a2c,g);br.rotation.z=s*0.75;
+        for(let k=0;k<3;k++){const x=s*(3.3+k*0.55),h=1.4+k*0.25;mesh(new _G.Cyl(0.025,0.03,h,6),0x4f8a32,x,h/2,0.8,g);const d=mesh(new _G.Cyl(0.24,0.24,0.05,16),0xffc61a,x,h,0.85,g);d.rotation.x=Math.PI/2-0.3;const c=mesh(new _G.Cyl(0.11,0.11,0.07,12),0x6b4226,x,h,0.88,g);c.rotation.x=Math.PI/2-0.3}});
+      blk(6.0,0.55,0.6,0,4.85,0.35,0x7a4a2c,g);return[[-3.85,0.8,0.7],[3.85,0.8,0.7]]},
+    lavender(g){[-1,1].forEach(s=>{post(g,s*2.45,0xe8dcc4,0.6);for(let k=0;k<5;k++)blob(g,s*(3.2+(k%3)*0.45),0.35,0.55+Math.floor(k/3)*0.45,0.32,[0x8d72c9,0x9b7fd6,0x7f66b8][k%3],0.95);
+        mesh(new _G.Cyl(0.04,0.04,3.4,8),0x6b4226,s*3.3,1.7,0.6,g);const b=new THREE.Mesh(new THREE.PlaneGeometry(0.55,1.1),dbl(0x8d72c9));b.position.set(s*3.3+s*0.3,2.8,0.6);g.add(b)});
+      stones(g,2.45,10,0xe8dcc4);return[[-3.5,0.6,0.7],[3.5,0.6,0.7]]},
+    frost(g){const ice=0xd6eef8;arcPts(2.5,10).forEach(([x,y,a])=>{const b=blk(0.7,0.55,0.75,x,y,0.3,ice,g);b.rotation.z=a-Math.PI/2});[-1,1].forEach(s=>{for(let y=0.28;y<AR;y+=0.55)blk(0.7,0.53,0.75,s*2.5,y,0.3,ice,g);
+        const p=mesh(new _G.Cone(0.7,1.8,10),0x2f6a44,s*3.6,1.3,0.9,g);mesh(new _G.Cone(0.5,1.3,10),0x2f6a44,s*3.6,2.1,0.9,g);mesh(new _G.Cone(0.28,0.4,10),matSnowBall,s*3.6,2.75,0.9,g);p.castShadow=true});
+      arcPts(2.5,10).forEach(([x,y],k)=>{blob(g,x,y+0.32,0.3,0.32,matSnowBall,0.45);if(k>1&&k<9&&k%2){const ic=mesh(new _G.Cone(0.06,0.45+(k%3)*0.15,6),0xe8f6ff,x*0.82,y*0.82+AR*0.18-0.55,0.55,g);ic.rotation.x=Math.PI}});return[[-3.6,0.9,0.8],[3.6,0.9,0.8]]}};
+  CAVE.tunnels.forEach(T=>{const C=CONN[+T.link.slice(1)],key=C.kind==='river'?'river_'+C.name.split(' ')[0]:C.kind,f=D[key]||D.river_Stepping;
+    const g=new THREE.Group();g.position.set(T.ex,0,T.ez);g.rotation.y=Math.atan2(-T.ux,-T.uz);g.userData.world=1;scene.add(g);
+    const cols=f(g)||[];g.updateMatrixWorld(true);cols.forEach(([x,r,z])=>{const v=new THREE.Vector3(x,0,z).applyMatrix4(g.matrixWorld);COLW.push({t:'circ',x:v.x,z:v.z,r,on:true,y0:-1,y1:6})});
+    // a name board over the way in
+    const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.2,0.55),new THREE.MeshBasicMaterial({map:signTex(['Meridian Caves','from '+C.name],512,128),toneMapped:false}));sg.position.set(0,5.55,0.62);g.add(sg);
+    g.children.slice().forEach(c=>{if(c.isMesh)c.castShadow=true});mergeDeep(g);g.userData.cullR=2.2})})();   // (its dressing is not drawn from far off; the arch in the cliff is)
 // trees in world coordinates (the hill, the meadow and the gaps between pieces)
 function addTreeW(x,z,o){o=o||{};const base=hillY(x,z),s=o.s||(0.9+RS()*0.7),type=o.type||(RS()<0.55?'round':'pine');
   INST.trunk.push({x,y:base+(type==='pine'?0.75:1.0)*s,z,s,sy:s*(type==='pine'?1:1.4),ry:RS()*6,w:1});
@@ -4301,6 +4505,28 @@ function mergeChildren(gr){const by=new Map();
     let e=by.get(c.material);if(!e)by.set(c.material,e=[]);e.push(c)});
   by.forEach((list,m)=>{if(list.length<2)return;const gs=list.map(c=>{c.updateMatrix();const gg=c.geometry.clone();gg.applyMatrix4(c.matrix);gr.remove(c);return gg});
     const mm=new THREE.Mesh(mergeGeos(gs),m);mm.castShadow=list.some(c=>c.castShadow);mm.receiveShadow=true;if(list[0].userData.st)mm.userData.st=1;gr.add(mm)})}
+// merge every fixed mesh under a group, at any depth, into one mesh per look. for builders that put parts in sub-groups or
+// make their own copy of a material for each part (plain lit materials that look exactly alike count as one). nothing
+// under the group may move or be looked up afterwards; see-through, glowing and specially shaded parts keep their own
+function mergeDeep(grp,vc){const OBC=THREE.Material.prototype.onBeforeCompile,SIG=new Map(),by=new Map(),list=[];
+  const look=m=>{if(!(m.isMeshStandardMaterial||m.isMeshLambertMaterial)||m.onBeforeCompile!==OBC||(m.emissive&&(m.emissive.r||m.emissive.g||m.emissive.b)))return m;
+    const k=[m.type,m.color.getHexString(),m.roughness,m.metalness,m.map&&m.map.uuid,m.side,m.envMap&&m.envMap.uuid,m.normalMap&&m.normalMap.uuid,m.alphaTest,m.flatShading].join('|');
+    let f=SIG.get(k);if(!f)SIG.set(k,f=m);return f};
+  grp.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(grp.matrixWorld).invert(),m4=new THREE.Matrix4();
+  grp.traverse(c=>{const g=c.geometry;if(c===grp||!c.isMesh||c.isInstancedMesh||c.children.length||Array.isArray(c.material)||c.material.transparent||c.material.vertexColors||c.customDepthMaterial||c.renderOrder||!g||!g.attributes.normal||g.morphAttributes&&Object.keys(g.morphAttributes).length)return;list.push(c)});
+  // (vc: plain, untextured parts of every colour share one mesh, their colours baked into the vertices)
+  const VC=new Map(),plain=m=>vc&&m.isMeshStandardMaterial&&!m.map&&!m.normalMap&&!m.roughnessMap&&!m.alphaMap&&!m.alphaTest&&m.onBeforeCompile===OBC&&!(m.emissive&&(m.emissive.r||m.emissive.g||m.emissive.b));
+  list.forEach(c=>{const m=c.material;if(plain(m)){const k=[m.side,m.roughness,m.metalness,m.envMap&&m.envMap.uuid,m.envMapIntensity,m.flatShading].join('|');let e=VC.get(k);if(!e)VC.set(k,e=[]);e.push(c);return}
+    const lm=look(m);let e=by.get(lm);if(!e)by.set(lm,e=[]);e.push(c)});
+  VC.forEach(L=>{if(L.length<2){const lm=look(L[0].material);let e=by.get(lm);if(!e)by.set(lm,e=[]);e.push(L[0]);return}const m0=L[0].material,cols=[];
+    const gs=L.map(c=>{const gg=c.geometry.clone();gg.applyMatrix4(m4.multiplyMatrices(inv,c.matrixWorld));const col=c.material.color;for(let i=0;i<gg.attributes.position.count;i++)cols.push(col.r,col.g,col.b);c.parent.remove(c);return gg});
+    const g=mergeGeos(gs);g.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+    const mm=new THREE.Mesh(g,new THREE.MeshStandardMaterial({vertexColors:true,roughness:m0.roughness,metalness:m0.metalness,side:m0.side,envMap:m0.envMap,envMapIntensity:m0.envMapIntensity,flatShading:m0.flatShading}));
+    mm.castShadow=L.some(c=>c.castShadow);mm.receiveShadow=true;grp.add(mm)});
+  by.forEach((L,m)=>{if(L.length<2)return;const gs=L.map(c=>{const gg=c.geometry.clone();gg.applyMatrix4(m4.multiplyMatrices(inv,c.matrixWorld));c.parent.remove(c);return gg});
+    const mm=new THREE.Mesh(mergeGeos(gs),m);mm.castShadow=L.some(c=>c.castShadow);mm.receiveShadow=true;grp.add(mm)});
+  // sub-groups left empty go too
+  const empty=[];grp.traverse(c=>{if(c!==grp&&!c.isMesh&&!c.isSprite&&!c.isLight&&!c.children.length)empty.push(c)});empty.forEach(c=>c.parent&&c.parent.remove(c))}
 function mergeGeos(gs){const P=[],N=[],U=[],I=[];let off=0;for(const g of gs){const p=g.attributes.position,n=g.attributes.normal,u=g.attributes.uv;
   for(let i=0;i<p.count;i++){P.push(p.getX(i),p.getY(i),p.getZ(i));N.push(n.getX(i),n.getY(i),n.getZ(i));U.push(u?u.getX(i):0,u?u.getY(i):0)}
   if(g.index)for(let i=0;i<g.index.count;i++)I.push(g.index.getX(i)+off);else for(let i=0;i<p.count;i++)I.push(i+off);off+=p.count}return geoFrom(P,N,U,I)}
@@ -4371,12 +4597,13 @@ function rockGeo(ws,hs){const g=new THREE.SphereGeometry(0.5,ws,hs),p=g.attribut
  const inSolid=(x,z,m)=>{const pc=pieceOfS(z).id;return boxes.some(c=>(c.pc||pieceOfS((c.minZ+c.maxZ)/2).id)===pc&&x>c.minX-m&&x<c.maxX+m&&z>c.minZ-m&&z<c.maxZ+m)};
  const onWorld=(x,z,m)=>WPATH.some(p=>{for(let k=0;k<p.pts.length-1;k++){const [ax,az]=p.pts[k],[bx,bz]=p.pts[k+1],dx=bx-ax,dz=bz-az,L2=dx*dx+dz*dz||1e-9,t=Math.max(0,Math.min(1,((x-ax)*dx+(z-az)*dz)/L2));if(Math.hypot(x-ax-dx*t,z-az-dz*t)<p.w/2+m)return true}return false});
  const MARG={flower:0.12,stem:0.12,grass:0.15,bush:0.45,cabbage:0.2,reed:0.15,cattail:0.15,blob:0.1};
- for(const k of Object.keys(MARG)){const a=INST[k];if(!a)continue;let w=0;for(const o of a){const m=MARG[k];if(k==='flower'&&o.y>1){a[w++]=o;continue}   // (roses up on arches and trellises stay)
+ for(const k of Object.keys(MARG)){const a=INST[k];if(!a)continue;let w=0;for(const o of a){const m=MARG[k];if(o.arch){a[w++]=o;continue}   // (roses up on the arches stay; a flower on a stem goes with its stem)
    const bad=o.w?onWorld(o.x,o.z,m):(onPathS(o.x,o.z,m)||inSolid(o.x,o.z,k==='bush'?0.35:0.05));if(!bad)a[w++]=o}a.length=w}
  {let w=0;for(const o of INST.rock){if(!(o.w?false:inSolid(o.x,o.z,0.1)))INST.rock[w++]=o}INST.rock.length=w}
  TREES.slice().forEach(T=>{const bad=onPathS(T.x,T.z,0.35)||inSolid(T.x,T.z,-0.05);if(!bad)return;T.parts.forEach(([list,o])=>{const i=list.indexOf(o);if(i>=0)list.splice(i,1)});(T.extra||[]).forEach(m=>m.parent&&m.parent.remove(m));
    if(T.col){const i=colliders.indexOf(T.col);if(i>=0)colliders.splice(i,1)}const i=TREES.indexOf(T);if(i>=0)TREES.splice(i,1)})}
-{const q={};Object.values(INST).forEach(list=>list.forEach(o=>{if(o.w)return;const P=pieceOfS(o.z);S2W(o.x,o.z,P,q);o.x=q.x;o.z=q.z;o.y=(o.y||0)+P.y;o.ry=(o.ry||0)+P.phi;o.w=1}))}
+{const q={};Object.values(INST).forEach(list=>list.forEach(o=>{if(o.w)return;const P=o.pc?PIECES.byId[o.pc]:pieceOfS(o.z);   // (o.pc: a plant that sits exactly on a boundary, such as on a hedge, stays with its piece)
+  S2W(o.x,o.z,P,q);o.x=q.x;o.z=q.z;o.y=(o.y||0)+P.y;o.ry=(o.ry||0)+P.phi;o.w=1}))}
 const LODS=[];let lodScale=1;
 function buildLOD(levels,list,cs,tag){if(!list.length)return;cs=cs||40;
   levels.forEach(l=>{if(!l.geo.boundingSphere)l.geo.computeBoundingSphere()});
@@ -4525,7 +4752,7 @@ function owlRoute(A,B,nA,nB){const bin=p=>OWLB.find(b=>b.inside(p.x,p.z)),ba=bin
    starts on the board by the fountain; at zero the engines light, smoke boils out of the trench, and it climbs away */
 BCTX='fin';const ROCKET=(()=>{const zp=zF0-44,H=46,R=1.2,RF=1.71,M0=1.25,S={zp,M0,state:'idle',t:0,y:0,vy:0,dz:0,pitch:0};
   const mat=(c,r,m,o)=>new THREE.MeshStandardMaterial(Object.assign({color:lin(c),roughness:r,metalness:m||0},o||{}));
-  const WHITE=mat(0xf3f4f5,0.35,0.05),BLACK=mat(0x1b1d20,0.55,0.1),GREY=mat(0x3a3d42,0.5,0.3),STEEL=mat(0x8a9097,0.35,0.7),SOOT=mat(0x5c5c5a,0.8,0.1),CONC=mat(0xb9b6ae,0.92);
+  const WHITE=mat(0xf3f4f5,0.35,0.05),BLACK=mat(0x1b1d20,0.55,0.1),GREY=mat(0x3a3d42,0.5,0.3),STEEL=mat(0x8a9097,0.35,0.7),SOOT=mat(0x5c5c5a,0.8,0.1),CONC=triPatch(mat(0xb9b6ae,0.92),TX.plaster,0.45,0.012);   // (the pad is weathered concrete, not flat grey)
   const g=new THREE.Group();g.position.set(0,M0,zp);scene.add(g);S.g=g;const add=(geo,m,x,y,z,p)=>{const o=new THREE.Mesh(geo,m);o.position.set(x||0,y||0,z||0);o.castShadow=o.receiveShadow=true;(p||g).add(o);return o};
   // stage 1 (27 m incl. the black interstage from 22.4 m), stage 2 up to 37.4 m, then the fairing
   add(new _G.Cyl(R,R,22.4,40,1,true),WHITE,0,11.2+0.9);add(new _G.Cyl(R*1.005,R*1.005,4.6,40,1,true),BLACK,0,22.4+2.3+0.9);
@@ -4548,7 +4775,8 @@ BCTX='fin';const ROCKET=(()=>{const zp=zF0-44,H=46,R=1.2,RF=1.71,M0=1.25,S={zp,M
     add(new THREE.BoxGeometry(1.0,0.08,0.06),GREY,0,0.4,0,fin);add(new THREE.BoxGeometry(1.0,0.08,0.06),GREY,0,-0.4,0,fin);[-0.5,0.5].forEach(x=>add(new THREE.BoxGeometry(0.06,0.88,0.06),GREY,x,0,0,fin));
     for(let i=1;i<6;i++){const b=add(new THREE.BoxGeometry(0.025,1.15,0.05),GREY,-0.5+i*1/6,0,0,fin);b.rotation.z=0.785;const b2=add(new THREE.BoxGeometry(0.025,1.15,0.05),GREY,-0.5+i*1/6,0,0,fin);b2.rotation.z=-0.785}}
   // the pad: a concrete apron, the flame trench under the rocket, a launch mount ring with clamps
-  flat(new THREE.CircleGeometry(15,64),CONC,0,0.03,zp);flat(new THREE.PlaneGeometry(4.4,13),0x2a2a28,0,0.04,zp-6.5);reserve(0,zp,16);
+  {const sh=new THREE.Shape();sh.absarc(0,0,15,0,Math.PI*2,false);const hx=CAVE.x,hz=-(zF0-52+CAVE.z-zp),hs=1.62,h=new THREE.Path();h.moveTo(hx-hs,hz-hs);h.lineTo(hx+hs,hz-hs);h.lineTo(hx+hs,hz+hs);h.lineTo(hx-hs,hz+hs);h.closePath();sh.holes.push(h);flat(new THREE.ShapeGeometry(sh,32),CONC,0,0.03,zp)}   // (with the opening for the lift from the caves)
+  flat(new THREE.PlaneGeometry(4.4,13),0x2a2a28,0,0.04,zp-6.5);reserve(0,zp,16);
   mesh(new _G.Cyl(2.4,2.8,M0,32,1,true),CONC,0,M0/2,zp);mesh(new _G.Tor(2.25,0.18,10,40),STEEL,0,M0,zp).rotation.x=Math.PI/2;
   for(let k=0;k<8;k++){const a=k*Math.PI/4+0.2;blk(0.3,0.5,0.3,Math.cos(a)*1.55,M0+0.2,zp+Math.sin(a)*1.55,0x555a60)}colCirc(0,zp,2.9);
   // the strongback: a steel lattice tower that holds the rocket and tilts back from it before launch
@@ -4624,7 +4852,7 @@ anims.push((t,dt)=>{const S=ROCKET;S.fm.uniforms.uT.value=t;
   else if(S.state==='gone'){S.glow.material.opacity=Math.max(0,0.9-S.t*0.25);S.glow.position.y+=dt*60;
   }});
 // the rocket goes up when you press the launch button, and only once (it stays gone until a new game)
-function launchRocket(){const S=ROCKET;if(S.state!=='idle'||S.done||!PROG.endgame())return;S.done=true;S.go=true;PROG.setRocket();S.button.m.position.y=1.08;setTimeout(()=>S.button.m.position.y=1.11,300)}
+function launchRocket(){const S=ROCKET;if(S.state!=='idle'||S.done||!PROG.isComplete('summit')||ph<H_TOP-2)return;S.done=true;S.go=true;PROG.setRocket();S.button.m.position.y=1.08;setTimeout(()=>S.button.m.position.y=1.11,300)}
 function rocketGone(){const S=ROCKET;S.done=true;S.state='gone';S.t=99;S.g.visible=false;S.sb.rotation.z=-0.32;S.redraw()}   // already launched on an earlier visit (see restore progress)
 
 buildOwlHeights();
@@ -4704,7 +4932,7 @@ function leafShape(len,wid){const s=new THREE.Shape();s.moveTo(0,0);s.quadraticC
   for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,-0.5*x*x/wid-0.08*y*y/len)}g.computeVertexNormals();return g}
 // the archer's drawing arm, jointed so its paw can follow the bowstring: the shoulder, where the arm's capsule ends and the
 // paw, reaching straight out towards the string at rest
-const AIMA=[-0.16,0.44,0.1],AIMB=[0.1124,0.4895,0.2156],AIMQ=[0.1487,0.4961,0.231];
+const AIMA=[-0.16,0.44,0.1],AIMB=[0.1545,0.5232,0.1555],AIMQ=[0.1974,0.5346,0.1631];
 function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=[],Y=[],H=[];const clown=(variant||'').includes('clown'),mime=(variant||'').includes('mime'),knight=(variant||'').includes('knight');
   const e=(c,r,col,k,rot)=>sh.push({t:'e',c,r,col,k,rot}),cap=(a,b,ra,rb,col,k)=>sh.push({t:'c',a,b,ra,rb,col,k});
   e([0,0.31,0],[0.25,0.27,0.235],B,0.05);e([0,0.2,0.02],[0.235,0.17,0.22],B,0.08);
@@ -4719,7 +4947,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
     else if(V.includes('wide')){cap([s*0.17,0.43,0.05],[s*0.37,0.5,0.05],0.066,0.05,B,0.05);e([s*0.41,0.52,0.05],[0.055,0.055,0.055],B,0.02)}
     else if(V.includes('hold')){cap([s*0.17,0.43,0.05],[s*0.11,0.44,0.24],0.066,0.05,B,0.05);e([s*0.1,0.44,0.272],[0.05,0.05,0.048],B,0.02)}
     else if(V.includes('lick')&&s>0){cap([s*0.17,0.43,0.05],[s*0.08,0.5,0.24],0.066,0.05,B,0.05);e([s*0.065,0.51,0.27],[0.05,0.05,0.048],B,0.02)}
-    else if(V.includes('aim')){if(s>0){cap([0.17,0.43,0.05],[0.3,0.49,0.17],0.066,0.05,B,0.05);e([0.33,0.5,0.2],[0.05,0.05,0.048],B,0.02)}else splitArm(AIMA,AIMB,0.066,0.05,AIMQ,[0.05,0.05,0.048])}
+    else if(V.includes('aim')){if(s>0){cap([0.17,0.43,0.05],[0.3,0.53,0.135],0.066,0.05,B,0.05);e([0.34,0.545,0.15],[0.05,0.05,0.048],B,0.02)}else splitArm(AIMA,AIMB,0.066,0.05,AIMQ,[0.05,0.05,0.048])}
     else if(V.includes('front')){if(SPLIT&&s>0)splitArm([0.17,0.43,0.05],[0.16,0.42,0.23],0.066,0.05,[0.155,0.42,0.265],[0.055,0.052,0.05]);else{cap([s*0.17,0.43,0.05],[s*0.16,0.42,0.23],0.066,0.05,B,0.05);e([s*0.155,0.42,0.265],[0.055,0.052,0.05],B,0.02)}}
     else if(V.includes('reach')&&s>0){cap([s*0.17,0.43,0.05],[s*0.29,0.66,0.1],0.066,0.05,B,0.05);e([s*0.31,0.71,0.11],[0.056,0.056,0.056],B,0.02)}
     else if(!K.claws){if(SPLIT&&s>0)splitArm([0.17,0.43,0.05],[0.25,0.27,0.13],0.068,0.05,[0.255,0.255,0.145],[0.055,0.05,0.06])
@@ -4729,7 +4957,7 @@ function critterParts(K,variant){const B=K.body,E=K.earC,T=K.tailC,sh=[],X=[],G=
   // where each arm and paw ended up, so clothes can be painted on the sleeves and stop at the paws
   const V0=variant||'',PAW=[],ARM=[];[-1,1].forEach(s=>{const a=[s*0.17,0.43,0.05];let b,q;
     if(V0.includes('up2')){b=[s*0.25,0.68,0.07];q=[s*0.26,0.72,0.08]}else if(V0.includes('wide')){b=[s*0.37,0.5,0.05];q=[s*0.41,0.52,0.05]}else if(V0.includes('hold')){b=[s*0.11,0.44,0.24];q=[s*0.1,0.44,0.272]}else if(V0.includes('lick')&&s>0){b=[s*0.08,0.5,0.24];q=[s*0.065,0.51,0.27]}
-    else if(V0.includes('aim')){b=s>0?[0.3,0.49,0.17]:AIMB;q=s>0?[0.33,0.5,0.2]:AIMQ}else if(V0.includes('front')){b=[s*0.16,0.42,0.23];q=[s*0.155,0.42,0.265]}else if(V0.includes('reach')&&s>0){b=[s*0.29,0.66,0.1];q=[s*0.31,0.71,0.11]}else if(!K.claws){b=[s*0.25,0.27,0.13];q=[s*0.255,0.255,0.145]}else{b=[s*0.29,0.38,0.11];q=[s*0.31,0.4,0.13]}
+    else if(V0.includes('aim')){b=s>0?[0.3,0.53,0.135]:AIMB;q=s>0?[0.34,0.545,0.15]:AIMQ}else if(V0.includes('front')){b=[s*0.16,0.42,0.23];q=[s*0.155,0.42,0.265]}else if(V0.includes('reach')&&s>0){b=[s*0.29,0.66,0.1];q=[s*0.31,0.71,0.11]}else if(!K.claws){b=[s*0.25,0.27,0.13];q=[s*0.255,0.255,0.145]}else{b=[s*0.29,0.38,0.11];q=[s*0.31,0.4,0.13]}
     ARM.push([a,b]);PAW.push(q)});
   const OUT=['farmer','fisher','beekeeper','shop','skates','mayor','princess','maid','archer','lifeguard'].find(t=>V0.includes(t))||(knight?'knight':undefined),HAT=OUT&&OUT!=='skates',SHADES=V0.includes('shades'),TC=parseInt((V0.match(/#([0-9a-f]{6})/)||[0,'d8202a'])[1],16);
   if(K.ear==='round'&&OUT!=='mayor')[-1,1].forEach(s=>e([s*0.185,0.91,-0.01],[0.085,0.085,0.045],E,0.04,[0,0,-s*0.3]));
@@ -5374,27 +5602,36 @@ KIOSKS.forEach((k,j)=>{const cocoa=k.kind==='cocoa',[sx,sz]=k.shop,sh=critterMes
 // stands side-on with the bow held out towards the target and the string drawn back to its chin; it looses, the arrow
 // flies to the target and sticks there for a while, and it nocks the next one
 {const zc=z0s[RI('castle')],ax=-16.4,az=zc-21,m=critterMesh('hopbun','archer aim busy');m.scale.setScalar(0.95);m.position.set(ax,0,az);m.rotation.y=Math.PI;scene.add(m);colCirc(ax,az,0.4);
- const W=0x7a4a2c,bp=[];for(let k=0;k<=16;k++){const y=0.5+(k/16-0.5)*0.78,q=(y-0.5)/0.39;bp.push([0.33-0.13*q*q,y,0.2])}
- const bow=new THREE.Mesh(tube(bp,0.011,32,6),M(W));bow.castShadow=true;m.add(bow);const grip=new THREE.Mesh(new _G.Cyl(0.016,0.016,0.1,8),M(0x3a2414));grip.position.set(0.33,0.5,0.2);m.add(grip);
- // the drawing arm (shoulder and elbow joints) reaches for the string, hooks it and pulls it back to the chin, lets go,
- // follows through and reaches forward again for the next arrow: a two-joint reach with the elbow kept up and out
+ // the bow is held out to the side at shoulder height; the arrow lies at chin height and points through the grip
+ const W=0x7a4a2c,bp=[],GY=0.545,GRIP=new THREE.Vector3(0.34,GY,0.15);for(let k=0;k<=16;k++){const y=GY+(k/16-0.5)*0.78,q=(y-GY)/0.39;bp.push([0.34-0.13*q*q,y,0.15])}
+ const bow=new THREE.Mesh(tube(bp,0.011,32,6),M(W));bow.castShadow=true;m.add(bow);const grip=new THREE.Mesh(new _G.Cyl(0.016,0.016,0.1,8),M(0x3a2414));grip.position.copy(GRIP);m.add(grip);
+ // the drawing arm, with shoulder and elbow joints, follows the string like a real archer's: it hooks the string, draws it
+ // straight back to the chin with the elbow rising up and back in line with the arrow, holds at the anchor while aiming,
+ // lets go (the hand flicks on back past the cheek), relaxes down by the hip, and comes back up to nock the next arrow
  const ag=m.userData.arm,fg=m.userData.fore,wru=m.userData.wru,wrf=m.userData.wrf;{const i=WAVERS.indexOf(m);if(i>=0)WAVERS.splice(i,1)}
- const SA=new THREE.Vector3(...AIMA),la=fg.position.length(),lb=new THREE.Vector3(...AIMQ).distanceTo(SA.clone().add(fg.position)),pole=new THREE.Vector3(-0.75,0.45,-0.5).normalize();
+ const SA=new THREE.Vector3(...AIMA),la=fg.position.length(),lb=new THREE.Vector3(...AIMQ).distanceTo(SA.clone().add(fg.position)),pole=new THREE.Vector3(-0.8,0.3,-0.52).normalize();
  const ht=new THREE.Vector3(),u=new THREE.Vector3(),w=new THREE.Vector3(),el=new THREE.Vector3(),hp=new THREE.Vector3(),dF=new THREE.Vector3(),qU=new THREE.Quaternion(),qi=new THREE.Quaternion(),fol=new THREE.Vector3();
  const reach=(x,y,z)=>{ht.set(x,y,z);u.subVectors(ht,SA);let d=u.length();u.multiplyScalar(1/d);d=Math.min(la+lb-0.002,Math.max(Math.abs(la-lb)+0.01,d));
    const ca=(la*la+d*d-lb*lb)/(2*la*d),sa=Math.sqrt(Math.max(0,1-ca*ca));w.copy(pole).addScaledVector(u,-pole.dot(u)).normalize();
    el.copy(SA).addScaledVector(u,la*ca).addScaledVector(w,la*sa);hp.copy(SA).addScaledVector(u,d);
    qU.setFromUnitVectors(wru,dF.subVectors(el,SA).normalize());ag.quaternion.copy(qU);dF.subVectors(hp,el).normalize();qi.copy(qU).invert();dF.applyQuaternion(qi);fg.quaternion.setFromUnitVectors(wrf,dF)};
- const tipT=new THREE.Vector3(0.2,0.89,0.2),tipB=new THREE.Vector3(0.2,0.11,0.2),nock=new THREE.Vector3(),sg=new THREE.BufferGeometry().setFromPoints([tipT,new THREE.Vector3(),tipB]);const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf0e8d8}));m.add(str);
+ const tipT=new THREE.Vector3(0.21,GY+0.39,0.15),tipB=new THREE.Vector3(0.21,GY-0.39,0.15),nock=new THREE.Vector3(),sg=new THREE.BufferGeometry().setFromPoints([tipT,new THREE.Vector3(),tipB]);const str=new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xf0e8d8}));m.add(str);
  const mkArrow=()=>{const g=new THREE.Group();const sh=new THREE.Mesh(new _G.Cyl(0.006,0.006,0.62,6),M(0x9a7a4a));sh.rotation.z=Math.PI/2;sh.position.x=0.31;g.add(sh);const hd=new THREE.Mesh(new _G.Cone(0.016,0.05,8),M(0xb8bec4));hd.rotation.z=-Math.PI/2;hd.position.x=0.64;g.add(hd);
    [0,2.09,4.19].forEach(a=>{const f=new THREE.Mesh(new THREE.PlaneGeometry(0.08,0.025),dbl(a?0xffffff:0xd8202a));f.position.set(0.04,Math.cos(a)*0.014,Math.sin(a)*0.014);f.rotation.x=a;g.add(f)});return g};
  const held=mkArrow();m.add(held);const fly=mkArrow();fly.scale.setScalar(0.95);fly.visible=false;scene.add(fly);
- const tgt=new THREE.Vector3(-23.76,1.36,az),start=new THREE.Vector3(),aim=new THREE.Vector3(),P3=sg.attributes.position;let lastT=0,hit=new THREE.Vector3();
+ const tgt=new THREE.Vector3(-23.76,1.36,az),start=new THREE.Vector3(),aim=new THREE.Vector3(),P3=sg.attributes.position,X1=new THREE.Vector3(1,0,0),ad=new THREE.Vector3();let lastT=0,hit=new THREE.Vector3();
+ // key points (archer's own space): the string at rest, the anchor under the chin, the hand's follow-through and rest
+ const REST=new THREE.Vector3(0.21,GY,0.155),ANCH=new THREE.Vector3(0.0,0.575,0.235),FOLW=new THREE.Vector3(-0.09,0.6,0.17),HIP=new THREE.Vector3(-0.2,0.33,0.14),HOFF=new THREE.Vector3(-0.03,-0.012,0),sm=v=>{v=Math.min(1,Math.max(0,v));return v*v*(3-2*v)};
  anims.push((t,dt)=>{if(!near2(m,60))return;const T=t%4.2,draw=Math.min(1,Math.max(0,(T-0.3)/1.1)),e=draw*draw*(3-2*draw);
-   const nx=T<1.9?0.2-0.22*e:0.2;nock.set(nx,0.5,0.24);P3.setXYZ(1,nock.x,nock.y,nock.z);P3.needsUpdate=true;held.visible=T<1.9||T>3.5;held.position.copy(nock);
-   if(T<1.9)reach(nx-0.03,0.5,0.24);
-   else{const fo=Math.min(1,(T-1.9)/0.25),bk=Math.min(1,Math.max(0,(T-2.6)/0.9)),b2=bk*bk*(3-2*bk);fol.set(-0.05-0.05*fo,0.5+0.015*fo,0.24-0.04*fo);fol.lerp(ht.set(0.17,0.5,0.24),b2);reach(fol.x,fol.y,fol.z)}
-   if(lastT<1.9&&T>=1.9){start.set(0.52,0.5,0.22);m.localToWorld(start);hit.set(tgt.x+0.01,tgt.y+(Math.random()-0.5)*0.35,tgt.z+(Math.random()-0.5)*0.35);fly.visible=true}
+   if(T<1.9){nock.lerpVectors(REST,ANCH,e);if(T>1.4)nock.y+=Math.sin(T*37)*0.0015}else nock.copy(REST);   // (a faint tremble while holding at full draw)
+   P3.setXYZ(1,nock.x,nock.y,nock.z);P3.needsUpdate=true;held.visible=T<1.9||T>3.45;held.position.copy(nock);held.quaternion.setFromUnitVectors(X1,ad.subVectors(GRIP,nock).normalize());
+   if(T<1.9)fol.copy(nock).add(HOFF);
+   else if(T<2.05)fol.copy(ANCH).add(HOFF).lerp(FOLW,sm((T-1.9)/0.15));
+   else if(T<2.75)fol.copy(FOLW).lerp(HIP,sm((T-2.05)/0.7));
+   else if(T<3.5)fol.copy(HIP).lerp(ht.copy(REST).add(HOFF),sm((T-2.75)/0.75));
+   else fol.copy(REST).add(HOFF);
+   reach(fol.x,fol.y,fol.z);
+   if(lastT<1.9&&T>=1.9){start.copy(GRIP).addScaledVector(ad,0.22);m.localToWorld(start);hit.set(tgt.x+0.01,tgt.y+(Math.random()-0.5)*0.35,tgt.z+(Math.random()-0.5)*0.35);fly.visible=true}
    if(T>=1.9&&T<2.25){const f=(T-1.9)/0.35;fly.position.lerpVectors(start,hit,f);fly.position.y+=Math.sin(Math.PI*f)*0.25;aim.set(hit.x-start.x,(hit.y-start.y)+Math.cos(Math.PI*f)*0.25*Math.PI/0.35*0.35,hit.z-start.z).normalize();fly.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),aim)}
    else if(T>=2.25){fly.position.copy(hit).addScaledVector(aim,-0.45)}else fly.visible=false;
    m.rotation.z=T>=1.9&&T<2.1?-0.03:0;lastT=T})}
@@ -5786,13 +6023,14 @@ function roomDone(r){return PROG.isComplete(AREA_OF_ROOM[r])}
 // (with the Summit Garden at its top). in a gap between two pieces it names the nearest one
 function placeAt(){const P=LP.P;if(!P)return{k:'road'};
   if(P.kind==='start')return LP.z>0.6?{k:'road'}:{k:'room',r:0};
-  if(P.kind==='fin')return LP.z<SUMMIT.z0+0.5&&Math.abs(LP.x)<22?{k:'summit'}:{k:'fin'};
+  if(P.kind==='fin')return ph<LOW?(Math.hypot(px-CAVE.x,pz-CAVE.z)<13.2?{k:'summit'}:{k:'cave'}):{k:'fin'};
   if(P.kind==='room')return{k:'room',r:P.i};return{k:'gap',r:P.i,next:P.i<NR-1?P.i+1:1}}
 function updateHud(){
   playerLogic(px,pz);const P=placeAt();let name,topic,list,key;
   if(P.k==='road'){name='Prime Meridian';topic='Walk up the path to the Welcome Garden';list=ROOMS[0].list;key='0'}
-  else if(P.k==='fin'){name='Meridian Hill';topic=PROG.endgame()?'The launch gate is open':PROG.doneCount()+' of 9 places complete · 6 open the launch';list=ROOMS.slice(1).map((_,r)=>({solved:roomDone(r+1)}));key='f'}
-  else if(P.k==='summit'){name='Summit Garden';topic='Advanced challenges';list=SUMMIT.list;key='s'}
+  else if(P.k==='fin'){name='Launch Pad';topic=PROG.S.rocket?'The rocket has launched!':'Press the red button to launch the rocket';list=ROOMS.slice(1).map((_,r)=>({solved:roomDone(r+1)}));key='f'}
+  else if(P.k==='cave'){const lit=TWL.filter(T=>T.st===3).length;name='Meridian Caves';topic=BARRIER.up?lit+' of 9 beams have arrived · all nine bring down the barrier':PROG.isComplete('summit')?'The lift to the launch pad has power':'The barrier is down: five final challenges';list=BARRIER.up?TWL.map(T=>({solved:T.st===3})):SUMMIT.list;key=BARRIER.up?'c':'s'}
+  else if(P.k==='summit'){name='The Five Challenges';topic=PROG.isComplete('summit')?'The lift to the launch pad has power':'The last puzzles · they power the lift';list=SUMMIT.list;key='s'}
   else if(P.k==='gap'){name=CONN[P.r].name;topic='On the way to '+ROOMS[P.next].name;list=ROOMS[P.next].list;key=String(P.next)}
   else{name=ROOMS[P.r].name;topic=ROOMS[P.r].topic;list=ROOMS[P.r].list;key=String(P.r)}
   $('#roomName').textContent=name;$('#roomTopic').textContent=topic;
@@ -5895,8 +6133,10 @@ function drawMove(g){
     const mag=sx?Math.abs(dx):Math.abs(dy),nx=last[0]+sx,ny=last[1]+sy,prev=p.path[p.path.length-2];
     if(last[0]===p.end[0]&&last[1]===p.end[1]&&sx===p.nub[0]&&sy===p.nub[1]){p.pend={dx:sx,dy:sy,t:Math.min(mag,NUB)};p.atEnd=mag>NUB*0.55;break}
     if(prev&&prev[0]===nx&&prev[1]===ny){if(mag>0.5){p.path.pop();sfx.back();continue}p.pend={dx:sx,dy:sy,t:mag};break}
-    const free=nx>=0&&ny>=0&&nx<p.W&&ny<p.H&&!inPath(p,nx,ny);
-    if(!free){p.pend={dx:sx,dy:sy,t:Math.min(mag,0.2)};break}
+    // off the edge of the grid there is no line to follow: the head stops exactly on the last point (only against your own
+    // line does it nudge a little way along the edge, inside the grid, to show it is blocked)
+    const onGrid=nx>=0&&ny>=0&&nx<p.W&&ny<p.H;if(!onGrid)break;
+    if(inPath(p,nx,ny)){p.pend={dx:sx,dy:sy,t:Math.min(mag,0.2)};break}
     if(mag>=0.5){p.path.push([nx,ny]);sfx.step(p.path.length);continue}
     p.pend={dx:sx,dy:sy,t:mag};break;
   }
@@ -6153,8 +6393,8 @@ function buildPlaces(){const ol=$('#placeList');ol.textContent='';
     else{const s=document.createElement('span');s.className='plock';s.textContent='Locked';li.appendChild(s)}
     ol.appendChild(li)});
   // Meridian Hill (the launch) and the Summit Garden (the five challenges)
-  [['Meridian Hill',PROG.endgame()?'The launch gate is open':PROG.doneCount()+' of 9 places finished · 6 open the launch',PROG.areaOpen('castle'),PROG.S.rocket,'★',()=>goToHill()],
-   ['Summit Garden','Advanced challenges · open when all 9 places are finished',PROG.bonus(),PROG.isComplete('summit'),'∞',()=>{goToHill();const w=S2W(0,SUMMIT.z0+3,PIECES.byId.fin,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0}]].forEach(([nm,tp,open,done,ic,go])=>{
+  [['Meridian Caves',BARRIER.up?TWL.filter(T=>T.st===3).length+' of 9 beams have reached the hill · all nine bring down the barrier':'The barrier is down: five final challenges',PROG.areaOpen('castle'),PROG.isComplete('summit'),'★',()=>goToHill()],
+   ['Launch Pad','Ride the lift up from the caves and launch the rocket',PROG.isComplete('summit'),PROG.S.rocket,'↑',()=>goToPad()]].forEach(([nm,tp,open,done,ic,go])=>{
     const li=document.createElement('li');li.className=done?'done':!open?'locked':'';li.innerHTML=`<span class="pnum">${done?'✓':ic}</span><div><b></b><span class="ptopic"></span></div>`;
     li.querySelector('b').textContent=nm;li.querySelector('.ptopic').textContent=tp;
     if(open){const b=document.createElement('button');b.type='button';b.className='ghost';b.textContent='Visit';b.addEventListener('click',()=>{go();play()});li.appendChild(b)}
@@ -6204,24 +6444,24 @@ function refreshFeedback(){MARKERS.forEach(drawMarker);let n=0;
   FJETS.forEach(f=>f.j.visible=PROG.isComplete(f.id));if(SPIRE.core){SPIRE.core.material.emissiveIntensity=0.2+n*0.35}}
 ['puzzleSolved','areaCompleted','reset'].forEach(e=>PROG.on(e,()=>refreshFeedback()));
 PROG.on('reset',()=>{XGATES.forEach(closeG);for(const id in SHORTCUTS){const S=SHORTCUTS[id];S.open=false;S.col.on=true;S.t=0;poseShortcut(S)}});
-PROG.on('areaCompleted',(id,quiet)=>{if(quiet)return;sfx.gate();const a=PROG.area(id);toast(a.start?'The Welcome Gate is open. Every area on the island is open to you now!':a.bonus?'You solved every challenge in the Summit Garden!':a.displayName+' is complete!','good')});
-PROG.on('endgameUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Enough areas are complete: the launch gate on the hill is open!','good'),3000)});
-PROG.on('bonusUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Every area is complete: the Summit Garden is open!','good'),6000)});
+PROG.on('areaCompleted',(id,quiet)=>{if(quiet)return;sfx.gate();const a=PROG.area(id);toast(a.start?'The Welcome Gate is open. Every area on the island is open to you now!':a.bonus?'You solved all five final challenges!':a.displayName+' is complete!','good')});
+
+PROG.on('bonusUnlocked',quiet=>{if(!quiet)setTimeout(()=>toast('Every place is complete! When all nine beams reach Meridian Hill, the barrier in its caves falls.','good'),4500)});
+PROG.on('areaCompleted',(id,quiet)=>{if(id==='summit'&&!quiet)setTimeout(()=>toast('The lift under the launch pad has power: step inside and ride up to the rocket!','good'),3500)});
 PROG.on('reset',()=>{ROOMS.forEach((_,r)=>closeGate(r))});
 function celebrate(){if(celebrated)return;celebrated=true;sfx.cheer();
-  {const n=PROG.doneCount(),t=$('#doneText');if(t)t.textContent=n>=9&&PROG.isComplete('summit')?'The rocket is away, and you solved every puzzle on the island, the Summit Garden\'s challenges too. That is a lot of maths thinking.'
-    :n>=9?'The rocket is away and all nine places are finished. The Summit Garden on the hilltop is open: five advanced challenges are waiting.'
-    :'The rocket is away! You finished '+n+' of the 9 places. The others are still waiting, and finishing all nine opens the Summit Garden on the hilltop.'}if(document.pointerLockElement)document.exitPointerLock();$('#done').hidden=false}
+  {const t=$('#doneText');if(t)t.textContent='The rocket is away! You solved every puzzle on the island: all nine places, and the five final challenges in the caves under Meridian Hill. That is a lot of maths thinking.'}if(document.pointerLockElement)document.exitPointerLock();$('#done').hidden=false}
 (function(){
   const d=PROG.load();refreshFeedback();if(!d)return;
   PANELS.forEach(p=>{if(PROG.S.solved.has(p.pid))markSolved(p)});
   if(PROG.S.rocket){rocketGone();celebrated=true}
-  if(d.pos&&isFinite(d.pos[0])&&isFinite(d.pos[1])){px=d.pos[0];pz=d.pos[1];yaw=d.pos[2]||0}
+  // (a save from before the caves, made up on the old hilltop, starts in the caves; otherwise at the saved height)
+  if(d.pos&&isFinite(d.pos[0])&&isFinite(d.pos[1])){px=d.pos[0];pz=d.pos[1];yaw=d.pos[2]||0;if(isFinite(d.pos[3]))ph=d.pos[3];else if(inMesa(px,pz,1))goToHill();else ph=heightW(px,pz)}
   else if(PROG.S.solved.size){if(PROG.areaOpen('castle')){const g=PIECES.byId.start.gate;px=g[0];pz=g[1]-4;yaw=0}else goToPlace(0)}
   if(d.migratedFrom)setTimeout(()=>toast('Your progress from the old version has been carried over.','good'),1500);
 })();
 // where you are standing is saved every few seconds, so Continue puts you back there
-setInterval(()=>{if(started&&mode==='walk'&&!MENU.open){PROG.setPos([+px.toFixed(2),+pz.toFixed(2),+yaw.toFixed(3)]);PROG.save()}},5000);
+setInterval(()=>{if(started&&mode==='walk'&&!MENU.open&&!ELEV.ride){PROG.setPos([+px.toFixed(2),+pz.toFixed(2),+yaw.toFixed(3),+ph.toFixed(2)]);PROG.save()}},5000);
 menuProgress();
 
 /* ---------- demo drawing on the start card ---------- */
@@ -6245,8 +6485,8 @@ const center=new THREE.Vector2(0,0);let lastT=performance.now(),hudTick=0,cullTi
 // 70-170 m away is moved to a render layer the camera does not see (its own show/hide state is left alone)
 const CULL=[];{const bb=new THREE.Box3(),sp=new THREE.Sphere();scene.updateMatrixWorld(true);
   scene.children.forEach(o=>{if(o===sky||o.isLight||o.isInstancedMesh||o.isPoints||o.userData.merged||o.userData.noCull)return;if(!(o.isMesh||o.isGroup||o.isSprite))return;
-    bb.makeEmpty();bb.setFromObject(o);if(bb.isEmpty())return;bb.getBoundingSphere(sp);if(sp.radius>4.5||sp.radius<0.001)return;
-    const ms=[];o.traverse(c=>{if(c.isMesh||c.isSprite)ms.push(c)});if(ms.length)CULL.push({o,ms,off:sp.center.clone().sub(o.position),r:sp.radius,out:false})})}
+    bb.makeEmpty();bb.setFromObject(o);if(bb.isEmpty())return;bb.getBoundingSphere(sp);const fr=o.userData.cullR;if(!fr&&(sp.radius>4.5||sp.radius<0.001))return;   // (cullR: a bigger thing that may go at the distance of a small one)
+    const ms=[];o.traverse(c=>{if(c.isMesh||c.isSprite)ms.push(c)});if(ms.length)CULL.push({o,ms,off:sp.center.clone().sub(o.position),r:fr||sp.radius,out:false})})}
 /* ---------- put the world together ----------
    every piece gets a group carrying its turn and offset, and everything built in strip coordinates moves into its
    piece's group (its strip position becomes its position inside the group), so it shows where the piece now sits while
@@ -6333,25 +6573,91 @@ function freeAfterUpload(g){if(!g||g.userData.freed)return;g.userData.freed=1;if
  HLOD.forEach(L=>L.lv.forEach(g=>{if(!keep.has(g))freeAfterUpload(g)}));
  LODS.forEach(L=>L.meshes.forEach(m=>freeAfterUpload(m.geometry)));freeAfterUpload(OCEAN.geometry);scene.children.forEach(o=>{if(o.userData.ground)freeAfterUpload(o.geometry)});
  scene.traverse(o=>{if(o.isMesh&&o.userData.mergedMesh&&!keep.has(o.geometry))freeAfterUpload(o.geometry)})}
+// ---- laser towers and receivers in each place's own style. towerBody builds the fixed body (plinth, shaft, bands, collar
+// and the place's decorations) into grp, 0..H high; bd is the beam's direction across the ground (decorations keep out
+// of its way) and fd the way to the place's last panel (its front). the lamp rings, cradle and lens are added after
+const TSTYLE={
+  castle:{stone:0xcfc3a8,shaft:0xd9cfb8},windmill:{stone:0xb8ad98,shaft:0xb98a5a},adding:{stone:0xf2f4f6,stripes:[0xff6b57,0xffd23f,0x4a86c8,0x6fb35a]},
+  times:{stone:0xe8d6b0,shaft:0xf6e3c6},oddeven:{stone:0x8f9aa0,shaft:0x8a6a48},snow:{stone:0xe4ebf0,shaft:'ice'},glass:{stone:0xf2f4f6,shaft:0xf6f8fa},
+  match:{stone:0xd9cfb8,shaft:'brick'},beach:{stone:0xd4bf8e,stripes:[0xd8352a,0xf6f6f2]}};
+function towerBody(id,grp,H,k,bd,fd){const S=TSTYLE[id]||TSTYLE.castle,y0=0.9,y1=H-0.5,sh=y1-y0,rb=0.56*k,rt=0.4*k,rAt=y=>rb+(rt-rb)*(y-y0)/sh;
+  const dirAway=a=>{const c=Math.cos(a),s=Math.sin(a),dx=c,dz=s;return dx*bd[0]+dz*bd[1]};   // how much angle a points along the beam
+  const around=(n,off)=>{const out=[];for(let i=0;i<n;i++){const a=off+i/n*Math.PI*2;out.push([a,Math.cos(a),Math.sin(a)])}return out};
+  // plinth and steps
+  mesh(new _G.Cyl(1.16*Math.max(1,k*0.9),1.26*Math.max(1,k*0.9),0.5,8),S.stone,0,0.25,0,grp);mesh(new _G.Cyl(0.94,1.02,0.4,8),S.stone,0,0.7,0,grp);
+  // the shaft: plain, striped, icy or brick
+  if(S.stripes){const n=Math.max(4,Math.round(sh/1.6));for(let i=0;i<n;i++){const a=y0+sh*i/n,b=y0+sh*(i+1)/n;mesh(new _G.Cyl(rAt(b),rAt(a),b-a+0.002,20),S.stripes[i%S.stripes.length],0,(a+b)/2,0,grp)}}
+  else if(S.shaft==='ice')mesh(new _G.Cyl(rt,rb,sh,20),matIce,0,y0+sh/2,0,grp);
+  else if(S.shaft==='brick'){const t=brickTex.clone();t.needsUpdate=true;t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(5,sh/0.55);mesh(new _G.Cyl(rt,rb,sh,20),new THREE.MeshStandardMaterial({map:t,roughness:0.85}),0,y0+sh/2,0,grp)}
+  else mesh(new _G.Cyl(id==='glass'?rt*0.55:rt,id==='glass'?rb*0.55:rb,sh,20),S.shaft,0,y0+sh/2,0,grp);
+  mesh(new _G.Cyl(rb+0.08,rb+0.1,0.24,20),S.stone,0,y0+0.12,0,grp);
+  // the collar the lens cradle stands on
+  mesh(new _G.Cyl(0.8*k,0.5*k,0.46,20),S.stone,0,H-0.27,0,grp);mesh(new _G.Cyl(0.92*k,0.92*k,0.14,20),S.stone,0,H-0.01,0,grp);
+  if(id==='castle'){   // battlements round the top, arrow slits and a pennant
+    around(10,0).forEach(([a,c,s])=>{const m=blk(0.32*k,0.42,0.26*k,c*0.86*k,H+0.27,s*0.86*k,S.stone,grp);m.rotation.y=-a});
+    for(let y=y0+2.2;y<y1-1.2;y+=3.2)around(4,Math.PI/4).forEach(([a,c,s])=>{const r=rAt(y)+0.015,m=blk(0.09,0.55,0.05,c*r,y,s*r,0x1d1f22,grp);m.rotation.y=-a+Math.PI/2});
+    let pa=0;for(const [a] of around(8,0))if(dirAway(a)<dirAway(pa))pa=a;const px=Math.cos(pa)*0.86*k,pz=Math.sin(pa)*0.86*k;mesh(new _G.Cyl(0.025,0.025,1.6,6),0x6b4226,px,H+0.9,pz,grp);
+    const fl=new THREE.Mesh(new THREE.PlaneGeometry(0.6,0.32),dbl(0xd8352a));fl.position.set(px+0.3,H+1.5,pz);grp.add(fl)}
+  else if(id==='windmill'){   // a timber trestle round the shaft, braced, with a thatched skirt under the top
+    const legs=around(4,Math.PI/4).map(([a,c,s])=>{const A=[c*1.25,0.2,s*1.25],B=[c*0.48*k,H-0.6,s*0.48*k];rod(A,B,0.08,0x8a5a3b,grp);return[A,B]});
+    for(let y=2.5;y<H-1.5;y+=3){const f=(y-0.2)/(H-0.8),P=legs.map(([A,B])=>[A[0]+(B[0]-A[0])*f,y,A[2]+(B[2]-A[2])*f]);for(let i=0;i<4;i++)rod(P[i],P[(i+1)%4],0.04,0x7a4a2c,grp)}
+    mesh(new _G.Cone(1.05*k,0.7,16,1,true),0xe8c766,0,H-0.75,0,grp)}
+  else if(id==='adding'){   // bright balls round the collar, like a climbing frame's
+    around(6,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.2*k,16,12),[0xff6b57,0xffd23f,0x4a86c8,0x6fb35a,0xb48cff,0xff9ecf][i],c*0.95*k,H+0.12,s*0.95*k,grp));
+    around(4,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.18,14,10),[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a][i],c*1.05,0.95,s*1.05,grp))}
+  else if(id==='times'){   // terracotta bands, a clock face (in times-table hours) and a little tiled roof over the lens
+    for(let y=y0+2.5;y<y1-0.5;y+=3)mesh(new _G.Cyl(rAt(y)+0.06,rAt(y)+0.06,0.18,20),0xb5523b,0,y,0,grp);
+    {const cy=y0+sh*0.7,r=rAt(cy)+0.03,cl=new THREE.Group();cl.position.set(fd[0]*r,cy,fd[1]*r);cl.rotation.y=Math.atan2(fd[0],fd[1]);grp.add(cl);
+     mesh(new THREE.CircleGeometry(0.34*k,24),0xfffaf0,0,0,0.01,cl);mesh(new _G.Tor(0.34*k,0.035,6,24),0x1d3340,0,0,0.02,cl);
+     [[0.2,0.4],[0.28,1.9]].forEach(([L,a])=>{const h=blk(0.03,L*k,0.02,0,0,0.03,0x1d3340,cl);h.rotation.z=-a;h.position.set(Math.sin(a)*L*k/2,Math.cos(a)*L*k/2,0.03)})}
+    around(4,Math.PI/4).forEach(([a,c,s])=>mesh(new _G.Cyl(0.04,0.04,1.25,6),0xfffaf0,c*0.7*k,H+0.62,s*0.7*k,grp));mesh(new _G.Cone(1.0*k,0.75,4),0xb5523b,0,H+1.6,0,grp).rotation.y=Math.PI/4}
+  else if(id==='oddeven'){   // a footing of pond stones, rope bands round the boards and lily pads at the foot
+    around(9,0).forEach(([a,c,s],i)=>{const m=blk(0.62,0.42+(i%2)*0.14,0.42,c*1.3,0.22,s*1.3,i%2?0x7f8a90:0x9aa5ab,grp);m.rotation.y=-a});
+    for(let y=y0+1.8;y<y1-0.5;y+=2.6)mesh(new _G.Tor(rAt(y)+0.03,0.05,6,24),0xcfa477,0,y,0,grp).rotation.x=Math.PI/2;
+    around(5,0.4).forEach(([a,c,s])=>{const p=mesh(new _G.Cyl(0.36,0.36,0.03,14,1,false,0.3,Math.PI*2-0.6),0x4f9a3f,c*1.75,0.03,s*1.75,grp);p.rotation.y=a})}
+  else if(id==='snow'){   // snow on the plinth and the collar, icicles under it and a snowflake on the shaft
+    around(8,0.2).forEach(([a,c,s])=>{const m=mesh(new _G.Sph(0.32,12,8),matSnowBall,c*0.95,0.92,s*0.95,grp);m.scale.set(1,0.45,1)});
+    around(10,0).forEach(([a,c,s])=>{const m=mesh(new _G.Sph(0.26*k,12,8),matSnowBall,c*0.82*k,H+0.08,s*0.82*k,grp);m.scale.set(1,0.4,1)});
+    around(12,0.1).forEach(([a,c,s],i)=>{const L=0.25+(i%3)*0.15,m=mesh(new _G.Cone(0.045,L,6),0xe8f6ff,c*0.88*k,H-0.12-L/2,s*0.88*k,grp);m.rotation.x=Math.PI});
+    {const cy=y0+sh*0.55,r=rAt(cy)+0.02,sf=new THREE.Group();sf.position.set(fd[0]*r,cy,fd[1]*r);sf.rotation.y=Math.atan2(fd[0],fd[1]);grp.add(sf);for(let i=0;i<3;i++)blk(0.05,0.8*k,0.03,0,0,0.02,0xf8fcff,sf).rotation.z=i*Math.PI/3}}
+  else if(id==='glass'){   // a glass sheath round a slim core, in a white iron frame with hoops, and a little lantern roof
+    const gs=new THREE.Mesh(new _G.Cyl(rt+0.12,rb+0.12,sh,24,1,true),wallGlass);gs.position.set(0,y0+sh/2,0);gs.renderOrder=2;grp.add(gs);
+    around(4,Math.PI/4).forEach(([a,c,s])=>rod([c*(rb+0.14),y0,s*(rb+0.14)],[c*(rt+0.14),y1,s*(rt+0.14)],0.035,0xf6f8fa,grp));
+    for(let y=y0+1.2;y<y1;y+=2.4)mesh(new _G.Tor(rAt(y)+0.14,0.025,6,28),0xf6f8fa,0,y,0,grp).rotation.x=Math.PI/2;
+    around(4,Math.PI/4).forEach(([a,c,s])=>mesh(new _G.Cyl(0.03,0.03,1.3,6),0xf6f8fa,c*0.72*k,H+0.65,s*0.72*k,grp));mesh(new _G.Cyl(0.95*k,0.95*k,0.06,24),0xf6f8fa,0,H+1.32,0,grp);mesh(new _G.Sph(0.12,10,8),matBrass,0,H+1.45,0,grp)}
+  else if(id==='match'){   // stone bands in the brick, a striped awning skirt and strings of bunting down to the ground
+    for(let y=y0+2.2;y<y1-0.5;y+=3.4)mesh(new _G.Cyl(rAt(y)+0.05,rAt(y)+0.05,0.2,20),0xd9cfb8,0,y,0,grp);
+    const aw=new THREE.Mesh(new _G.Cone(1.1*k,0.6,16,1,true),new THREE.MeshStandardMaterial({map:stripeFlat(0xd8352a,8),side:THREE.DoubleSide,roughness:0.85}));aw.position.set(0,H-0.75,0);grp.add(aw);
+    const A0=Math.atan2(bd[1],bd[0]);[0.9,2.2,-0.9,-2.2].forEach(da=>{const a=A0+da,c=Math.cos(a),s=Math.sin(a),T=[c*0.75*k,H-0.4,s*0.75*k],G=[c*3.6,0.05,s*3.6];rod(T,G,0.012,0xfffaf0,grp);mesh(new _G.Cyl(0.04,0.05,0.3,6),0x6b4226,G[0],0.15,G[2],grp);
+      for(let i=1;i<9;i++){const f=i/9,p=[T[0]+(G[0]-T[0])*f,T[1]+(G[1]-T[1])*f-Math.sin(f*Math.PI)*0.4,T[2]+(G[2]-T[2])*f],fl=new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-0.12,0,0),new THREE.Vector3(0.12,0,0),new THREE.Vector3(0,-0.26,0)]),dbl([0xd8352a,0xffd23f,0x4a86c8,0x6fb35a][i%4]));
+        fl.geometry.setIndex([0,1,2]);fl.geometry.computeVertexNormals();fl.position.set(p[0],p[1],p[2]);fl.rotation.y=-a+Math.PI/2;grp.add(fl)}})}
+  else if(id==='beach'){   // a lighthouse: a gallery with a railing under the top, and a lifebuoy and a coil of rope at the foot
+    mesh(new _G.Cyl(1.05*k,1.05*k,0.08,24),0x3a3d42,0,H-0.56,0,grp);around(14,0).forEach(([a,c,s])=>mesh(new _G.Cyl(0.02,0.02,0.6,5),0x3a3d42,c*1.0*k,H-0.25,s*1.0*k,grp));
+    mesh(new _G.Tor(1.0*k,0.025,6,36),0x3a3d42,0,H+0.05,0,grp).rotation.x=Math.PI/2;
+    const fx=fd[0],fz=fd[1],lb=mesh(new _G.Tor(0.3,0.08,10,24),new THREE.MeshStandardMaterial({map:stripeFlat(0xd8352a,4),roughness:0.6}),fx*1.02,0.85,fz*1.02,grp);lb.rotation.y=Math.atan2(fx,fz);
+    const rc=mesh(new _G.Tor(0.32,0.07,8,24),0xd8c49a,-fz*1.5,0.08,fx*1.5,grp);rc.rotation.x=Math.PI/2;mesh(new _G.Tor(0.22,0.07,8,20),0xd8c49a,-fz*1.5,0.2,fx*1.5,grp).rotation.x=Math.PI/2}
+  return{y0,y1,sh,rAt}}
 // the laser towers. each rises from the spot kept for it near its place's last panel, as tall as it must be for its beam to
-// reach the spire's armillary sphere without passing through anything on the way (a castle wall, a roof, a tree, the hill),
-// and never under 12 m, so it is easy to pick out from the ground. once the place is complete it charges for ten seconds,
-// with a rising whine, a pulse of light climbing it faster and faster and sparks circling its lens, and then fires
-{const B=S2W(SPIRE.x,SPIRE.z,PIECES.byId.fin,{}),TG=new THREE.Vector3(B.x,SPIRE.y+H_TOP,B.z),up=new THREE.Vector3(0,1,0),rc=new THREE.Raycaster(),q={},t0=performance.now();
+// reach its receiver at the foot of Meridian Hill without passing through anything on the way (a castle wall, a roof, a
+// tree, the cliffs), and never under 12 m, so it is easy to pick out from the ground. once the place is complete it charges
+// for ten seconds, with a rising hum, a pulse of light climbing it faster and faster and sparks circling its lens, and then
+// fires; the receiver lights up when the beam arrives
+const HR=9;   // the receivers' height: their dishes are about 10 m up, above the trees round the foot of the hill
+{const TG=new THREE.Vector3(),up=new THREE.Vector3(0,1,0),rc=new THREE.Raycaster(),q={},t0=performance.now();
  scene.updateMatrixWorld(true);const solids=[];
  scene.traverse(o=>{if(!o.isMesh||o===OCEAN||o.userData.ground||!o.geometry||!o.geometry.attributes.position||!o.geometry.attributes.position.array)return;const m=o.material;
    if(!m||Array.isArray(m)||m.blending===THREE.AdditiveBlending||m.transparent&&m.opacity<0.25||m.visible===false)return;
-   // a beam never comes lower than 12.9 m, so anything whose top is below 12.5 m can be left out (most of the island)
+   // a beam never comes lower than its receiver's dish (about 10 m up), so anything whose top is below 8.5 m can be left out
    const g=o.geometry;if(!g.boundingBox)g.computeBoundingBox();const bb=g.boundingBox;let top=-1e9;
    if(o.isInstancedMesh)top=1e9;   // sorted copy by copy below
    else for(let c=0;c<8;c++){const v=new THREE.Vector3(c&1?bb.max.x:bb.min.x,c&2?bb.max.y:bb.min.y,c&4?bb.max.z:bb.min.z).applyMatrix4(o.matrixWorld);top=Math.max(top,v.y)}
-   if(top>12.5)solids.push(o)});
+   if(top>8.5)solids.push(o)});
  // each one's bounding sphere in world space, so a ray only looks closely at what it passes near. instanced plants and
  // trees are spread right across the island, so each copy gets its own sphere (and only the tall copies count)
  const SPH=[],dm=new THREE.Mesh();
  solids.forEach(o=>{const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();const bs=g.boundingSphere;
    if(!o.isInstancedMesh){SPH.push({o,c:bs.center.clone().applyMatrix4(o.matrixWorld),r:bs.radius*o.matrixWorld.getMaxScaleOnAxis()});return}
-   for(let i=0;i<o.count;i++){const m4=new THREE.Matrix4();o.getMatrixAt(i,m4);m4.premultiply(o.matrixWorld);const c=bs.center.clone().applyMatrix4(m4),r=bs.radius*m4.getMaxScaleOnAxis();if(c.y+r>12.5)SPH.push({o,m4,c,r})}});
+   for(let i=0;i<o.count;i++){const m4=new THREE.Matrix4();o.getMatrixAt(i,m4);m4.premultiply(o.matrixWorld);const c=bs.center.clone().applyMatrix4(m4),r=bs.radius*m4.getMaxScaleOnAxis();if(c.y+r>8.5)SPH.push({o,m4,c,r})}});
  const t1=performance.now(),_w=new THREE.Vector3(),hits=[];
  let NEAR=SPH;
  const rayHit=()=>{const O=rc.ray.origin,D=rc.ray.direction;hits.length=0;
@@ -6359,7 +6665,7 @@ function freeAfterUpload(g){if(!g||g.userData.freed)return;g.userData.freed=1;if
      try{if(e.m4){dm.geometry=e.o.geometry;dm.material=e.o.material;dm.matrixWorld.copy(e.m4);dm.raycast(rc,hits)}else e.o.raycast(rc,hits)}catch(err){}if(hits.length)return e.o}
    return null};
  const a=new THREE.Vector3(),d=new THREE.Vector3(),sd=new THREE.Vector3(),vt=new THREE.Vector3();
- // what the beam from (x, y, z) to the spire would pass through: the hill is checked against the ground's height and
+ // what the beam from (x, y, z) to its receiver (TG) would pass through: the hill is checked against the ground's height and
  // everything else with rays (just the middle line while searching, then four more round the glow to be sure)
  const blockedBy=(x,y,z,full)=>{a.set(x,y,z);d.copy(TG).sub(a);const L=d.length();d.multiplyScalar(1/L);
    for(let s=3;s<L-3;s+=1.5)if(heightW(x+d.x*s,z+d.z*s)>y+d.y*s-0.8)return 'the ground';
@@ -6370,7 +6676,8 @@ function freeAfterUpload(g){if(!g||g.userData.freed)return;g.userData.freed=1;if
  const strut=(x0,y0,z0,x1,y1,z1,r,g)=>{const v=new THREE.Vector3(x1-x0,y1-y0,z1-z0),m=mesh(new _G.Cyl(r,r,v.length(),8),matBrass,(x0+x1)/2,(y0+y1)/2,(z0+z1)/2,g);m.quaternion.setFromUnitVectors(up,v.normalize());return m};
  const beamG=r=>new THREE.CylinderGeometry(r,r,1,12,1,true).translate(0,0.5,0);
  Object.values(TOWERS).forEach(Tw=>{const P=PIECES.byId['r'+Tw.r];S2W(Tw.x,Tw.z,P,q);const wx=q.x,wz=q.z,gy=heightW(wx,wz),LY=0.95;
-   // only what stands near the line from here to the spire (seen from above) can be in the way
+   const RX=CAVE.receivers[Tw.r];TG.set(RX.x,heightW(RX.x,RX.z)+HR+0.95,RX.z);
+   // only what stands near the line from here to the receiver (seen from above) can be in the way
    {const ex=TG.x-wx,ez=TG.z-wz,l2=ex*ex+ez*ez;NEAR=SPH.filter(e=>{const t=Math.max(0,Math.min(1,((e.c.x-wx)*ex+(e.c.z-wz)*ez)/l2)),dx=e.c.x-wx-ex*t,dz=e.c.z-wz-ez*t;return dx*dx+dz*dz<(e.r+1)*(e.r+1)})}
    const ok=(h,full)=>!blockedBy(wx,gy+h+LY,wz,full);
    let H=12;if(!ok(H)){let lo=12,hi=42;if(ok(hi)){while(hi-lo>0.75){const m=(lo+hi)/2;if(ok(m))hi=m;else lo=m}}H=Math.ceil(hi)}
@@ -6380,17 +6687,14 @@ function freeAfterUpload(g){if(!g||g.userData.freed)return;g.userData.freed=1;if
    // for the lens. its fixed parts are merged into one mesh per material, all its lamp rings into a single mesh lit by the
    // shader (so the climbing pulse costs no extra draw calls), and its small parts at the foot are left out far away
    const k=1+(H-12)/45,g=new THREE.Group();g.position.set(wx,gy,wz);g.userData.world=1;scene.add(g);
-   const wu=[Tw.ux*P.c+Tw.uz*P.s,-Tw.ux*P.s+Tw.uz*P.c],stone=0xd9cfb8,stone2=0xcfc3a8,body=new THREE.Group();g.add(body);
-   mesh(new _G.Cyl(1.16,1.26,0.5,8),stone2,0,0.25,0,body);mesh(new _G.Cyl(0.94,1.02,0.4,8),stone,0,0.7,0,body);
-   const y0=0.9,y1=H-0.5,sh=y1-y0,rAt=y=>(0.56-0.16*(y-y0)/sh)*k;
-   mesh(new _G.Cyl(0.4*k,0.56*k,sh,20),0xf2ede2,0,y0+sh/2,0,body);mesh(new _G.Cyl(0.64*k,0.66*k,0.24,20),stone,0,y0+0.12,0,body);
-   mesh(new _G.Cyl(0.8*k,0.5*k,0.46,20),stone,0,H-0.27,0,body);mesh(new _G.Cyl(0.92*k,0.92*k,0.14,20),stone2,0,H-0.01,0,body);
+   const wu=[Tw.ux*P.c+Tw.uz*P.s,-Tw.ux*P.s+Tw.uz*P.c],body=new THREE.Group();g.add(body);
+   const lw=new THREE.Vector3(wx,gy+H+LY,wz),dir=TG.clone().sub(lw),BL=dir.length();dir.normalize();
+   const bh=Math.hypot(dir.x,dir.z)||1,{y0,y1,sh,rAt}=towerBody(Tw.id,body,H,k,[dir.x/bh,dir.z/bh],wu);
    mesh(new _G.Tor(0.86*k,0.06,8,36),matBrass,0,H+0.07,0,body).rotation.x=Math.PI/2;
    for(let i=0;i<4;i++){const an=i*Math.PI/2+Math.PI/4;strut(Math.cos(an)*0.74*k,H+0.06,Math.sin(an)*0.74*k,Math.cos(an)*0.42,H+LY-0.1,Math.sin(an)*0.42,0.045,body)}
-   const lw=new THREE.Vector3(wx,gy+H+LY,wz),dir=TG.clone().sub(lw),BL=dir.length();dir.normalize();
    // a focusing ring in front of the lens, square to the beam
    {const fr=mesh(new _G.Tor(0.44,0.05,8,28),matBrass,dir.x*0.78,H+LY+dir.y*0.78,dir.z*0.78,body);fr.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),dir)}
-   mergeChildren(body);
+   mergeDeep(body,true);
    // the lamp rings: one mesh; each ring knows how far up the tower it is (rf), and the shader works out how brightly it glows
    const n=Math.max(4,Math.round(sh/2.4)),RU={uThr:{value:-1},uLit:{value:0.06},uDim:{value:0.06},uP:{value:0},uPh:{value:0},uW:{value:40}};
    {const parts=[];for(let i=0;i<n;i++){const y=y0+0.9+(sh-1.7)*i/(n-1),tg=new _G.Tor(rAt(y)+0.04,0.075,8,36);tg.rotateX(Math.PI/2);tg.translate(0,y,0);
@@ -6418,24 +6722,39 @@ function freeAfterUpload(g){if(!g||g.userData.freed)return;g.userData.freed=1;if
     const m=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,fog:false});
     const c2=new THREE.Mesh(bg,m);c2.renderOrder=5;bm.add(c2);mats.push({m,op:1})}
    TWL.push(Object.assign(Tw,{wx,wz,H,LY,g,RU,lens,lensM,ind,motes,moteArr,mspin:Math.random()*6,bm,mats,BL,blocked:bb?String(bb.name||bb.type||bb):null}))});
+ // the receivers: a shorter tower in the same place's style at the foot of the cliffs, with a brass dish turned to face its
+ // tower's lens and a glowing collector in it; its rings light up when the beam arrives
+ TWL.forEach(T=>{const R=CAVE.receivers[T.r];if(!R)return;const gy=heightW(R.x,R.z),g=new THREE.Group();g.position.set(R.x,gy,R.z);g.userData.world=1;scene.add(g);
+   const to=new THREE.Vector3(T.wx-R.x,0,T.wz-R.z).normalize(),body=new THREE.Group();g.add(body);
+   const rb=towerBody(T.id,body,HR,0.85,[to.x,to.z],[to.x,to.z]);mesh(new _G.Tor(0.74,0.05,8,32),matBrass,0,HR+0.07,0,body).rotation.x=Math.PI/2;
+   const yk=new THREE.Vector3(0,HR+0.95,0),aim=new THREE.Vector3(T.wx-R.x,T.H+T.LY+heightW(T.wx,T.wz)-(gy+HR+0.95),T.wz-R.z).normalize();
+   for(let i=0;i<3;i++){const an=i/3*Math.PI*2,x0=Math.cos(an)*0.62,z0=Math.sin(an)*0.62;strut(x0,HR+0.06,z0,aim.x*0.15,HR+0.95+aim.y*0.15,aim.z*0.15,0.04,body)}
+   mergeDeep(body,true);
+   const rm=lampMat(T.col);rm.emissiveIntensity=0.06;{const parts=[],n=Math.max(3,Math.round(rb.sh/2.4));for(let i=0;i<n;i++){const y=rb.y0+0.8+(rb.sh-1.5)*i/(n-1),tg=new _G.Tor(rb.rAt(y)+0.04,0.07,8,32);tg.rotateX(Math.PI/2);tg.translate(0,y,0);parts.push(tg)}mesh(mergeGeos(parts),rm,0,0,0,g,true)}
+   const yoke=new THREE.Group();yoke.position.copy(yk);yoke.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),aim);g.add(yoke);
+   const dish=new THREE.Mesh(new THREE.SphereGeometry(0.9,30,10,0,Math.PI*2,0,Math.PI*0.3),new THREE.MeshStandardMaterial({color:lin(0xc9a24a),metalness:0.55,roughness:0.3,side:THREE.DoubleSide,envMap:skyCube}));
+   dish.rotation.x=-Math.PI/2;dish.position.z=0.62;dish.castShadow=true;yoke.add(dish);
+   const cm=lampMat(T.col);cm.emissiveIntensity=0.08;mesh(new _G.Cyl(0.03,0.03,0.4,6),0x3a3d42,0,0,0.05,yoke).rotation.x=Math.PI/2;mesh(new _G.Sph(0.16,16,12),cm,0,0,0.28,yoke);
+   T.rx={rm,cm,g}});
  console.log('Prime Meridian: laser towers placed in '+Math.round(performance.now()-t0)+' ms ('+SPH.length+' tall things checked)',TWL.map(T=>T.id+' '+T.H+'m').join(', '))}
-const towerVol=T=>{const dx=T.wx-camera.position.x,dz=T.wz-camera.position.z,d=Math.hypot(dx,dz);return 1.1*Math.pow(Math.max(0,1-d/120),1.4)};
+const towerVol=T=>{const dx=T.wx-camera.position.x,dz=T.wz-camera.position.z,d=Math.hypot(dx,dz);return 0.55*Math.pow(Math.max(0,1-d/110),1.6)};
 const towerPan=T=>{const dx=T.wx-camera.position.x,dz=T.wz-camera.position.z,d=Math.hypot(dx,dz),ry=camera.rotation.y;return d<1?0:(dx*Math.cos(ry)-dz*Math.sin(ry))/d};
-function towerOff(T){T.st=0;T.t=0;T.bm.visible=false;T.RU.uThr.value=-1;T.RU.uDim.value=0.06;T.RU.uP.value=0;T.lensM.emissiveIntensity=0.08;T.lens.scale.setScalar(1);T.motes.visible=false;T.ind.emissiveIntensity=0.05}
-function towerOn(T){T.st=3;T.t=0;T.bm.visible=true;T.bm.scale.set(1,T.BL,1);T.motes.visible=true;T.ind.emissiveIntensity=2;T.lens.scale.setScalar(1)}
-// ten seconds of charging: a whine climbing in pitch under a quickening flutter, and an electric fizz swelling beneath it
+function towerOff(T){T.quiet=false;if(T.rx){T.rx.rm.emissiveIntensity=0.06;T.rx.cm.emissiveIntensity=0.08}T.st=0;T.t=0;T.bm.visible=false;T.RU.uThr.value=-1;T.RU.uDim.value=0.06;T.RU.uP.value=0;T.lensM.emissiveIntensity=0.08;T.lens.scale.setScalar(1);T.motes.visible=false;T.ind.emissiveIntensity=0.05}
+function towerOn(T){T.quiet=true;T.st=3;T.t=0;T.bm.visible=true;T.bm.scale.set(1,T.BL,1);T.motes.visible=true;T.ind.emissiveIntensity=2;T.lens.scale.setScalar(1)}
+// ten seconds of charging: a soft hum that slowly climbs in pitch under a gentle, slowly quickening pulse, with a faint
+// electric fizz swelling beneath it
 function towerCharge(T){T.st=1;T.t=0;T.ind.emissiveIntensity=2;if(!AC||!AMB.ready)return;
   const t=AC.currentTime+0.03,out=AC.createGain();out.gain.value=towerVol(T);let pn=null;if(AC.createStereoPanner){pn=AC.createStereoPanner();pn.pan.value=towerPan(T)*0.8;out.connect(pn);pn.connect(AMB.out)}else out.connect(AMB.out);T.snd={out,pn,age:0};
-  const bus=AC.createGain();bus.gain.setValueAtTime(0.0001,t);bus.gain.exponentialRampToValueAtTime(0.13,t+1.6);bus.gain.linearRampToValueAtTime(0.3,t+9.75);bus.gain.exponentialRampToValueAtTime(0.0001,t+10.15);bus.connect(out);
-  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.Q.value=4;lp.frequency.setValueAtTime(240,t);lp.frequency.exponentialRampToValueAtTime(3800,t+10);lp.connect(bus);
-  const trem=AC.createGain();trem.gain.value=0.72;trem.connect(lp);const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.setValueAtTime(2.2,t);lfo.frequency.exponentialRampToValueAtTime(24,t+10);lg.gain.value=0.26;lfo.connect(lg);lg.connect(trem.gain);lfo.start(t);lfo.stop(t+10.3);
-  [['sawtooth',55,330,0.55],['sawtooth',55.7,334,0.45],['sine',110,990,0.8],['triangle',220,1760,0.22]].forEach(([ty,f0,f1,v])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+10);g.gain.value=v;o.connect(g);g.connect(trem);o.start(t);o.stop(t+10.3)});
-  const ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const nb=AC.createBiquadFilter();nb.type='bandpass';nb.Q.value=1.3;nb.frequency.setValueAtTime(2200,t);nb.frequency.exponentialRampToValueAtTime(7500,t+10);
-  const ng=AC.createGain();ng.gain.setValueAtTime(0.0001,t);ng.gain.exponentialRampToValueAtTime(0.09,t+9.8);ng.gain.exponentialRampToValueAtTime(0.0001,t+10.15);ns.connect(nb);nb.connect(ng);ng.connect(out);ns.start(t);ns.stop(t+10.3)}
+  const bus=AC.createGain();bus.gain.setValueAtTime(0.0001,t);bus.gain.exponentialRampToValueAtTime(0.045,t+2.5);bus.gain.linearRampToValueAtTime(0.11,t+9.6);bus.gain.exponentialRampToValueAtTime(0.0001,t+10.2);bus.connect(out);
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.Q.value=4;lp.frequency.setValueAtTime(220,t);lp.frequency.exponentialRampToValueAtTime(1600,t+10);lp.connect(bus);
+  const trem=AC.createGain();trem.gain.value=0.72;trem.connect(lp);const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.setValueAtTime(1.0,t);lfo.frequency.exponentialRampToValueAtTime(6,t+10);lg.gain.value=0.2;lfo.connect(lg);lg.connect(trem.gain);lfo.start(t);lfo.stop(t+10.3);
+  [['sawtooth',55,150,0.4],['sawtooth',55.5,151,0.32],['sine',110,330,0.8],['triangle',220,660,0.18]].forEach(([ty,f0,f1,v])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+10);g.gain.value=v;o.connect(g);g.connect(trem);o.start(t);o.stop(t+10.3)});
+  const ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const nb=AC.createBiquadFilter();nb.type='bandpass';nb.Q.value=1.3;nb.frequency.setValueAtTime(1800,t);nb.frequency.exponentialRampToValueAtTime(4200,t+10);
+  const ng=AC.createGain();ng.gain.setValueAtTime(0.0001,t);ng.gain.exponentialRampToValueAtTime(0.025,t+9.8);ng.gain.exponentialRampToValueAtTime(0.0001,t+10.15);ns.connect(nb);nb.connect(ng);ng.connect(out);ns.start(t);ns.stop(t+10.3)}
 // firing: a bright zap that drops away, a crack of noise, a deep thump and a hum that settles
 function towerFire(T){T.st=2;T.t=0;T.bm.visible=true;T.bm.scale.set(1,0.001,1);if(!AC||!AMB.ready)return;
   let o=T.snd&&T.snd.out;if(!o){o=shotOut(towerVol(T),towerPan(T))}const t=AC.currentTime+0.01;
-  blip(o,'sawtooth',2600,90,t,0.6,['lowpass',5200,1]);blip(o,'square',1300,70,t,0.38,['bandpass',1900,2]);hiss(o,t,0.9,'highpass',1800,0.7,0.8);ping(o,68,t,1.3,0.9);
+  blip(o,'sawtooth',1800,90,t,0.7,['lowpass',3200,1]);blip(o,'square',900,70,t,0.4,['bandpass',1400,2]);hiss(o,t,0.9,'highpass',1800,0.7,0.35);ping(o,68,t,1.3,0.6);
   const hm=AC.createOscillator(),hg=AC.createGain();hm.type='sine';hm.frequency.value=176;hg.gain.setValueAtTime(0.0001,t);hg.gain.exponentialRampToValueAtTime(0.18,t+0.12);hg.gain.exponentialRampToValueAtTime(0.0001,t+2.6);hm.connect(hg);hg.connect(o);hm.start(t);hm.stop(t+2.7)}
 animsW.push((t,dt)=>{for(const T of TWL){if(T.st===0)continue;
   if(T.snd&&AC){T.snd.age+=dt;if(T.snd.age>14)T.snd=null;else{T.snd.out.gain.setTargetAtTime(towerVol(T),AC.currentTime,0.08);if(T.snd.pn)T.snd.pn.pan.setTargetAtTime(towerPan(T)*0.8,AC.currentTime,0.08)}}
@@ -6447,11 +6766,68 @@ animsW.push((t,dt)=>{for(const T of TWL){if(T.st===0)continue;
   T.mats[0].m.opacity=0.86+0.07*Math.sin(t*11+T.r)+0.07*Math.sin(t*7.3+T.r*2);
   if(T.st===2){T.t+=dt;const k=Math.min(1,T.t/0.5),e=1-Math.pow(1-k,3);T.bm.scale.set(1,Math.max(0.001,T.BL*e),1);T.lensM.emissiveIntensity=4.6-2.2*k;T.lens.scale.setScalar(1.28-0.28*k);
     {const U=T.RU;U.uThr.value=2;U.uLit.value=2.8-1.4*k;U.uP.value=0}if(k>=1){T.st=3;refreshFeedback()}}
-  else{const ph=(t%2.4)/2.4,U=T.RU;U.uThr.value=2;U.uLit.value=1.0;U.uP.value=1.1;U.uPh.value=ph;U.uW.value=40;T.lensM.emissiveIntensity=2.3+0.35*Math.sin(t*4.5+T.r)}
+  else{const ph=(t%2.4)/2.4,U=T.RU;U.uThr.value=2;U.uLit.value=1.0;U.uP.value=1.1;U.uPh.value=ph;U.uW.value=40;T.lensM.emissiveIntensity=2.3+0.35*Math.sin(t*4.5+T.r);
+    if(T.rx){T.rx.rm.emissiveIntensity=1.3+0.5*Math.sin(t*3+T.r);T.rx.cm.emissiveIntensity=2.6+0.6*Math.sin(t*7+T.r)}}
   T.mspin+=dt*0.9;T.moteArr.forEach((m,i)=>{const an=T.mspin+i*2.094;m.position.set(Math.cos(an)*0.95,T.H+T.LY+Math.sin(t*1.3+i*2)*0.12,Math.sin(an)*0.95)})}});
 PROG.on('areaCompleted',(id,quiet)=>{const T=TOWERS[id];if(!T||!T.bm)return;if(quiet)towerOn(T);else if(T.st===0)towerCharge(T)});
 PROG.on('reset',()=>TWL.forEach(towerOff));
 TWL.forEach(T=>{if(PROG.isComplete(T.id))towerOn(T)});
+// ---- the barrier falls when every receiver has its beam (at once, without fuss, when a saved game is loaded)
+function barrierUp(){BARRIER.up=true;BARRIER.fade=1;BARRIER.t=0;BARRIER.wall.visible=true;BARRIER.mat.uniforms.uF.value=1;BARRIER.capMat.emissiveIntensity=2;BARRIER.cols.forEach(c=>c.on=true)}
+function liftSound(kind){if(!AC||!AMB.ready||muted)return;const dx=ELEV.cx-camera.position.x,dz=ELEV.cz-camera.position.z,d=Math.hypot(dx,dz),v=0.5*Math.pow(Math.max(0,1-d/45),1.5);if(v<0.02)return;const o=shotOut(v,0),t=AC.currentTime+0.02;
+  if(kind==='barrier'){blip(o,'sine',520,90,t,2.2,['lowpass',1400,1]);hiss(o,t,1.8,'bandpass',900,0.8,0.35)}
+  else if(kind==='door'){hiss(o,t,0.9,'bandpass',2600,1.2,0.25);ping(o,180,t+0.85,0.4,0.25)}
+  else if(kind==='ding'){ping(o,1318,t,1.2,0.35);ping(o,1046,t+0.28,1.4,0.35)}
+  else if(kind==='hatch'){blip(o,'sawtooth',110,70,t,1.3,['lowpass',600,1]);hiss(o,t,1.2,'lowpass',500,1,0.3)}
+  else if(kind==='hum'){const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.setValueAtTime(70,t);os.frequency.linearRampToValueAtTime(95,t+2);os.frequency.linearRampToValueAtTime(70,t+8.5);
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.25,t+0.8);g.gain.setValueAtTime(0.25,t+7.6);g.gain.exponentialRampToValueAtTime(0.0001,t+8.6);os.connect(g);g.connect(o);os.start(t);os.stop(t+8.7)}}
+animsW.push((t,dt)=>{const all=TWL.length>0&&TWL.every(T=>T.st===3);
+  if(all&&BARRIER.up){BARRIER.up=false;BARRIER.cols.forEach(c=>c.on=false);if(TWL.every(T=>T.quiet)){BARRIER.fade=0;BARRIER.wall.visible=false;BARRIER.capMat.emissiveIntensity=0.1}
+    else{liftSound('barrier');setTimeout(()=>toast('All nine beams have reached Meridian Hill: the barrier in the caves is down!','good'),600)}}
+  else if(!all&&!BARRIER.up)barrierUp();
+  if(!BARRIER.up&&BARRIER.fade>0){BARRIER.fade=Math.max(0,BARRIER.fade-dt/2.5);BARRIER.mat.uniforms.uF.value=BARRIER.fade*(0.6+0.4*Math.sin(t*40));BARRIER.capMat.emissiveIntensity=0.1+1.9*BARRIER.fade;if(BARRIER.fade===0)BARRIER.wall.visible=false}});
+PROG.on('reset',()=>{barrierUp();ELEV.st='bottom';ELEV.out=true;ELEV.y=0.02;ELEV.door=0;ELEV.hatch=0;ELEV.ride=false;ELEV.t=0;liftPose()});
+// ---- the lift. it waits at the bottom with its door shut until the last challenge powers it; then the door opens. step in
+// and after a moment the door closes, the hatch in the launch pad opens above, the cabin rises up through it, the hatch
+// closes beneath it, it settles onto the hatch and only then does the door open, out onto the launch pad. it takes you
+// back down the same way, and comes to fetch you if you are waiting at the other end
+function liftPose(){const E=ELEV;E.cab.position.y=E.y;
+  // the cabin floor is something to stand on, wherever the cabin is (a cave floor while it is down, part of the launch pad while it is up)
+  if(!E.plat){E.plat={t:'box',minX:E.cx-1.3,maxX:E.cx+1.3,minZ:E.cz-1.3,maxZ:E.cz+1.3,h:0,low:true};PLATW.push(E.plat)}E.plat.h=E.floor();E.plat.low=E.y<LOW;E.leaves.forEach((m,i)=>{const s=i?1:-1;m.position.x=s*(0.36+0.62*E.door)});
+  E.plates.forEach((g,i)=>{const s=i?1:-1;g.position.x=E.cx+s*(0.81+1.75*E.hatch)});
+  const up=E.y>H_TOP-1;E.walls.concat([E.doorCol]).forEach(c=>{c.y0=E.y-1;c.y1=E.y+2.8});E.doorCol.on=E.door<0.9;
+  E.pitCol.on=E.y>0.5;E.hatchCol.on=E.hatch>0.05&&!E.ride;if(E.lampOn!==E.powered){E.lampOn=E.powered;E.lamp.material.color.copy(lin(E.powered?0x4cd964:0xff4a3a));E.lamp.material.emissive.copy(E.lamp.material.color)}}
+const inCab=()=>Math.abs(px-ELEV.cx)<1.05&&Math.abs(pz-ELEV.cz)<1.05&&Math.abs(ph-ELEV.floor())<0.7;
+animsW.push((t,dt)=>{const E=ELEV,sm=v=>v*v*(3-2*v);E.powered=PROG.isComplete('summit');
+  const step=(k,dur)=>{E.t+=dt/dur;return Math.min(1,E.t)};
+  const go=st=>{E.st=st;E.t=0};
+  switch(E.st){
+    case 'bottom':E.y=0.02;if(E.powered&&E.door<1){E.door=Math.min(1,E.door+dt/1.0);if(E.door===1)liftSound('door')}if(!E.powered)E.door=Math.max(0,E.door-dt);
+      if(!inCab())E.out=true;   // (after a ride you step out before it will take you again)
+      if(E.powered&&E.door===1){if(inCab()&&ph<4&&E.out){E.stay+=dt;if(E.stay>0.8){E.stay=0;E.ride=true;go('closeUp');liftSound('door')}}else E.stay=0}
+      break;
+    case 'top':E.y=E.TOPY;if(E.door<1)E.door=Math.min(1,E.door+dt/1.0);
+      if(!inCab())E.out=true;
+      if(E.door===1){if(inCab()&&ph>H_TOP-2&&E.out){E.stay+=dt;if(E.stay>0.8){E.stay=0;E.ride=true;go('closeDown');liftSound('door')}}else E.stay=0;
+        // someone waiting in the cave for the lift: it comes down to fetch them
+        if(!E.ride&&ph<4&&Math.hypot(px-E.cx,pz-E.cz)<4.5&&E.powered){go('closeDown')}}
+      break;
+    case 'closeUp':E.door=1-sm(step(0,1.0));if(E.t>=1){go('rise');liftSound('hum')}break;
+    case 'rise':{const k=step(0,8.5);E.y=0.02+(E.UPY-0.02)*sm(k);if(E.y>H_TOP-9&&E.hatch<1){if(E.hatch===0)liftSound('hatch');E.hatch=Math.min(1,E.hatch+dt/1.4)}if(k>=1){go('hatchShutUp');liftSound('hatch')}}break;
+    case 'hatchShutUp':E.hatch=1-sm(step(0,1.4));if(E.t>=1)go('settleUp');break;
+    case 'settleUp':{const k=step(0,0.7);E.y=E.UPY+(E.TOPY-E.UPY)*sm(k);if(k>=1){go('openUp');liftSound('ding')}}break;
+    case 'openUp':E.door=sm(step(0,1.0));if(E.t>=1){E.ride=false;E.out=false;go('top');liftSound('door')}break;
+    case 'closeDown':E.door=Math.min(E.door,1-sm(step(0,1.0)));if(E.t>=1)go('liftOff');break;
+    case 'liftOff':{const k=step(0,0.6);E.y=E.TOPY+(E.UPY-E.TOPY)*sm(k);if(k>=1){go('hatchOpenDown');liftSound('hatch')}}break;
+    case 'hatchOpenDown':E.hatch=sm(step(0,1.4));if(E.t>=1){go('fall');liftSound('hum')}break;
+    case 'fall':{const k=step(0,8.5);E.y=E.UPY+(0.02-E.UPY)*sm(k);if(E.y+3.2<H_TOP-0.5&&E.hatch>0)E.hatch=Math.max(0,E.hatch-dt/1.4);if(k>=1){E.hatch=0;go('openDown');liftSound('ding')}}break;
+    case 'openDown':E.door=sm(step(0,1.0));if(E.t>=1){E.ride=false;E.out=false;go('bottom')}break}
+  // someone on the launch pad waiting for the lift that is down in the cave: it comes up for them
+  if(E.st==='bottom'&&!E.ride&&E.powered&&ph>H_TOP-2&&Math.hypot(px-E.cx,pz-E.cz)<4.5){go('closeUp')}
+  // riding: you stay inside the cabin
+  if(E.ride){px=Math.max(E.cx-0.95,Math.min(E.cx+0.95,px));pz=Math.max(E.cz-0.95,Math.min(E.cz+0.95,pz));ph=E.floor()}
+  liftPose()});
+liftPose();
 // the lanterns stand just outside each place's two gates, and outside its shortcut gate on the meadow, facing whoever walks
 // up to them, on the first spot close by where nothing else stands and no path runs
 {const q={},onPathW=(x,z)=>{for(const r of piecesAtW(x,z,0.5).slice())if(onWalk(r.x,r.z,0.35))return true;
@@ -6484,6 +6860,16 @@ function run(f,a,b){if(f.dead)return;try{f(a,b);f.fails=0}catch(e){jobFail(f,e)}
 const PERF=(()=>{const I=renderer.info,el=document.createElement('div');el.id='perf';el.hidden=true;document.body.appendChild(el);
   I.autoReset=false;   // reset once per frame (below) instead of once per render pass, so a frame's passes add up
   const gl=renderer.getContext(),tq=renderer.capabilities.isWebGL2?gl.getExtension('EXT_disjoint_timer_query_webgl2'):null;
+  // which graphics processor is drawing. if the browser has fallen back to drawing in software on the processor (hardware
+  // acceleration turned off, or a blocked driver), say so plainly: that is the one case where the GPU isn't doing the work
+  const GPU=(()=>{let n='';try{const d=gl.getExtension('WEBGL_debug_renderer_info');n=String(gl.getParameter(d?d.UNMASKED_RENDERER_WEBGL:gl.RENDERER)||'')}catch(e){}
+    const soft=/swiftshader|llvmpipe|softpipe|software|basic render|mesa offscreen|lavapipe/i.test(n);
+    let short=n.replace(/^ANGLE \((.*)\)$/,'$1').split(',').map(x=>x.trim()).filter(Boolean);short=(short.length>1?short[1]:short[0]||'unknown').replace(/\s*(Direct3D|vs_|ps_|OpenGL|\(0x).*$/i,'').trim()||'unknown';
+    return{name:n,short,soft}})();
+  if(GPU.soft)setTimeout(()=>toast('This browser is drawing the game without your graphics card (hardware acceleration is off), so it will be slow. Turn hardware acceleration on in the browser settings and reload.','bad'),4000);
+  // where the browser hides GPU timers (most do), the time for the GPU to finish a frame is estimated now and then by
+  // waiting for it once the frame's drawing has been sent (from the first draw of the frame to the GPU being done)
+  let rStart=0,fc=0;{const r0=renderer.render.bind(renderer);renderer.render=function(sc,cam){if(!rStart)rStart=performance.now();return r0(sc,cam)}}
   let on=false,t0=0,q=null,qOpen=false,lastT=0,shadowCalls=0;const A={n:0,int:0,cpu:0,calls:0,tris:0,sh:0,gpu:0,gn:0,acc:0},vb=new THREE.Vector2(),stats={};
   {const sm=renderer.shadowMap,s0=sm.render.bind(sm);sm.render=function(a,b,c){const c0=I.render.calls;s0(a,b,c);shadowCalls+=I.render.calls-c0}}
   const fmt=n=>n>=1e6?(n/1e6).toFixed(2)+' M':n>=1e4?(n/1e3).toFixed(1)+' k':String(Math.round(n));
@@ -6491,17 +6877,19 @@ const PERF=(()=>{const I=renderer.info,el=document.createElement('div');el.id='p
   try{if(/[?&](perf|debug)\b/.test(location.search))show(true)}catch(e){}
   window.addEventListener('keydown',e=>{if(e.code==='F3'||e.code==='Backquote'){e.preventDefault();show(!on)}});
   $('#fps').addEventListener('click',()=>show(!on));
-  return{get on(){return on},show,stats,
-    begin(t){I.reset();shadowCalls=0;t0=performance.now();
+  return{get on(){return on},show,stats,GPU,
+    begin(t){I.reset();shadowCalls=0;t0=performance.now();rStart=0;
       if(on&&tq&&!q){q=gl.createQuery();gl.beginQuery(tq.TIME_ELAPSED_EXT,q);qOpen=true}},
     end(t){const cpu=performance.now()-t0,int=lastT?t-lastT:0;lastT=t;if(!on)return;
+      if(!tq&&rStart&&(++fc%20)===0){gl.finish();A.gpu+=performance.now()-rStart;A.gn++;A.est=1}
       if(qOpen){gl.endQuery(tq.TIME_ELAPSED_EXT);qOpen=false}
       else if(q&&gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE)){if(!gl.getParameter(tq.GPU_DISJOINT_EXT)){A.gpu+=gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6;A.gn++}gl.deleteQuery(q);q=null}
       A.n++;A.int+=int;A.cpu+=cpu;A.calls+=I.render.calls;A.tris+=I.render.triangles;A.sh+=shadowCalls;A.acc+=int;
       if(A.acc<500)return;const n=A.n,fi=A.int/n,v=renderer.getDrawingBufferSize(vb);
       Object.assign(stats,{fps:fi>0?1000/fi:0,ms:fi,cpu:A.cpu/n,gpu:A.gn?A.gpu/A.gn:null,calls:A.calls/n,tris:A.tris/n,shadow:A.sh/n,frames:n});
       el.innerHTML='<b>'+(fi>0?(1000/fi).toFixed(0):'--')+' fps</b>  '+fi.toFixed(1)+' ms/frame\n'
-        +'CPU '+(A.cpu/n).toFixed(1)+' ms  GPU '+(A.gn?(A.gpu/A.gn).toFixed(1)+' ms':'n/a')+'\n'
+        +'CPU '+(A.cpu/n).toFixed(1)+' ms  GPU '+(A.gn?(A.est?'≈ ':'')+(A.gpu/A.gn).toFixed(1)+' ms'+(A.est?' <i>(est.)</i>':''):'…')+'\n'
+        +(GPU.soft?'<b style="color:#ff8a7a">NO GPU: '+GPU.short+' (software)</b>\n':'<i>GPU: '+GPU.short+'</i>\n')
         +'<b>'+fmt(A.calls/n)+'</b> draw calls <i>('+fmt(A.sh/n)+' shadow)</i>\n'
         +'<b>'+fmt(A.tris/n)+'</b> triangles\n'
         +'<i>'+v.x+'×'+v.y+' · '+renderer.getPixelRatio().toFixed(2)+'x · '+QNAME[QL]+'</i>\n'
@@ -6545,7 +6933,8 @@ function frameStep(t){
     const spd=(keys.ShiftLeft||keys.ShiftRight?8:5)*dt,s=Math.sin(yaw),c=Math.cos(yaw);
     const dx=(fx*c+fz*s)*spd,dz=(-fx*s+fz*c)*spd;
     if(!blockedW(px+dx,pz,ph))px+=dx;if(!blockedW(px,pz+dz,ph))pz+=dz;
-    const gh=heightW(px,pz);ph=gh>ph?Math.min(gh,ph+dt*8):Math.max(gh,ph-dt*4.5);
+    const gh=heightW(px,pz,ph);ph=gh>ph?Math.min(gh,ph+dt*8):Math.max(gh,ph-dt*4.5);
+    if(ELEV.ride)ph=ELEV.floor();   // riding the lift: you go where its floor goes
     if(l>0.1)bob+=dt*9*l;
     camera.position.set(px,ph+EYE+Math.sin(bob)*0.035,pz);camera.rotation.set(pitch,yaw,0);
     // only the panels within 6 m can be the one you are looking at, so only those are tested
@@ -6553,7 +6942,7 @@ function frameStep(t){
     for(let i=0;i<panelFaces.length;i++){const f=panelFaces[i],w=f.userData.wc||(f.userData.wc=trueWorld(f,new THREE.Vector3())),ex=w.x-camera.position.x,ez=w.z-camera.position.z;if(ex*ex+ez*ez<36)PC.push(f)}
     const hit=PC.length?ray.intersectObjects(PC)[0]:null;
     aimed=hit&&hit.distance<4.5?hit.object.userData.panel:null;
-    aimedBtn=null;{const B=ROCKET.button,dx=B.wx-px,dz=B.wz-pz,dd=Math.hypot(dx,dz);if(!aimed&&dd<2.3&&dd>0.15&&(dx*-Math.sin(yaw)+dz*-Math.cos(yaw))/dd>0.8)aimedBtn=B}
+    aimedBtn=null;{const B=ROCKET.button,dx=B.wx-px,dz=B.wz-pz,dd=Math.hypot(dx,dz);if(!aimed&&ph>H_TOP-2&&dd<2.3&&dd>0.15&&(dx*-Math.sin(yaw)+dz*-Math.cos(yaw))/dd>0.8)aimedBtn=B}
     aimedBench=null;if(!aimed&&!aimedBtn){let best=2.4;const fx=-Math.sin(yaw),fz=-Math.cos(yaw);for(const b of BENCHES){const dx=b.wx-px,dz=b.wz-pz,dd=Math.hypot(dx,dz);if(dd<best&&dd>0.2&&(dx*fx+dz*fz)/dd>0.72&&Math.abs(b.wy-ph)<0.7){best=dd;aimedBench=b}}}
     const pr=EL.prompt,ch=EL.cross;
     if(started&&aimed&&EL.help.hidden){const pow=isPowered(aimed),can=pow&&!aimed.solved;pr.hidden=false;pr.className=can?'':'off';
@@ -6628,7 +7017,9 @@ window.GAME={PROG,debug:{
    ['State',()=>{const st=PROG.state();out(st.areas.map(a=>a.id+': '+a.status+' '+a.solved+'/'+a.of).join('\n')+'\nendgame '+st.endgame+' · bonus '+st.bonus)}],['Validate',()=>{const v=D.validate();out(v.ok?'validation passed: '+v.puzzles+' puzzles, '+v.areas+' areas, '+v.selfContained+' self-contained':v.errors.join('\n'))}],
    ['Reset',()=>{if(confirm('Reset all progress?'))out(D.reset())}]].forEach(([t,f])=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.style.cssText='font:12px system-ui;padding:4px 8px;border-radius:8px;border:0;cursor:pointer';b.addEventListener('click',e=>{e.stopPropagation();f()});d.querySelector('#dbBtns').appendChild(b)});
   const v=D.validate();out(v.ok?'validation passed at load: '+v.puzzles+' puzzles in '+v.areas+' areas':'VALIDATION FAILED\n'+v.errors.join('\n'))})();
-function goToHill(){const w=S2W(0,zF0+6,PIECES.byId.fin,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0;pitch=0}
+// into the caves under Meridian Hill (on the path round the barrier), and up on the launch pad by the lift
+function goToHill(){px=CAVE.x+15.7;pz=CAVE.z;ph=0;yaw=Math.PI/2;pitch=0}
+function goToPad(){px=ELEV.cx;pz=ELEV.cz+3.4;ph=H_TOP;yaw=Math.PI;pitch=0}
 function goToStart(){const w=S2W(3.0,ISL_N-0.8,PIECES.byId.start,{});px=w.x;pz=w.z;ph=heightW(px,pz);yaw=0;pitch=0}
 refreshWorld();updateHud();camera.position.set(px,EYE,pz);
 requestAnimationFrame(frame);

@@ -14,11 +14,14 @@ Every half second it shows:
 | Line | What it means |
 |---|---|
 | `62 fps  16.1 ms/frame` | Frames per second, and the average time between frames. |
-| `CPU 3.2 ms  GPU 7.9 ms` | CPU time to prepare a frame (game logic plus three.js), and GPU time to draw it. GPU time uses `EXT_disjoint_timer_query_webgl2` and shows `n/a` where the browser doesn't offer it. |
+| `CPU 3.2 ms  GPU 7.9 ms` | CPU time to prepare a frame (game logic plus three.js), and GPU time to draw it. GPU time uses `EXT_disjoint_timer_query_webgl2` where the browser offers it. Most browsers hide that timer for privacy, so the overlay then estimates it instead (`GPU ≈ 7.9 ms (est.)`): every 20th frame it waits for the GPU to finish and times the wait. |
+| `GPU: NVIDIA GeForce RTX 3060` | Which GPU is drawing the game, from `WEBGL_debug_renderer_info`. If it's a software renderer (SwiftShader, llvmpipe, Microsoft Basic Render and similar), the line turns red and reads `NO GPU: … (software)`. A message also tells you to turn on hardware acceleration in the browser. |
 | `1.4 k draw calls (85 shadow)` | Draw calls per frame, summed over every render pass: the shadow map, the world and post-processing. The shadow pass's share is in brackets. |
 | `2.71 M triangles` | Triangles per frame, over all passes. |
 | `1920×1080 · 1.00x · Ultra` | Render resolution, pixel ratio and quality level. |
 | `screen 144 Hz · drawing every 2nd refresh` | The measured refresh rate, and what the frame limiter is doing. |
+
+"GPU n/a" never meant the CPU was drawing the game. WebGL always draws on the GPU unless the browser has fallen back to software rendering, and the GPU line shows which case you're in.
 
 The counts are correct across passes because `renderer.info.autoReset` is off. The overlay resets the counters once per frame, not once per `render()` call.
 
@@ -155,6 +158,19 @@ Same spots and settings as the baseline. Headless at pixel ratio 1, so fixes 1 a
 - On real hardware, add the frame cap (half the work per second on 120–144 Hz screens) and the resolution cap (44% fewer pixels on 2× screens).
 
 Screenshots before and after match at Low, High and Ultra. The remaining differences are animation: butterflies, pets and clouds.
+
+## After the hill rework
+
+The caves, the nine laser receivers, the themed towers and the lift add very little:
+- **Towers and receivers:** their parts are merged per material, and their plain-coloured parts share one vertex-coloured mesh.
+- **Cave mouths:** their decorations are left out beyond about 120 m, like other small things.
+- **Cavern:** everything in it is drawn only when you're near or below the hill.
+
+| Spot | Draw calls | Shadow draws | Triangles |
+|---|---|---|---|
+| Welcome Garden | 1,494 → **1,589** | 85 → **87** | 2.78 M → **2.86 M** |
+| Castle courtyard | 815 → **824** | 122 → **124** | 2.00 M → **2.06 M** |
+| Times village | 1,081 → **1,082** | 334 → **341** | 2.42 M → **2.46 M** |
 
 ## Measuring it yourself
 

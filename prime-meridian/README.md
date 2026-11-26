@@ -16,15 +16,16 @@ Each place teaches one rule with 8 line-drawing panels, from very easy to hard. 
 | Glasshouse Gardens | Doubles and halves |
 | Match Maker Market | Adding, taking away, times |
 | Number Bond Beach | Number bonds |
-| Summit Garden (bonus) | Five advanced challenges, one rule at its hardest each |
+| The Five Challenges (finale) | Five advanced challenges, one rule at its hardest each, in the caves under Meridian Hill |
 
 ## How it fits together
 
-- **Gates:** each place has two gates on the loop path that runs round the island. A spoke path leads from each place up Meridian Hill.
+- **Gates:** each place has two gates on the loop path that runs round the island. A spoke path leads from each place to a cave mouth in the cliffs of Meridian Hill. Each cave mouth is dressed in the style of the walk the path comes from.
 - **Lanterns:** a lantern by each gate shows dark (not started), amber (under way) or green (complete).
-- **Finishing a place:** the yellow cable from its last panel runs to the place's laser tower, which stands a few steps away. The tower charges for ten seconds, with a rising hum and rings of light climbing it, then fires a beam of its colour to the Meridian Spire on the hilltop. Each tower is tall enough that its beam clears everything on the way, so the castle's tower rises above the keep. A shortcut gate in the place's hill-side wall also opens onto the meadow.
-- **Six finished places** open the launch pad on top of the hill. Press the button, watch the rocket go, and the "You finished" card follows 5 seconds after lift-off.
-- **All nine** open the Summit Garden behind the spire, on the island's middle line (the prime meridian, marked in brass).
+- **Finishing a place:** the yellow cable from its last panel runs to the place's laser tower, which stands a few steps away. Each tower is built in its place's style. It charges for ten seconds, with a hum and rings of light climbing it, then fires a beam of its colour to its receiver at the foot of the hill's cliff, between two cave mouths. The receivers match their towers. A shortcut gate in the place's hill-side wall also opens onto the meadow.
+- **All nine beams** bring down the barrier round the five final challenges, in the middle of the cavern under the hill.
+- **The five challenges** power the lift with mirrored glass walls. Step in: the door closes, the hatch in the launch pad opens above you, and the lift rises through it. The hatch closes underneath, then the door opens onto the launch pad. The hilltop is twice as high as before, and there's no other way up.
+- **The rocket:** press the button on the launch pad, watch the rocket go, and the "You finished" card follows 5 seconds after lift-off.
 
 The island is full of life:
 - fish in the rivers and ponds, kingfishers with their chicks, seagulls, and a polar bear cub and its friend
@@ -48,7 +49,7 @@ Progress is saved in the browser (localStorage, save version 8). A save from Num
 - **Solve current:** the button in the corner solves the next panel with power for you
 - **Step back:** Esc, right-click, or the Step back button
 - **Sit:** look at a bench or a picnic-table seat and press E or click
-- **Menu:** M or the Menu button. Places lets you visit any open place, Meridian Hill or the Summit Garden.
+- **Menu:** M or the Menu button. Places lets you visit any open place, the Meridian Caves, or the launch pad once the lift has power.
 
 ## Quality and performance
 
@@ -62,7 +63,8 @@ Ultra, High and Low quality levels trade post-processing and shadow detail for s
 
 **Performance overlay:** press **F3** or **`**, click the fps counter, or open `index.html?perf`. It shows:
 - frames per second and time per frame
-- CPU and GPU time per frame (GPU time where the browser allows it)
+- CPU and GPU time per frame. GPU time is measured where the browser allows it, and estimated otherwise (marked "est.")
+- which GPU is drawing the game. If the browser has fallen back to software rendering on the CPU, this line turns red and a message says how to turn hardware acceleration back on
 - draw calls (with the shadow pass's share) and triangles
 - render resolution, and the screen's refresh rate
 
