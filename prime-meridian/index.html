@@ -551,7 +551,7 @@ const ROOMS=[
     {type:'mult',W:6,H:6,k:8,need:6,near:true,wind:0.65,start:[2,5],end:[3,0]},
     {type:'mult',W:7,H:7,k:7,need:7,near:true,wind:0.6}]},
   {name:'Odd and Even Pond',topic:'Odd and even numbers',
-   spots:[[-3.6,-6.5,'e'],[0,-19.2,'s'],[3,-27,'e'],[-15.2,-33.93,'s','wall'],[-4,-46.5,'s'],[-20,-48,'e'],[4,-65.5,'s'],[14,-48,'w']],panels:[
+   spots:[[-3.6,-6.5,'e'],[0,-19.2,'s'],[3,-27,'e'],[-15.2,-33.93,'s','wall'],[-4,-46.5,'s'],[-20,-48,'e'],[4,-65.5,'s'],[10.5,-51,'s']],panels:[   // (the last stands by the Even Pond with its back to it: finish it and you are looking at the laser tower)
     {type:'sep',W:3,H:3,fill:1,maxN:10},
     {type:'sep',W:3,H:3,fill:1,maxN:20,start:[0,0],end:[2,2]},
     {type:'sep',W:4,H:4,fill:0.8,maxN:20},
@@ -591,7 +591,7 @@ const ROOMS=[
     {type:'bond',W:6,H:6,target:100,unit:5,minRegions:4,maxPer:3,minTiles:9,wind:0.65,start:[2,5],end:[3,0]},
     {type:'bond',W:7,H:7,target:100,minRegions:5,maxPer:3,minTiles:12,wind:0.6}]},
   {name:'Place Value Castle',topic:'Ordering numbers',scatter:{trees:10,bushes:30},
-   spots:[[-4,-8,'e'],[7,-16,'w'],[-12,-24,'e'],[3.6,-31.8,'w'],[-5,-50,'e'],[10,-52,'w'],[-10.93,-56,'e','wall'],[8,-64,'s']],panels:[
+   spots:[[-4,-8,'e'],[7,-16,'w'],[-12,-24,'e'],[3.6,-31.8,'w'],[-5,-50,'e'],[10,-52,'w'],[-10.93,-56,'e','wall'],[8.5,-57,'e']],panels:[   // (the last faces the keep, in line with the great sigil and near enough that, as the tower charges, the sigil slides down into view just above it)
     {type:'rank',W:3,H:3,count:3,lo:1,hi:20,minLen:7},
     {type:'rank',W:3,H:3,count:4,lo:10,hi:60,minLen:7,end:[2,2]},
     {type:'rank',W:4,H:4,count:4,lo:10,hi:99},
@@ -1419,6 +1419,32 @@ function ribbonPath(pts,w,col){const D=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1]);
   const bb=(pp,h)=>({poly:pp,hw:h,minX:Math.min(...pp.map(v=>v[0]))-h,maxX:Math.max(...pp.map(v=>v[0]))+h,minZ:Math.min(...pp.map(v=>v[1]))-h,maxZ:Math.max(...pp.map(v=>v[1]))+h});
   WALK.push(bb(P,w/2));const tail=P.filter((_,i)=>cum[i]>L-1.5);if(tail.length>1)WALK.push(bb(tail,w/2+0.8));
   P.forEach((p,i)=>{if(i%3===0){reserve(p[0],p[1],HW[i]+0.2);RIBR.push({minX:p[0]-HW[i],maxX:p[0]+HW[i],minZ:p[1]-HW[i],maxZ:p[1]+HW[i]})}})}
+// a panel's side path: one smooth paved strip with a round end in front of the panel. where it meets the walkway it
+// widens in two quarter-circle curves that run into the walkway's edge, so the join is smooth, with no neck or bump.
+// (it is not part of the shared paving grid, whose corner rounding could pinch a narrow strip where it joined)
+function sidePath(pts,w,col){const D=(a,b)=>Math.hypot(b[0]-a[0],b[1]-a[1]);
+  const q=[pts[0]];for(let i=1;i<pts.length;i++)if(D(q[q.length-1],pts[i])>0.02)q.push(pts[i]);if(q.length<2)return;
+  // where the walkway's edge is, back along the last stretch from the end (which lies a little way onto the walkway)
+  const A=q[q.length-2],E=q[q.length-1],le=D(A,E),ux=(E[0]-A[0])/le,uz=(E[1]-A[1])/le;let e=0;while(e<Math.min(le,1.2)&&onWalk(E[0]-ux*e,E[1]-uz*e,0))e+=0.02;
+  q.push([E[0]+ux*0.3,E[1]+uz*0.3]);
+  // corners rounded into smooth curves, then points close together (closer still through the widening)
+  const P0=[q[0]];for(let i=1;i<q.length-1;i++){const a=q[i-1],b=q[i],d=q[i+1],l1=D(a,b),l2=D(b,d);if(Math.abs((b[0]-a[0])*(d[1]-b[1])-(b[1]-a[1])*(d[0]-b[0]))<1e-6){P0.push(b);continue}
+    const R=Math.min(1.8,l1*(i===1?0.95:0.48),l2*0.48),p1=[b[0]-(b[0]-a[0])/l1*R,b[1]-(b[1]-a[1])/l1*R],p2=[b[0]+(d[0]-b[0])/l2*R,b[1]+(d[1]-b[1])/l2*R];
+    for(let k=0;k<=12;k++){const t=k/12,u=1-t;P0.push([u*u*p1[0]+2*u*t*b[0]+t*t*p2[0],u*u*p1[1]+2*u*t*b[1]+t*t*p2[1]])}}
+  P0.push(q[q.length-1]);
+  let tot=0;for(let i=1;i<P0.length;i++)tot+=D(P0[i-1],P0[i]);const Ls=tot-0.3-e,R=Math.max(0.15,Math.min(0.7,Ls*0.6)),hwAt=s=>s<Ls-R?w/2:s<Ls?w/2+R-Math.sqrt(Math.max(0,R*R-(s-(Ls-R))**2)):w/2+R;
+  const P=[P0[0]],cum=[0];for(let i=1;i<P0.length;i++){const a=P[P.length-1],b=P0[i],l=D(a,b);if(l<0.005)continue;const s0=cum[cum.length-1],n=Math.ceil(l/(s0+l>Ls-R-0.15&&s0<Ls+0.05?0.03:0.3));
+    for(let k=1;k<=n;k++){P.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n]);cum.push(s0+l*k/n)}}
+  const V=[],N=[],I=[],y=0.02,HW=[];
+  P.forEach((p,i)=>{const a=P[Math.max(0,i-1)],b=P[Math.min(P.length-1,i+1)],tl=D(a,b)||1,tx=(b[0]-a[0])/tl,tz=(b[1]-a[1])/tl,hw=hwAt(cum[i]);HW.push(hw);
+    V.push(p[0]-tz*hw,y,p[1]+tx*hw,p[0]+tz*hw,y,p[1]-tx*hw);N.push(0,1,0,0,1,0);if(i){const o=(i-1)*2;I.push(o,o+2,o+1,o+1,o+2,o+3)}});
+  {const o0=I[0]*3,o1=I[1]*3,o2=I[2]*3,ny=(V[o1+2]-V[o0+2])*(V[o2]-V[o0])-(V[o1]-V[o0])*(V[o2+2]-V[o0+2]);if(ny<0)for(let t=0;t<I.length;t+=3){const tmp=I[t+1];I[t+1]=I[t+2];I[t+2]=tmp}}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(V,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(N,3));g.setIndex(I);   // (placed at its own middle: the static-mesh merger tells which piece of the island a mesh belongs to by its position)
+  {let cx=0,cz=0;P.forEach(p=>{cx+=p[0];cz+=p[1]});cx/=P.length;cz/=P.length;g.translate(-cx,0,-cz);mesh(g,col,cx,0,cz,scene,true)}
+  flat(new THREE.CircleGeometry(w/2,32),col,P[0][0],y-0.0005,P[0][1]);
+  const bb=(pp,h)=>({poly:pp,hw:h,minX:Math.min(...pp.map(v=>v[0]))-h,maxX:Math.max(...pp.map(v=>v[0]))+h,minZ:Math.min(...pp.map(v=>v[1]))-h,maxZ:Math.max(...pp.map(v=>v[1]))+h});
+  WALK.push(bb(P,w/2));const tail=P.filter((_,i)=>cum[i]>Ls-R);if(tail.length>1)WALK.push(bb(tail,w/2+R));
+  P.forEach((p,i)=>{if(i%4===0){reserve(p[0],p[1],HW[i]+0.2);RIBR.push({minX:p[0]-HW[i],maxX:p[0]+HW[i],minZ:p[1]-HW[i],maxZ:p[1]+HW[i]})}})}
 function hedge(cx,cz,w,d){blk(w,2.2,d,cx,1.1,cz,0x4a9446);colBox(cx-w/2,cx+w/2,cz-d/2,cz+d/2);
   const L=Math.max(w,d),alongX=w>d,pc=BCTX||pieceOfS(cz).id;for(let s=-L/2+0.6;s<L/2;s+=1.3)INST.bush.push({x:alongX?cx+s:cx+(RS()-0.5)*0.2,y:2.15,z:alongX?cz+(RS()-0.5)*0.2:cz+s,s:0.72+RS()*0.15,sy:0.5,c:pick([0x4a9446,0x55a24c,0x438a40]),ry:RS()*6,pc})}
 // a big roadside sign; ry turns it so its face points back down the road at people walking up
@@ -1446,7 +1472,9 @@ function placeLamp(x,z){[x,z]=offPath(x,z,0.3,0.6);[x,z]=clearOfPanels(x,z);cons
 const BENCHES=[];
 function bench(x,z,face){BENCHES.push({x,z,n:FACES[face],y:heightAt(x,z)});const n=FACES[face],g=sgroup(x,heightAt(x,z),z,Math.atan2(n[0],n[1]));
   [-0.17,0,0.17].forEach(o=>blk(1.8,0.05,0.14,0,0.46,o,0xb5773e,g));[0.68,0.88].forEach(y=>blk(1.8,0.12,0.04,0,y,-0.26,0xb5773e,g));
-  [-0.8,0.8].forEach(a=>{blk(0.07,0.46,0.45,a,0.23,0,0x2b3a42,g);blk(0.07,0.55,0.05,a,0.72,-0.27,0x2b3a42,g)});colCirc(x,z,0.85);reserve(x,z,1.4)}
+  [-0.8,0.8].forEach(a=>{blk(0.07,0.46,0.45,a,0.23,0,0x2b3a42,g);blk(0.07,0.55,0.05,a,0.72,-0.27,0x2b3a42,g)});
+  // (it blocks you only where it stands: its length along its face, from its front edge to its back rest)
+  {const lx=n[0]?0:1,cxo=-n[0]*0.03,czo=-n[1]*0.03,hl=0.95,hd=0.33;if(lx)colBox(x+cxo-hl,x+cxo+hl,z+czo-hd,z+czo+hd);else colBox(x+cxo-hd,x+cxo+hd,z+czo-hl,z+czo+hl)}reserve(x,z,1.4)}
 function flowerBed(x,z,r){mesh(new THREE.CylinderGeometry(r+0.2,r+0.25,0.3,24),0xcfc3a8,x,0.15,z);flat(new THREE.CircleGeometry(r,24),0x6b4a2f,x,0.305,z);
   flowersAt(x,z,Math.round(28*r*r),r*0.9,0.12);colCirc(x,z,r+0.15);reserve(x,z,r+0.7)}
 // (opts.hatch: the roof gets an opening over the middle of the house, covered by a section of the ridge that can lift and slide
@@ -1477,7 +1505,9 @@ function house(x,z,w,d,face,wallCol,roofCol,doorOff,opts){
       const bx=wx+m[0]*0.15,bz=wz+m[1]*0.15;blk(m[0]?0.22:1.05,0.2,m[0]?1.05:0.22,bx,1.22,bz,0x7a4a2c,scene,true);
       for(let k=0;k<7;k++){const o=(k/6-0.5)*0.85,qx=bx+tt[0]*o,qz=bz+tt[1]*o,h=0.1+RS()*0.1;INST.flower.push({x:qx,y:1.32+h,z:qz,s:0.85+RS()*0.4,c:pick(FLOWC),ry:RS()*6,rx:0});INST.stem.push({x:qx,y:1.32,z:qz,s:1,sy:h});if(k%2)INST.bush.push({x:qx,y:1.38,z:qz,s:0.24,sy:0.2,c:pick(LEAFC),ry:RS()*6})}})});
 }
-function cable(points){
+function cable(points){const out=cableGeos(points);
+  if(!out.length)return[];const m=new THREE.Mesh(mergeGeos(out),matCableOff);m.castShadow=m.receiveShadow=true;scene.add(m);return[m]}   // the whole leg is one mesh, lit up in one go
+function cableGeos(points){
   const out=[];
   for(let i=0;i<points.length-1;i++){
     const a=points[i],b=points[i+1],len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<0.01)continue;
@@ -1493,8 +1523,74 @@ function cable(points){
       }
     }
   }
-  if(!out.length)return[];const m=new THREE.Mesh(mergeGeos(out),matCableOff);m.castShadow=m.receiveShadow=true;scene.add(m);return[m];   // the whole leg is one mesh, lit up in one go
-}
+  return out}
+// a cable whose way is across water (or through anything solid, such as a castle wall) runs up a post on the near bank,
+// hangs across to a post on the far side and comes back down there. both posts are as tall as they need to be for the
+// cable, sagging, to clear everything underneath it (a bridge's rails, a castle wall) by a good margin
+let SPANC=null;   // (what a span could pass over: every mesh with its bounding sphere, gathered the first time one is needed)
+function spanCable(points){
+  const S=[];for(let i=0;i<points.length-1;i++){const a=points[i],b=points[i+1],len=Math.hypot(b[0]-a[0],b[1]-a[1]);if(len<1e-6)continue;const n=Math.max(1,Math.ceil(len/0.25));
+    for(let k=S.length?1:0;k<=n;k++)S.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n,i])}
+  if(S.length<3)return cable(points);
+  const wet=(x,z)=>waters.some(w=>w.box?(x>w.minX&&x<w.maxX&&z>w.minZ&&z<w.maxZ):(((x-w.x)/w.rx)**2+((z-w.z)/w.rz)**2<1)),
+    solid=(x,z)=>colliders.some(c=>!c.dyn&&!c.panel&&(c.t==='box'?(x>c.minX&&x<c.maxX&&z>c.minZ&&z<c.maxZ):c.t==='circ'&&(x-c.x)**2+(z-c.z)**2<c.r*c.r)),
+    bad=S.map(([x,z])=>wet(x,z)?2:solid(x,z)?1:0),last=S.length-1;
+  // stretches in the way (joined across gaps under a metre), if they hold water or are at least 3/4 m long
+  let runs=[];for(let i=0;i<=last;i++){if(!bad[i])continue;const L=runs[runs.length-1];if(L&&i-L[1]<=4)L[1]=i;else runs.push([i,i])}
+  runs=runs.filter(([i0,i1])=>{for(let i=i0;i<=i1;i++)if(bad[i]===2)return true;return i1-i0>=3});
+  if(!runs.length)return cable(points);
+  if(!SPANC){SPANC=[];scene.updateMatrixWorld(true);scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||!o.visible||!o.geometry||!o.geometry.attributes.position)return;const m=Array.isArray(o.material)?o.material[0]:o.material;
+    if(!m||m.blending===THREE.AdditiveBlending||m.transparent&&m.opacity<0.3||m===matCableOff||m===matCableOn)return;const g=o.geometry;if(!g.boundingSphere)g.computeBoundingSphere();
+    SPANC.push({o,c:g.boundingSphere.center.clone().applyMatrix4(o.matrixWorld),r:g.boundingSphere.radius*o.matrixWorld.getMaxScaleOnAxis()})})}
+  const rc=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0),hits=[];
+  const groundPts=(i0,i1)=>{const P=[[S[i0][0],S[i0][1]]];for(let sg=S[i0][2]+1;sg<=S[i1][2];sg++)P.push(points[sg]);P.push([S[i1][0],S[i1][1]]);return P};
+  const geos=[],posts=[],brackets=[];let from=0,foot=null;   // (foot: where the cable last came back to the ground)
+  const vcab=(c,y0,y1)=>{const v=new THREE.CylinderGeometry(0.035,0.035,Math.abs(y1-y0)+0.035,6);v.translate(c[0],(y0+y1)/2,c[1]);geos.push(v)};
+  const hcab=(p,q,y)=>{const L=Math.hypot(q[0]-p[0],q[1]-p[1]),g=new THREE.BoxGeometry(0.07,0.07,L+0.07);g.lookAt(new THREE.Vector3(q[0]-p[0],0,q[1]-p[1]));g.translate((p[0]+q[0])/2,y,(p[1]+q[1])/2);geos.push(g)};
+  const topOver=(j0,j1)=>{let t=-9;for(let j=j0;j<=j1;j++){rc.set(new THREE.Vector3(S[j][0],40,S[j][1]),down);rc.far=60;hits.length=0;rc.intersectObjects(SPANC.filter(e=>Math.hypot(e.c.x-S[j][0],e.c.z-S[j][1])<e.r+0.5).map(e=>e.o),false,hits);if(hits.length)t=Math.max(t,hits[0].point.y)}return t};
+  for(const [i0,i1] of runs){if(i1<from)continue;
+    // a wall right at the water's edge (the castle's): the span ends on its face, and the cable is clipped up the face,
+    // over the top and down the other side, rather than on a post tall enough to clear it
+    let ws=-1,we=-1,wallAt=0;
+    if(bad[i1]===1){we=i1;ws=i1;while(ws>i0&&bad[ws-1]===1)ws--;if(ws>i0&&ws-1>=0&&we+1<=last)wallAt=1}
+    else if(bad[i0]===1){ws=i0;we=i0;while(we<i1&&bad[we+1]===1)we++;if(we<i1&&ws-1>=0&&we+1<=last)wallAt=-1}
+    const a=wallAt===-1?Math.max(from,ws-1):Math.max(from,i0-2),b=wallAt===1?Math.min(last,we+1):Math.min(last,i1+2);
+    // (a post that would stand on the cable's own end, behind a panel at the water's edge, steps aside)
+    const side=(i,j)=>{const dx=S[j][0]-S[i][0],dz=S[j][1]-S[i][1],l=Math.hypot(dx,dz)||1;return[S[i][0]-dz/l*0.4,S[i][1]+dx/l*0.4]};
+    // (and one that would stand in something, such as a brazier, moves along the cable, away from the water, or aside)
+    const clear=(x,z)=>!wet(x,z)&&!colliders.some(c=>!c.dyn&&(c.t==='box'?(x>c.minX-0.3&&x<c.maxX+0.3&&z>c.minZ-0.3&&z<c.maxZ+0.3):c.t==='circ'&&(x-c.x)**2+(z-c.z)**2<(c.r+0.3)**2));
+    const spot=(i,step,lim)=>{for(let j=i;j!==lim+step;j+=step){if(j<0||j>last)break;if(clear(S[j][0],S[j][1]))return[S[j][0],S[j][1]]}
+      const k=Math.max(0,Math.min(last,i+step)),dx2=S[k][0]-S[i][0],dz2=S[k][1]-S[i][1],l=Math.hypot(dx2,dz2)||1;
+      for(const o of [0.5,-0.5,0.9,-0.9]){const x=S[i][0]-dz2/l*o,z=S[i][1]+dx2/l*o;if(clear(x,z))return[x,z]}return[S[i][0],S[i][1]]};
+    const PA=wallAt===-1?[S[we+1][0],S[we+1][1]]:a===0?side(0,Math.min(2,last)):spot(a,-1,Math.max(from,a-8)),PB=wallAt===1?[S[ws-1][0],S[ws-1][1]]:b===last?side(last,Math.max(0,last-2)):spot(b,1,Math.min(last,b+8));
+    const dx=PB[0]-PA[0],dz=PB[1]-PA[1],L=Math.hypot(dx,dz)||1,ux=dx/L,uz=dz/L,sag=0.12+0.025*L,gA=heightAt(PA[0],PA[1]),gB=heightAt(PB[0],PB[1]);
+    // the highest thing under the cable, along it and a little to each side
+    const near=SPANC.filter(e=>{const t=Math.max(0,Math.min(1,((e.c.x-PA[0])*dx+(e.c.z-PA[1])*dz)/(L*L))),qx=e.c.x-PA[0]-dx*t,qz=e.c.z-PA[1]-dz*t;return qx*qx+qz*qz<(e.r+0.6)**2}).map(e=>e.o);
+    let Y=Math.max(gA,gB)+2.4;const u0=wallAt===-1?Math.min(0.5,1.2/L):0.04,u1=wallAt===1?Math.max(0.5,1-1.2/L):0.97;   // (over the water only: not the wall's own stonework)
+    for(let u=u0;u<u1;u+=0.25/L)for(const o of [-0.25,0,0.25]){const x=PA[0]+dx*u-uz*o,z=PA[1]+dz*u+ux*o;rc.set(new THREE.Vector3(x,40,z),down);rc.far=60;hits.length=0;
+      rc.intersectObjects(near,false,hits);const top=Math.max(heightAt(x,z),hits.length?hits[0].point.y:-9);Y=Math.max(Y,top+0.45+sag*4*u*(1-u))}
+    Y=Math.min(Y,Math.max(gA,gB)+10);
+    // (on a wall, the cable is fixed to the stone itself, which can stand a little proud of where the wall is solid)
+    const face=(P,dx2,dz2,y)=>{const l=Math.hypot(dx2,dz2)||1,d=new THREE.Vector3(dx2/l,0,dz2/l);rc.set(new THREE.Vector3(P[0]-d.x*1.2,y,P[1]-d.z*1.2),d);rc.far=3;hits.length=0;
+      rc.intersectObjects(SPANC.filter(e=>Math.hypot(e.c.x-P[0],e.c.z-P[1])<e.r+2).map(e=>e.o),false,hits);return hits.length?[hits[0].point.x-d.x*0.06,hits[0].point.z-d.z*0.06]:P};
+    const cA=wallAt===-1?face(PA,-ux,-uz,Y-0.1):[PA[0]+ux*0.11,PA[1]+uz*0.11],cB=wallAt===1?face(PB,ux,uz,Y-0.1):[PB[0]-ux*0.11,PB[1]-uz*0.11];
+    if(wallAt===-1){   // along the ground to the wall, up its far face, over the top, and down this face to the span
+      const G0=[S[ws-1][0],S[ws-1][1]],G=face(G0,S[ws][0]-G0[0],S[ws][1]-G0[1],heightAt(G0[0],G0[1])+1),gG=heightAt(G[0],G[1]),top=topOver(ws,we)+0.05,gp=groundPts(from,ws-1);if(foot)gp[0]=foot;geos.push(...cableGeos(gp));
+      gp.push(G);vcab(G,gG,top);hcab(G,cA,top);vcab(cA,top,Y-0.1);brackets.push([cA,Y-0.1,ux,uz])}
+    else{const gp=groundPts(from,a);if(foot)gp[0]=foot;geos.push(...cableGeos([...gp,cA]));vcab(cA,gA,Y-0.1);posts.push([PA,gA,ux,uz,Y])}
+    const pts=[];for(let j=0;j<=16;j++){const u=j/16;pts.push(new THREE.Vector3(cA[0]+(cB[0]-cA[0])*u,Y-0.1-sag*4*u*(1-u),cA[1]+(cB[1]-cA[1])*u))}
+    geos.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),Math.max(16,Math.round(L*3)),0.035,6,false));
+    if(wallAt===1){   // up this face of the wall from the span, over the top, and down the far face to the ground
+      const G0=[S[we+1][0],S[we+1][1]],G=face(G0,S[we][0]-G0[0],S[we][1]-G0[1],heightAt(G0[0],G0[1])+1),gG=heightAt(G[0],G[1]),top=topOver(ws,we)+0.05;vcab(cB,Y-0.1,top);hcab(cB,G,top);vcab(G,top,gG);brackets.push([cB,Y-0.1,-ux,-uz]);foot=G}
+    else{vcab(cB,gB,Y-0.1);posts.push([PB,gB,-ux,-uz,Y]);foot=cB}
+    from=b;if(b===last)break}
+  {const gp=groundPts(from,last);gp[0]=foot;geos.push(...cableGeos(gp))}
+  const m=new THREE.Mesh(mergeGeos(geos),matCableOff);m.castShadow=m.receiveShadow=true;scene.add(m);
+  // the posts (part of the cable's mesh, so they go with it if the cable is laid again): wooden, capped, with an insulator
+  posts.forEach(([P,g,ux,uz,Y])=>{const h=Y-g;mesh(new _G.Cyl(0.07,0.09,h,10),0x6a4a2e,P[0],g+h/2,P[1],m).castShadow=true;mesh(new _G.Cone(0.11,0.12,10),0x5a3c24,P[0],g+h+0.06,P[1],m);
+    mesh(new _G.Sph(0.05,10,8),0xf4f1ea,P[0]+ux*0.08,g+h-0.1,P[1]+uz*0.08,m);colCirc(P[0],P[1],0.12);reserve(P[0],P[1],0.5)});
+  brackets.forEach(([P,y,ux,uz])=>{blk(0.1,0.1,0.1,P[0]-ux*0.04,y,P[1]-uz*0.04,0x2b3a42,m);mesh(new _G.Sph(0.045,10,8),0xf4f1ea,P[0]+ux*0.03,y,P[1]+uz*0.03,m)});   // (where it is fixed to a wall)
+  return[m]}
 const cbox=(w,h,d,x,y,z)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);return g};
 
 /* ---------- sculpted models: smooth lathe-turned profiles and multi-part bodies ---------- */
@@ -2381,11 +2477,11 @@ function beeGeo(){if(BEEG)return BEEG;const A=[],ad=partAdder(A),Y=0xffcf33,K=0x
   ad(new _G.Sph(0.09,24,18),Y,0,0,-0.02,1,0.95,1.2);[0,1].forEach(k=>ad(new _G.Tor(0.083-k*0.01,0.018,8,28),K,0,0,-0.045-k*0.05,1,0.95,1));ad(new _G.Sph(0.072,24,18),Y,0,0.02,0.1);
   [-1,1].forEach(s=>{ad(new _G.Sph(0.022,14,10),E,s*0.03,0.035,0.158);ad(new _G.Sph(0.007,8,6),W,s*0.034,0.044,0.176);ad(new _G.Sph(0.014,10,8),P,s*0.05,0.005,0.15,1,0.6,0.5);
     ad(new _G.Cyl(0.004,0.004,0.08,6),K,s*0.025,0.11,0.12,1,1,1,0.4,0,-s*0.35);ad(new _G.Sph(0.014,10,8),K,s*0.04,0.15,0.135)});
-  ad(new _G.Tor(0.016,0.0035,6,16,Math.PI),K,0,0,0.165,1,1,1,0,0,Math.PI);return BEEG=partsGeo(A)}
+  return BEEG=partsGeo(A)}   // (no mouth: just eyes, rosy cheeks and feelers)
 const beeBodyMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.55}),beeWingGeo=new _G.Cir(0.07,20);
 // butterflies and bees keep at least three metres from the walls either side of every gate
 const wallClear=z=>{for(let r=0;r<NR;r++)for(let j=0;j<2;j++){const w=j?z0s[r]-AREA:z0s[r],d=z-w;if(Math.abs(d)<3)return w+(d<0?-3:3)}return z};
-function cuteBees(cx,cz,n,sx,sz){for(let i=0;i<n;i++){const g=new THREE.Group();g.scale.setScalar(1.2);scene.add(g);
+function cuteBees(cx,cz,n,sx,sz){for(let i=0;i<n;i++){const g=new THREE.Group();g.scale.setScalar(0.6);scene.add(g);   // (bee-sized: about 20 cm across the wings)
   const body=new THREE.Mesh(beeGeo(),beeBodyMat);body.castShadow=true;g.add(body);
   const wings=[-1,1].map(s=>{const w=new THREE.Group();w.position.set(s*0.03,0.08,0);g.add(w);const m=new THREE.Mesh(beeWingGeo,beeMats.w);m.position.set(s*0.06,0,-0.01);m.scale.set(1,0.6,1);m.rotation.x=-Math.PI/2;w.add(m);return w});
   const ph=RS()*6,a=0.25+RS()*0.2,b=0.17+RS()*0.15,hy=1.5+RS()*0.6,px0=new THREE.Vector3();
@@ -2854,9 +2950,8 @@ function buildCastle(z0){
      [175,256,337].forEach(x=>{c.fillStyle='#ffffff';c.beginPath();c.arc(x,58,11,0,7);c.fill()});});
    const S=new THREE.Shape();S.moveTo(-2.2,2.4);S.lineTo(2.2,2.4);S.lineTo(2.2,-0.2);S.quadraticCurveTo(2.15,-2.0,0,-3.0);S.quadraticCurveTo(-2.15,-2.0,-2.2,-0.2);S.closePath();
    const g=new THREE.ExtrudeGeometry(S,{depth:0.3,bevelEnabled:true,bevelThickness:0.08,bevelSize:0.08,bevelSegments:2});tex.repeat.set(1/4.4,1/6.4);tex.offset.set(0.5,3.4/6.4);tex.wrapS=tex.wrapT=THREE.ClampToEdgeWrapping;
-   const face=new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:0.12,roughness:0.45,metalness:0.2}),rim=new THREE.MeshStandardMaterial({color:lin(0xd4a017),metalness:0.8,roughness:0.3});
+   const face=new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:0.12,roughness:0.45,metalness:0.2}),rim=new THREE.MeshStandardMaterial({color:lin(0xd4a017),metalness:0.3,roughness:0.5});
    const sg=new THREE.Mesh(g,[face,rim]);sg.scale.setScalar(1.55);sg.position.set(-19+8+0.2,13+6.0,z0-57);sg.rotation.y=Math.PI/2;sg.castShadow=true;scene.add(sg);SIGIL.mat=face;SIGIL.mesh=sg;SIGIL.y0=sg.position.y;
-   [-2,2].forEach(dz=>blk(0.4,4.8,0.4,-19+7.3,13+2.4,z0-57+dz,0x7a6a5a));
    const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:LAMPGLOW.map,color:0xffe9a8,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));halo.position.set(-19+8.6,13+5.8,z0-57);halo.scale.set(16,19,1);halo.userData.noCull=1;SIGIL.halo=halo;SIGIL.hy0=halo.position.y}
   birds(0,z0-50,5);
 }
@@ -3230,50 +3325,68 @@ function buildFrostLink(gz,c){snowGround(c,GAP);snowDrifts(gz,gz-GAP);
   const bm=new THREE.Mesh(mergeColored(bulbs),bulbMat);scene.add(bm);const bb=new THREE.Mesh(mergeColored(baubles),baubleMat);bb.castShadow=true;scene.add(bb)}
 
 /* ---------- links between the places: rivers with bridges, and garden walks ---------- */
-// a big kingfisher perched on the bridge handrail, sculpted finely as one bird: a plump orange breast and belly, a deep
-// azure back with a bright cyan stripe down the middle, folded wings built up from rows of feathers (scapulars, spangled
-// coverts, dark flight feathers with pale edges) whose long tips cross over the rump, and a short squared tail. the head
-// has a barred crown, an orange cheek band, a white neck flash and white throat, a long dagger bill, glossy eyes and
-// red feet that grip the rail. it looks about, bobs, and flicks its tail now and then
-const KF=(()=>{const BL=0x1f6fc0,OR=0xe8722a,CY=0x3ad6f0,DK=0x0f3f78,WH=0xf6f1e6,FE=0x0a2a55;
-  const wingRow=(s)=>[{t:'e',c:[s*0.017,0.09,-0.011],r:[0.011,0.019,0.017],rot:[0.3,0,s*0.05],col:BL,k:0.004},{t:'e',c:[s*0.0255,0.077,-0.008],r:[0.011,0.028,0.022],rot:[0.36,0,s*0.07],col:BL,k:0.003},
-    {t:'e',c:[s*0.027,0.059,-0.016],r:[0.0095,0.033,0.02],rot:[0.46,0,s*0.08],col:DK,k:0.0025},{t:'e',c:[s*0.022,0.036,-0.031],r:[0.0075,0.033,0.011],rot:[0.58,0,s*0.12],col:FE,k:0.002},
-    {t:'e',c:[s*0.016,0.022,-0.04],r:[0.006,0.022,0.008],rot:[0.68,0,s*0.12],col:FE,k:0.002}];
-  const body=sculpt([{t:'e',c:[0,0.066,-0.004],r:[0.031,0.049,0.032],rot:[0.32,0,0],col:BL,k:0.012},{t:'e',c:[0,0.058,0.012],r:[0.028,0.037,0.027],rot:[0.3,0,0],col:OR,k:0.016},
-    {t:'e',c:[0,0.036,0.006],r:[0.023,0.024,0.022],col:OR,k:0.014},{t:'e',c:[0,0.1,0.006],r:[0.024,0.021,0.023],col:BL,k:0.018},{t:'e',c:[0,0.029,-0.022],r:[0.015,0.019,0.015],rot:[0.5,0,0],col:BL,k:0.01},
-    ...wingRow(-1),...wingRow(1)],
-    {h:0.00135,blend:0.0025,paint:(c,x,y,z,nx,ny,nz)=>{const ax=Math.abs(x),wing=ax>0.015&&Math.abs(nx)>0.35&&y>0.012;c.set(BL).convertSRGBToLinear();
-      if(!wing)mixC(c,OR,sstep(-0.05,0.3,nz-ny*0.7)*sstep(0.112,0.096,y));
-      if(nz<-0.15&&y>0.03&&y<0.12)mixC(c,CY,sstep(0.008,0.0035,ax));
-      if(wing){const fy=y+z*0.55;
-        if(fy<0.045){mixC(c,FE,0.75);const e=((fy*260)%1+1)%1;if(e<0.12)mixC(c,0x5a8ab8,0.6)}
-        else if(fy<0.07){mixC(c,DK,0.55);const e=((fy*230+ax*90)%1+1)%1;if(e<0.14)mixC(c,0x4aa8d8,0.7)}
-        else{if(hash3(Math.floor(x/0.0028),Math.floor(y/0.0028),Math.floor(z/0.0028))>0.62)mixC(c,CY,0.9);const e=((fy*200+ax*70)%1+1)%1;if(e<0.1)mixC(c,DK,0.5)}}
-      else if(nz<0&&y>0.06)c.multiplyScalar(0.9+0.15*hash3(Math.floor(x/0.002),Math.floor(y/0.002),Math.floor(z/0.002)));
-      if(!wing&&nz>0)c.multiplyScalar(0.94+0.1*hash3(Math.floor(x/0.0025),Math.floor(y/0.0018),Math.floor(z/0.0025)))}});
-  const head=sculpt([{t:'e',c:[0,0,0],r:[0.031,0.029,0.034],col:BL,k:0.01},{t:'e',c:[0,-0.017,-0.012],r:[0.025,0.022,0.024],col:BL,k:0.016},{t:'e',c:[0,0.01,-0.004],r:[0.026,0.022,0.028],col:BL,k:0.01},
-    {t:'e',c:[0,-0.003,0.028],r:[0.015,0.013,0.016],col:BL,k:0.01},{t:'e',c:[0,-0.019,0.018],r:[0.017,0.012,0.016],col:WH,k:0.012}],
-    {h:0.0013,blend:0.0025,paint:(c,x,y,z,nx,ny,nz)=>{const ax=Math.abs(x);c.set(BL).convertSRGBToLinear();
-      mixC(c,WH,sstep(-0.15,-0.5,ny)*sstep(-0.004,0.012,z));
-      if(ax>0.012)mixC(c,OR,sstep(0.0085,0.005,segDist(ax,y,z,[0.016,-0.004,0.03],[0.03,-0.006,-0.01])));
-      if(ax>0.012)mixC(c,DK,sstep(0.004,0.002,segDist(ax,y,z,[0.017,0.003,0.03],[0.03,0.0,-0.008]))*0.6);
-      if(ax>0.015)mixC(c,WH,sstep(0.009,0.006,Math.hypot(ax-0.025,y+0.02,z+0.017)));
-      if(ny>0.25){const b=((z*330+ax*60)%1+1)%1;mixC(c,b<0.45?CY:DK,b<0.45?0.75:0.35)}}});
-  const tail=sculpt([{t:'e',c:[0,-0.022,-0.013],r:[0.0125,0.034,0.005],rot:[0.45,0,0],col:DK,k:0.004},{t:'e',c:[0,0,-0.004],r:[0.012,0.011,0.009],col:BL,k:0.008},
-    ...[-1,1].map(s=>({t:'e',c:[s*0.006,-0.02,-0.012],r:[0.006,0.032,0.0045],rot:[0.45,0,s*0.12],col:DK,k:0.003}))],{h:0.0012,blend:0.003,paint:(c,x,y,z,nx,ny,nz)=>{if(nz<0)mixC(c,BL,0.5);if(Math.abs(x)<0.0012&&nz<0)mixC(c,FE,0.5)}});
-  // the bill: a long straight dagger, lofted along its length. the black upper mandible has a rounded ridge along the
-  // top and flat sides that taper to a sharp point; the orange lower mandible is shallower and a little shorter; they
-  // meet along a clean gape line, with a slit nostril on each side near the base
-  const mand=(w0,h0,len,sgn,yl)=>{const NS=28,NA=14,NF=6,P=[],I=[];for(let i=0;i<=NS;i++){const u=i/NS,w=w0*Math.pow(1-u,0.85)+0.0002,h=h0*Math.pow(1-u,1.05)+0.0002,zz=u*len;
+// a big kingfisher perched on the bridge handrail, modelled smooth and true to the real bird: a plump teardrop body tilted
+// forward as it perches, a rich orange breast and belly blending into an azure back with a brilliant cyan stripe down the
+// middle, and folded wings spangled with pale blue that cross over a short dark tail. its big head has a finely barred
+// crown, an orange band through the face (in front of and behind the eye), a dark moustache, a white throat and a white
+// flash on the side of the neck; a long straight dagger of a bill (black above, orange-red at the base below) set into the
+// face; glossy dark eyes; and short coral-red legs whose three forward toes and one hind toe curl round the rail.
+// it looks about, bobs, and flicks its tail now and then
+const KF=(()=>{const BL=0x1d6fbf,OR=0xe8722a,CY=0x48dcf4,DK=0x0f3f78,WH=0xf8f4ea,FE=0x0b2c55,RD=0xe0452c,CL=0x3a2a22;
+  const paint=(g,fn)=>{g.computeVertexNormals();const p=g.attributes.position,n=g.attributes.normal,C=new Float32Array(p.count*3),c=new THREE.Color();
+    for(let i=0;i<p.count;i++){fn(c,p.getX(i),p.getY(i),p.getZ(i),n.getX(i),n.getY(i),n.getZ(i));C[i*3]=c.r;C[i*3+1]=c.g;C[i*3+2]=c.b}g.setAttribute('color',new THREE.BufferAttribute(C,3));return g};
+  const xf=(g,sx,sy,sz,rx,ry,rz,x,y,z)=>{g.scale(sx,sy,sz);g.applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(rx,ry,rz)));g.translate(x,y,z);return g};
+  const lat=(u,v,k)=>{const a=((u%1)+1)%1-0.5,b=((v%1)+1)%1-0.5;return sstep(k,k*0.55,Math.hypot(a,b))};   // (soft round spots on a grid)
+  // the body: a smooth teardrop, its breast fuller than its back, narrowing to the tail
+  const bg=new _G.Sph(1,56,40),bp=bg.attributes.position;
+  for(let i=0;i<bp.count;i++){const x=bp.getX(i),y=bp.getY(i),z=bp.getZ(i),tl=y<0?1-0.42*y*y:1-0.1*y*y,f=z>0?1+0.16*z:1+0.04*z;bp.setXYZ(i,x*tl,y,z*tl*f)}
+  xf(bg,0.03,0.05,0.031,0.36,0,0,0,0.064,-0.002);
+  paint(bg,(c,x,y,z,nx,ny,nz)=>{const ax=Math.abs(x);c.set(BL).convertSRGBToLinear();
+    mixC(c,OR,sstep(-0.3,0.15,nz-0.5*ny+0.15*(0.06-y)/0.06));                     // the breast and belly, facing forward and down
+    if(nz<-0.15)mixC(c,CY,sstep(0.0085,0.004,ax)*sstep(-0.15,-0.45,nz)*0.95);      // the cyan stripe down the back
+    c.multiplyScalar(0.96+0.05*Math.sin(x*1100+y*900)*Math.sin(y*1000-z*800))});   // (the faintest feathering)
+  // the folded wings: long, flattened, lying along the sides and crossing over the tail; azure coverts spangled with pale
+  // blue, darker secondaries edged lighter, and dark primaries at the tips
+  const wing=s=>{const g=new _G.Sph(1,40,28);xf(g,0.0085,0.037,0.016,0.52,s*0.08,-s*0.06,s*0.0245,0.06,-0.014);
+    return paint(g,(c,x,y,z,nx,ny,nz)=>{const fy=y+z*0.55;c.set(BL).convertSRGBToLinear();
+      if(fy<0.03){c.set(FE).convertSRGBToLinear();if(((fy*300)%1+1)%1<0.1)mixC(c,0x4a7ab0,0.6)}
+      else if(fy<0.05){c.set(DK).convertSRGBToLinear();mixC(c,0x3a8ac8,0.35*sstep(0.03,0.05,fy));if(((fy*260+Math.abs(x)*60)%1+1)%1<0.12)mixC(c,0x5ab0e0,0.6)}
+      else mixC(c,CY,0.85*lat(fy*260,z*260+Math.abs(x)*80,0.32))})};
+  const body=mergeColored([bg,wing(-1),wing(1)]);
+  // the head: big and round, a little flat on the crown, the face drawn forward into the bill
+  const hg=new _G.Sph(1,56,40),hp=hg.attributes.position;for(let i=0;i<hp.count;i++){const x=hp.getX(i),y=hp.getY(i),z=hp.getZ(i);hp.setXYZ(i,x,y*(y>0?0.92:1),z*(z>0?1+0.12*(1-Math.abs(y)):1))}
+  xf(hg,0.027,0.026,0.029,0,0,0,0,0,0);
+  const head=paint(hg,(c,x,y,z,nx,ny,nz)=>{const ax=Math.abs(x);c.set(BL).convertSRGBToLinear();
+    if(ny>0.15){const b=((z*320+ax*50)%1+1)%1;mixC(c,CY,sstep(0.15,0.45,ny)*(b<0.38?0.55:0))}                                   // the barred crown
+    mixC(c,OR,sstep(0.0072,0.0045,segDist(ax,y,z,[0.008,-0.0045,0.031],[0.026,-0.004,-0.012]))*sstep(0.006,0.012,ax));          // the orange band through the face
+    mixC(c,DK,sstep(0.0032,0.0016,segDist(ax,y,z,[0.008,-0.0125,0.028],[0.022,-0.0145,0.0]))*0.85);                              // the dark moustache
+    mixC(c,WH,sstep(-0.3,-0.6,ny)*sstep(-0.006,0.012,z));                                                                         // the white throat
+    mixC(c,WH,sstep(0.0075,0.0045,Math.hypot(ax-0.022,y+0.008,z+0.016)))});                                                       // the white flash on the neck
+  // the tail: short and dark, a little wedge, brighter blue above
+  const tg=new _G.Sph(1,32,24);xf(tg,0.011,0.03,0.0042,0.45,0,0,0,-0.022,-0.013);
+  const tail=paint(tg,(c,x,y,z,nx,ny,nz)=>{c.set(DK).convertSRGBToLinear();if(nz<0)mixC(c,BL,0.55);if(Math.abs(x)<0.0012&&nz<0)mixC(c,FE,0.5)});
+  // the bill: a long straight dagger, lofted along its length: the upper mandible black with a rounded ridge, the lower a
+  // little shallower and shorter, orange-red at the base fading darker to the tip; they meet along a clean gape line
+  const mand=(w0,h0,len,sgn,yl)=>{const NS=30,NA=14,NF=6,P=[],I=[];for(let i=0;i<=NS;i++){const u=i/NS,w=w0*Math.pow(1-u,0.85)+0.0002,h=h0*Math.pow(1-u,1.05)+0.0002,zz=u*len;
       for(let j=0;j<=NA;j++){const a=Math.PI*j/NA,sa=Math.sin(a);P.push(w*Math.cos(a),yl+sgn*h*Math.pow(sa,0.75)*(1-0.12*Math.pow(Math.abs(Math.cos(a)),3)),zz)}
       for(let k=1;k<NF;k++)P.push(-w+2*w*k/NF,yl,zz)}
     const R=NA+NF;for(let i=0;i<NS;i++)for(let j=0;j<R;j++){const a=i*R+j,b=i*R+(j+1)%R,c=a+R,d=b+R;if(sgn>0)I.push(a,b,c,b,d,c);else I.push(a,c,b,b,c,d)}
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);g.computeVertexNormals();return g};
-  const mk=(sc)=>{const P=[],add=partAdder(P),S=r=>new _G.Sph(r,16,10);add(mand(0.0082,0.0115,0.068*sc,1,-0.009),0x15171a,0,0,0.027);add(mand(0.0074,0.0058,0.064*sc,-1,-0.0092),0xd8552a,0,0,0.027);
-    [-1,1].forEach(s=>add(S(1),0x050505,s*0.0052,-0.004,0.027+0.016*sc,0.0008,0.0012,0.0035));return partsGeo(P)};
-  const E=[],H=[];[-1,1].forEach(s=>{partAdder(E)(new _G.Sph(0.0063,28,20),0,s*0.0215,0.004,0.022);partAdder(H)(new _G.Sph(0.0019,12,8),0,s*0.025,0.0065,0.027)});
-  const mat=triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.42,clearcoat:0.55,clearcoatRoughness:0.3,sheen:new THREE.Color(0.25,0.4,0.6)}),featherTex,90,0,true);
-  return{body,head,tail,bill:mk(1),billS:mk(0.55),eyes:partsGeo(E),hi:partsGeo(H),mat,matB:triPatch(new THREE.MeshPhysicalMaterial({vertexColors:true,color:new THREE.Color(0.86,0.9,0.9),roughness:0.5,clearcoat:0.3,clearcoatRoughness:0.4,sheen:new THREE.Color(0.4,0.45,0.5)}),featherTex,90,0,true)}})();
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setIndex(I);return g};
+  const mk=sc=>{const L1=0.045*sc,L2=0.042*sc,up=mand(0.0072,0.0088,L1,1,-0.0055),lo=mand(0.0066,0.0055,L2,-1,-0.0057);up.translate(0,0,0.024);lo.translate(0,0,0.024);
+    paint(up,c=>c.set(0x15171a).convertSRGBToLinear());paint(lo,(c,x,y,z)=>{c.set(0xd8552a).convertSRGBToLinear();mixC(c,0x2a2420,sstep(0.024+L2*0.3,0.024+L2*0.85,z))});
+    const n=[];[-1,1].forEach(s=>{const g=new _G.Sph(1,10,6);xf(g,0.0008,0.0011,0.0032,0,0,0,s*0.0048,-0.0028,0.027+0.012*sc);n.push(paint(g,c=>c.set(0x050505).convertSRGBToLinear()))});   // (nostril slits)
+    return mergeColored([up,lo,...n])};
+  const E=[],H=[];[-1,1].forEach(s=>{partAdder(E)(new _G.Sph(0.0056,28,20),0,s*0.0205,0.0025,0.0178);partAdder(H)(new _G.Sph(0.0016,12,8),0,s*0.0246,0.006,0.0205)});
+  // the feet: short legs and slender toes, three forward and one back, curling round the rail (it runs across the bird,
+  // centred 0 under its feet) with dark claws at the tips
+  const F=[],Rr=0.0207;[-1,1].forEach(s=>{const lx=s*0.0095,leg=new THREE.CylinderGeometry(0.0027,0.0031,0.012,12);xf(leg,1,1,1,-0.25,0,0,lx,0.0258,0.004);F.push(paint(leg,c=>c.set(RD).convertSRGBToLinear()));
+    const toe=(x0,dx,t0,t1)=>{const pts=[];for(let k=0;k<=14;k++){const t=t0+(t1-t0)*k/14,r=Rr+0.0004*k/14;pts.push(new THREE.Vector3(x0+dx*k/14,r*Math.sin(t),r*Math.cos(t)))}
+      const cv=new THREE.CatmullRomCurve3(pts),tb=new THREE.TubeGeometry(cv,18,0.0021,8,false);F.push(paint(tb,c=>c.set(RD).convertSRGBToLinear()));
+      const tip=pts[14],tn=cv.getTangentAt(1),cl=new THREE.ConeGeometry(0.0016,0.0042,8);cl.translate(0,0.0021,0);cl.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),tn)));cl.translate(tip.x,tip.y,tip.z);F.push(paint(cl,c=>c.set(CL).convertSRGBToLinear()))};
+    [-0.004,0,0.004].forEach(o=>toe(lx+o*0.3,o,1.5,0.62));toe(lx,0,1.65,2.35)});   // (short toes: just over the top of the rail)
+  const mat=new THREE.MeshPhysicalMaterial({vertexColors:true,roughness:0.48,clearcoat:0.3,clearcoatRoughness:0.35,sheen:new THREE.Color(0.22,0.35,0.5)});
+  return{body,head,tail,bill:mk(1),billS:mk(0.55),eyes:partsGeo(E),hi:partsGeo(H),feet:mergeColored(F),mat,footMat:new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.45}),
+    matB:new THREE.MeshPhysicalMaterial({vertexColors:true,color:new THREE.Color(0.86,0.9,0.9),roughness:0.55,clearcoat:0.2,clearcoatRoughness:0.4,sheen:new THREE.Color(0.4,0.45,0.5)})}})();
 // baby: a fledgling, smaller, fluffier and a touch duller, with a short stubby bill; it begs now and then with a little
 // flutter and its bill open
 function kingfisher(x,y,z,ry,baby){const g=new THREE.Group();g.position.set(x,y,z);g.rotation.y=ry;scene.add(g);const b=new THREE.Group();b.scale.setScalar(baby?3.2:5.2);g.add(b);const BM=baby?KF.matB:KF.mat;
@@ -3281,9 +3394,8 @@ function kingfisher(x,y,z,ry,baby){const g=new THREE.Group();g.position.set(x,y,
   const body=new THREE.Group();b.add(body);add(KF.body,BM,body);if(baby)body.scale.set(1.08,0.95,1.05);
   const tail=new THREE.Group();tail.position.set(0,0.03,-0.032);body.add(tail);add(KF.tail,BM,tail);if(baby)tail.scale.setScalar(0.7);
   const head=new THREE.Group();head.position.set(0,0.128,0.012);b.add(head);add(KF.head,BM,head);add(baby?KF.billS:KF.bill,glossMat,head);add(KF.eyes,eyeMat,head);add(KF.hi,hiMat,head);if(baby){head.scale.setScalar(1.15);head.position.y=0.122}
-  // feet: red toes wrapping the rail (the rail runs across the bird's body)
-  const RD=new THREE.MeshStandardMaterial({color:lin(0xe0452c),roughness:0.45});
-  [-1,1].forEach(s=>{const lg=new THREE.Mesh(new _G.Cyl(0.0035,0.003,0.02,12),RD);lg.position.set(s*0.011,0.026,0.004);b.add(lg);for(let k=-1;k<=1;k++){const t=new THREE.Mesh(new _G.Tor(0.019,0.0032,10,28,Math.PI*1.1),RD);t.position.set(s*0.011+k*0.004,0,0);t.rotation.set(0,Math.PI/2,-0.05);b.add(t)}});
+  // feet: short legs, three toes forward and one back, curled round the rail (which runs across the bird's body)
+  add(KF.feet,KF.footMat,b);
   if(!baby)SNDS.push({k:'tweet',x,z,t:RS()*6});
   let nextLook=2,yawT=0,bob=0,beg=0,fl=0,fn=1+Math.random()*3;anims.push((t,dt)=>{if((x-camera.position.x)**2+(z-camera.position.z)**2>3600)return;nextLook-=dt;if(nextLook<0){nextLook=1.5+Math.random()*3;yawT=(Math.random()-0.5)*1.8;if(Math.random()<0.4)bob=1;if(baby&&Math.random()<0.35)beg=1}
     head.rotation.y+=(yawT-head.rotation.y)*Math.min(1,dt*6);bob=Math.max(0,bob-dt*2.5);beg=Math.max(0,beg-dt*0.8);const bb=Math.sin(bob*Math.PI*2)*0.012;head.position.y=(baby?0.122:0.128)+bb;body.position.y=bb*0.5;
@@ -3468,16 +3580,22 @@ function buildGardenLink(gz,o){const c=gz-GAP/2;
     for(let z=gz-4;z>gz-GAP+4;z-=2.4){last=z;mesh(new THREE.TorusGeometry(1.9,0.06,10,48,Math.PI),0xfffaf0,0,1.1,z);[-1.9,1.9].forEach(x=>{blk(0.12,1.15,0.12,x,0.57,z,0xfffaf0);colCirc(x,z,0.12)});
       // the roses grow on the arch itself: each sits against the tube (posts and curve alike), never out in the air beside it
       ARCHZ.push(z);const RC=ROSEC[Math.round((gz-4-z)/2.4)%ROSEC.length];
-      for(let f=0;f<27;f++){const u=0.05+RS()*0.9,th=RS()*Math.PI*2,rr=0.07;let x,y,zz;
-        if(u<0.2||u>0.8){const t=u<0.2?u/0.2:(1-u)/0.2;x=(u<0.2?-1.9:1.9)+Math.cos(th)*rr;y=0.3+t*0.8;zz=z+Math.sin(th)*rr}
-        else{const a=Math.PI*(1-(u-0.2)/0.6);x=Math.cos(a)*(1.9+Math.cos(th)*rr);y=1.1+Math.sin(a)*(1.9+Math.cos(th)*rr);zz=z+Math.sin(th)*rr}
-        INST.flower.push({x,y,z:zz,s:1.25+RS()*0.3,c:pick(RC),ry:RS()*6,rx:(RS()-0.5)*2,k:'rose',arch:1})}}
+      // (each faces straight out from the tube, its base just clear of the tube and the vines round it, spaced so that
+      // neighbouring roses on the same side never overlap)
+      for(let f=0;f<20;f++){const u=0.04+0.92*(f+0.5)/20+(RS()-0.5)*0.012,th=(f%2?Math.PI/2:-Math.PI/2)+(RS()-0.5)*1.3,rb=0.1,D=new THREE.Vector3();let x,y,zz;
+        if(u<0.2||u>0.8){const t=u<0.2?u/0.2:(1-u)/0.2;D.set(Math.cos(th),0,Math.sin(th));x=(u<0.2?-1.9:1.9)+D.x*rb;y=0.3+t*0.8;zz=z+D.z*rb}
+        else{const a=Math.PI*(1-(u-0.2)/0.6);D.set(Math.cos(a)*Math.cos(th),Math.sin(a)*Math.cos(th),Math.sin(th));x=Math.cos(a)*1.9+D.x*rb;y=1.1+Math.sin(a)*1.9+D.y*rb;zz=z+D.z*rb}
+        const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),D).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),RS()*6));
+        INST.flower.push({x,y,z:zz,s:1.15+RS()*0.2,c:pick(RC),q,k:'rose',arch:1})}}
     // thin climbing-rose vines twine up each post and round the arch, with small leaves along them (the roses stay in full view)
     {const parts=[],arches=[...new Set(ARCHZ)],lf=new THREE.Shape();lf.moveTo(0,0);lf.quadraticCurveTo(0.035,0.03,0,0.085);lf.quadraticCurveTo(-0.035,0.03,0,0);
-     arches.forEach(z=>[0,1].forEach(w=>{const pts=[];for(let i=0;i<=90;i++){const u=i/90;let cx,cy,rx,ry;if(u<0.2){const t=u/0.2;cx=-1.9;cy=t*1.1;rx=1;ry=0}else if(u>0.8){const t=(u-0.8)/0.2;cx=1.9;cy=1.1-t*1.1;rx=1;ry=0}
-        else{const a=Math.PI*(1-(u-0.2)/0.6);cx=Math.cos(a)*1.9;cy=1.1+Math.sin(a)*1.9;rx=Math.cos(a);ry=Math.sin(a)}const ph=u*Math.PI*14+w*Math.PI,rr=0.085;pts.push([cx+rx*Math.cos(ph)*rr,cy+ry*Math.cos(ph)*rr,z+Math.sin(ph)*rr])}
-       parts.push(colGeo(tube(pts,0.012,180),0x4a5a28));const crv=new THREE.CatmullRomCurve3(pts.map(q=>new THREE.Vector3(...q))),v=new THREE.Vector3(),tg=new THREE.Vector3();
-       for(let i=0;i<60;i++){const u=(i+0.5)/60;crv.getPointAt(u,v);crv.getTangentAt(u,tg);const g=new THREE.ShapeGeometry(lf,2);g.rotateZ((i%2?1:-1)*1.0);g.rotateY(Math.atan2(tg.x,tg.z)+(i%2?0.5:-0.5));g.translate(v.x,v.y,v.z);parts.push(colGeo(g,i%3?0x3f7f36:0x5a9a46))}}));
+     arches.forEach(z=>[0,1].forEach(w=>{const pts=[],ax=[];for(let i=0;i<=90;i++){const u=i/90;let cx,cy,rx,ry;if(u<0.2){const t=u/0.2;cx=-1.9;cy=t*1.1;rx=1;ry=0}else if(u>0.8){const t=(u-0.8)/0.2;cx=1.9;cy=1.1-t*1.1;rx=1;ry=0}
+        else{const a=Math.PI*(1-(u-0.2)/0.6);cx=Math.cos(a)*1.9;cy=1.1+Math.sin(a)*1.9;rx=Math.cos(a);ry=Math.sin(a)}const ph=u*Math.PI*14+w*Math.PI,rr=0.085;pts.push([cx+rx*Math.cos(ph)*rr,cy+ry*Math.cos(ph)*rr,z+Math.sin(ph)*rr]);ax.push([cx,cy,z])}
+       parts.push(colGeo(tube(pts,0.012,180),0x4a5a28));
+       // (each leaf grows from the vine out and away from the arch's tube, leaning along the vine one way or the other)
+       const Y=new THREE.Vector3(0,1,0),v=new THREE.Vector3(),o=new THREE.Vector3(),tg=new THREE.Vector3(),d=new THREE.Vector3();
+       for(let i=0;i<60;i++){const j=Math.min(89,Math.floor((i+0.5)/60*90)),P=pts[j],A=ax[j],N=pts[j+1];v.set(...P);o.set(P[0]-A[0],P[1]-A[1],P[2]-A[2]).normalize();tg.set(N[0]-P[0],N[1]-P[1],N[2]-P[2]).normalize();
+         d.copy(o).multiplyScalar(0.8).addScaledVector(tg,i%2?0.55:-0.55).normalize();const g=new THREE.ShapeGeometry(lf,2);g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(Y,d)));g.translate(v.x,v.y,v.z);parts.push(colGeo(g,i%3?0x3f7f36:0x5a9a46))}}));
      const vm=new THREE.Mesh(mergeColored(parts),plantMat);vm.castShadow=true;scene.add(vm);ARCHZ.length=0}
     rod([0,3.0,gz-4],[0,3.0,last],0.04,0xfffaf0);[-1,1].forEach(s=>rod([s*1.34,2.44,gz-4],[s*1.34,2.44,last],0.035,0xfffaf0));
     [-1,1].forEach(s=>{for(let z=gz-3;z>gz-GAP+2;z-=4){mesh(new THREE.CylinderGeometry(0.07,0.09,0.9,10),0x7a5236,s*5.2,0.45,z);INST.bush.push({x:s*5.2,y:1.25,z,s:0.85,sy:0.85,c:0x2f6a44,ry:RS()*6});INST.blob.push({x:s*5.2,y:0.036,z,s:1.2,ry:0});colCirc(s*5.2,z,0.35);reserve(s*5.2,z,1)}
@@ -3703,19 +3821,24 @@ function gateTheme(z,th,face){   // builds the gate's leaves and dressing at z; 
         for(let k=0;k<C.count;k++)C.setXYZ(k,C.getX(k)*rcol.r*1.25,C.getY(k)*rcol.g*1.25,C.getZ(k)*rcol.b*1.25);return g};
     leaves=[-1,1].map(sd=>leaf(sd,(h,dx)=>{frame(h,dx,WH);hinges(h,dx,0x3a3f44);ring(h,dx,0xc8a24a);
       for(let k=-7;k<=7;k++)[1,-1].forEach(dir=>{const sl=blk(0.03,2.6,0.025,dx(L/2+k*0.2),1.2,0,WH,h);sl.rotation.z=dir*0.78;sl.scale.y=Math.max(0.15,1-Math.abs(k)*0.13)});
-      const P=[],vine=[];for(let q=0;q<=40;q++){const t=q/40,v=0.12+t*(L-0.24),y=0.35+1.7*t+0.22*Math.sin(t*Math.PI*3);vine.push([dx(v),y,0.05])}P.push(colGeo(tube(vine,0.011,80,5),0x4a5a28));
+      const P=[],vine=[];for(let q=0;q<=40;q++){const t=q/40,v=0.12+t*(L-0.24),y=0.35+1.7*t+0.22*Math.sin(t*Math.PI*3);vine.push([dx(v),y,0.075])}   // (in front of the frame, not through it)P.push(colGeo(tube(vine,0.011,80,5),0x4a5a28));
       for(let k=0;k<26;k++){const t=(k+0.5)/26,v=0.12+t*(L-0.24),y=0.35+1.7*t+0.22*Math.sin(t*Math.PI*3)+(rg()-0.5)*0.18;
-        if(k%2===0){const lg=leafGeo(0.09,0.045,{seg:4,sw:2,base:0x2f6a2a,tip:0x5f9a46});lg.rotateZ((rg()-0.5)*2.6);lg.rotateX(-1.2);lg.translate(dx(v)+(rg()-0.5)*0.1,y,0.06);P.push(lg)}
-        else P.push(roseCopy(RC[k%RC.length],0.85+rg()*0.35,dx(v),y,0.07,1.45,rg()*6))}
-      [[0.35,0.65],[0.8,1.05],[1.2,0.55]].forEach(([v,y],k)=>P.push(roseCopy(RC[(k+2)%RC.length],1.1,dx(v),y,0.07,1.45,k)));
+        if(k%2===0){const lg=leafGeo(0.09,0.045,{seg:4,sw:2,base:0x2f6a2a,tip:0x5f9a46});lg.rotateZ((rg()-0.5)*2.6);lg.rotateX(-1.2);lg.translate(dx(v)+(rg()-0.5)*0.1,y,0.085);P.push(lg)}
+        else P.push(roseCopy(RC[k%RC.length],0.85+rg()*0.35,dx(v),y,0.09,1.45,rg()*6))}
+      [[0.35,0.65],[0.8,1.05],[1.2,0.55]].forEach(([v,y],k)=>P.push(roseCopy(RC[(k+2)%RC.length],1.1,dx(v),y,0.09,1.45,k)));
       const m=new THREE.Mesh(mergeColored(P),plantMat);m.castShadow=true;h.add(m)}));
     // vines and roses on the pillars and the beam (static, so they use the same roses as the rose arches)
-    {const P=[];[-1,1].forEach(s=>{for(const side of [1,-1]){const pts=[];for(let q=0;q<=60;q++){const t=q/60,a=t*Math.PI*6+(side>0?0:Math.PI);pts.push([s*1.9+Math.cos(a)*0.42,0.2+t*3.3,z+Math.sin(a)*0.66])}P.push(colGeo(tube(pts,0.016,120,5),0x4a5a28))}
-       for(let k=0;k<18;k++){const t=(k+0.5)/18,a=t*Math.PI*6+(k%2?Math.PI:0),x=s*1.9+Math.cos(a)*0.44,y=0.2+t*3.3,zz=z+Math.sin(a)*0.68;
-         if(k%3===2){const lg=leafGeo(0.11,0.05,{seg:4,sw:2,base:0x2f6a2a,tip:0x5f9a46});lg.rotateY(a);lg.translate(x,y,zz);P.push(lg)}
-         else INST.flower.push({x,y,z:zz,s:1.0+rg()*0.35,c:RC[(k+(s>0?3:0))%RC.length],ry:-a+Math.PI/2,rx:1.4,k:'rose'})}});
-     for(const zz of [z+0.66,z-0.66]){const pts=[];for(let q=0;q<=40;q++){const t=q/40;pts.push([-2.35+4.7*t,3.55-0.12*Math.sin(t*Math.PI)+0.05*Math.sin(t*20),zz])}P.push(colGeo(tube(pts,0.016,80,5),0x4a5a28));
-       for(let k=0;k<20;k++){const t=(k+0.5)/20,x=-2.3+4.6*t;INST.flower.push({x,y:3.5-0.12*Math.sin(t*Math.PI)+(k%2?0.08:-0.04),z:zz+(zz>z?0.04:-0.04),s:1.05+rg()*0.3,c:RC[k%RC.length],ry:rg()*6,rx:zz>z?1.35:-1.35,k:'rose'})}}
+    // (a pillar is 0.7 m by 1.2 m: its vines follow a rounded square just outside its sides, between its base and its cap,
+    // and every rose faces straight out from the side it grows on; the garlands hang just clear of the caps and the beam)
+    {const P=[],se=(a,o)=>{const c=Math.cos(a),sn=Math.sin(a),e=1/8;return[(0.42+o)*Math.sign(c)*Math.pow(Math.abs(c),e),(0.67+o)*Math.sign(sn)*Math.pow(Math.abs(sn),e)]},
+       nrm=a=>{const c=Math.cos(a),sn=Math.sin(a),e=1/8,eps=0.002,[x0,z0]=se(a-eps,0),[x1,z1]=se(a+eps,0),tx=x1-x0,tz=z1-z0,l=Math.hypot(tx,tz)||1;return[tz/l,-tx/l]};
+     [-1,1].forEach(s=>{for(const side of [1,-1]){const pts=[];for(let q=0;q<=120;q++){const t=q/120,a=t*Math.PI*6+(side>0?0:Math.PI),[ox,oz]=se(a,0);pts.push([s*1.9+ox,0.38+t*2.9,z+oz])}P.push(colGeo(tube(pts,0.016,240,5),0x4a5a28))}
+       for(let k=0;k<18;k++){const t=(k+0.5)/18,a=t*Math.PI*6+(k%2?Math.PI:0),[ox,oz]=se(a,0.07),[nx,nz]=nrm(a),x=s*1.9+ox,y=0.38+t*2.9,zz=z+oz;
+         if(k%3===2){const lg=leafGeo(0.11,0.05,{seg:4,sw:2,base:0x2f6a2a,tip:0x5f9a46});lg.rotateY(Math.atan2(nx,nz));lg.translate(x,y,zz);P.push(lg)}
+         else{const q=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),new THREE.Vector3(nx,0,nz)).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),rg()*6));
+           INST.flower.push({x,y,z:zz,s:0.9+rg()*0.25,c:RC[(k+(s>0?3:0))%RC.length],q,k:'rose'})}}});
+     for(const zz of [z+0.75,z-0.75]){const pts=[];for(let q=0;q<=40;q++){const t=q/40;pts.push([-2.35+4.7*t,3.6-0.12*Math.sin(t*Math.PI)+0.05*Math.sin(t*20),zz])}P.push(colGeo(tube(pts,0.016,80,5),0x4a5a28));
+       for(let k=0;k<14;k++){const t=(k+0.5)/14,x=-2.3+4.6*t;INST.flower.push({x,y:3.58-0.12*Math.sin(t*Math.PI)+(k%2?0.06:-0.03),z:zz+(zz>z?0.03:-0.03),s:0.95+rg()*0.25,c:RC[k%RC.length],ry:rg()*6,rx:zz>z?Math.PI/2:-Math.PI/2,k:'rose'})}}
      const vm=new THREE.Mesh(mergeColored(P),plantMat);vm.castShadow=true;scene.add(vm)}
     [-1,1].forEach(s=>{const tx=s*2.85,tz=z+face*0.95;st(lathe([[0.3,0],[0.36,0.05],[0.4,0.45],[0.43,0.5],[0,0.48]],28),0xf2ece0,tx,0,tz-z);st(new _G.Cir(0.39,24),0x5a3e28,tx,0.47,tz-z).rotation.x=-Math.PI/2;
       INST.bush.push({x:tx,y:0.85,z:tz,s:0.55,sy:0.5,c:0x2f6a44,ry:rg()*6});for(let k=0;k<7;k++){const a=k*0.9+s;INST.flower.push({x:tx+Math.cos(a)*0.28,y:1.0+(k%3)*0.08,z:tz+Math.sin(a)*0.28,s:1.1,c:RC[(k+1)%RC.length],ry:rg()*6,rx:(rg()-0.5)*0.8,k:'rose'})}})}
@@ -3968,7 +4091,8 @@ function innerWall(r){const id=AREA_OF_ROOM[r],th=WALLTHEME[ROOMS[r].key]||'hedg
    if(id==='times'&&TIMESHOUSE.hatch){best={s:0,x:TIMESHOUSE.x,z:TIMESHOUSE.z,ux:1,uz:0,inHouse:1}}   // (inside the house behind the last panel: see towerExtras)
    // Odd and Even Pond's stands on a platform in the middle of the Even Pond. its cable comes to a post on the bank, on the
    // last panel's side, and runs from the top of the post out over the water to the tower's foot
-   if(id==='oddeven'&&EVENPOND.deck){const E=EVENPOND,dx=p.pos.x-E.x,dz=p.pos.z-E.z,l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l,t=1/Math.hypot(ux/(E.rx+1.0),uz/(E.rz+1.0));
+   // (turned 50 degrees off the line to the panel, so neither the post nor the cable stands between the panel and the tower)
+   if(id==='oddeven'&&EVENPOND.deck){const E=EVENPOND,dx=p.pos.x-E.x,dz=p.pos.z-E.z,l=Math.hypot(dx,dz)||1,c5=Math.cos(-0.87),s5=Math.sin(-0.87),ux=(dx*c5-dz*s5)/l,uz=(dx*s5+dz*c5)/l,t=1/Math.hypot(ux/(E.rx+1.0),uz/(E.rz+1.0));
      best={s:0,x:E.x,z:E.z,ux,uz,deck:E.deck,shore:[E.x+ux*t,E.z+uz*t]};
      for(const k of ['reed','cattail'])for(let i=INST[k].length-1;i>=0;i--){const o=INST[k][i];if(Math.hypot(o.x-best.shore[0],o.z-best.shore[1])<0.7)INST[k].splice(i,1)}
      colCirc(best.shore[0],best.shore[1],0.14);reserve(best.shore[0],best.shore[1],0.6)}
@@ -4025,7 +4149,8 @@ const SIDEP=[],PPLOG=[];
     const PW2=0.8,ok=(x,z)=>{if(inWater(x,z,0.3))return false;for(const c of near){if(c.t==='box'?(x>c.minX-0.3&&x<c.maxX+0.3&&z>c.minZ-0.3&&z<c.maxZ+0.3):((x-c.x)**2+(z-c.z)**2<(c.r+0.3)**2))return false}return true};
     const march=(ax,az,dx,dz,max)=>straightRun(ax,az,dx,dz,max,near);
     room.list.forEach(p=>{const nx=p.normal.x,nz=p.normal.z,sx=p.pos.x+nx*1.9,sz=p.pos.z+nz*1.9;if(onWalk(sx,sz,0.4)||heightAt(sx,sz)>0.05)return;
-      const ax=p.pos.x+nx*0.55,az=p.pos.z+nz*0.55,lay=segs=>{segs.forEach(([a,b])=>{paths([[a,b]],1.6,0,col);SIDEP.push(PATHR[PATHR.length-1])})};
+      const ax=p.pos.x+nx*0.55,az=p.pos.z+nz*0.55,lay=segs=>{sidePath([segs[0][0],...segs.map(sg=>sg[1])],1.6,col);
+        segs.forEach(([a,b])=>{const w=1.6,dx=Math.abs(b[0]-a[0]),dz=Math.abs(b[1]-a[1]),W2=dx>0.01?dx+w:w,D2=dz>0.01?dz+w:w,cx=(a[0]+b[0])/2,cz=(a[1]+b[1])/2,rr={minX:cx-W2/2,maxX:cx+W2/2,minZ:cz-D2/2,maxZ:cz+D2/2,col,y:0,side:1};PATHR.push(rr);SIDEP.push(rr)})};
       let best=null;{const t=march(ax,az,nx,nz,25);if(t>0)best={len:t,segs:[[[ax,az],[ax+nx*t,az+nz*t]]]}}
       for(let d=1.4;d<=12&&(!best||d<best.len);d+=0.5){
         let clear=true;for(let t=0;t<=d;t+=0.25)for(let o=-PW2;o<=PW2+1e-6;o+=PW2/2)if(!ok(ax+nx*t-nz*o,az+nz*t+nx*o)){clear=false;break}if(!clear)break;
@@ -4205,11 +4330,11 @@ function layCables(){
       if(lv===3&&q>0&&legCells[q-1]){legCells[q-1].forEach(k=>used[k]=0);const [c2,l2]=tryLeg(ea,eb,2);let ok=false;
         if(c2){c2.forEach(k=>used[k]=1);const [c1,l1]=tryLeg(E[q-1],E[q],2);
           if(c1){c1.forEach(k=>used[k]=1);legs[q-1].forEach(m=>m.parent&&m.parent.remove(m));const p1=toPts(c1,[E[q-1][0],E[q-1][1]],[E[q][0],E[q][1]]);
-            legs[q-1]=cable(p1);legPts[q-1]=p1;legLv[q-1]=l1;legCells[q-1]=c1;cells=c2;lv=l2;ok=true}
+            legs[q-1]=spanCable(p1);legPts[q-1]=p1;legLv[q-1]=l1;legCells[q-1]=c1;cells=c2;lv=l2;ok=true}
           else c2.forEach(k=>used[k]=0)}
         if(!ok)legCells[q-1].forEach(k=>used[k]=1)}
       let pts;if(cells){cells.forEach(k=>used[k]=1);pts=toPts(cells,[ea[0],ea[1]],[eb[0],eb[1]])}else pts=route([ea[0],ea[1]],[eb[0],eb[1]],'xz');
-      legs.push(cable(pts));legPts.push(pts);legLv.push(lv);legCells.push(cells);
+      legs.push(spanCable(pts));legPts.push(pts);legLv.push(lv);legCells.push(cells);
       // keep scattered bushes and trees off the cable
       for(let s=0;s<pts.length-1;s++){const A=pts[s],B=pts[s+1],len=Math.hypot(B[0]-A[0],B[1]-A[1]);for(let u=0;u<=len;u+=1)reserve(A[0]+(B[0]-A[0])*u/(len||1),A[1]+(B[1]-A[1])*u/(len||1),0.3)}}
     entryCables[r]=[];L.forEach((p,i)=>{p.cables=legs[i];p.cablePts=legPts[i]});room.entryPts=null;room.legPts=[null,...legPts];room.legLv=[0,...legLv];   // (leg i leads into panel i; none into the first)
@@ -4670,7 +4795,7 @@ function buildLOD(levels,list,cs,tag){if(!list.length)return;cs=cs||40;
   chunks.forEach(items=>{const n=items.length;let cx=0,cy=0,cz=0;items.forEach(o=>{cx+=o.x;cy+=o.y;cz+=o.z});cx/=n;cy/=n;cz/=n;let rad=0;
     items.forEach(o=>{rad=Math.max(rad,Math.hypot(o.x-cx,o.y-cy,o.z-cz)+gr*Math.max(o.sx||o.s,o.sy||o.s,o.sz||o.s))});const sphere=new THREE.Sphere(new THREE.Vector3(cx,cy,cz),rad);
     const mA=new THREE.InstancedBufferAttribute(new Float32Array(n*16),16),hasC=items[0].c!=null,cA=hasC?new THREE.InstancedBufferAttribute(new Float32Array(n*3),3):null;
-    items.forEach((o,i)=>{e.set(o.rx||0,o.ry||0,0);q.setFromEuler(e);v.set(o.x,o.y,o.z);s.set(o.sx||o.s,o.sy||o.s,o.sz||o.s);m4.compose(v,q,s);m4.toArray(mA.array,i*16);if(hasC){c.set(o.c).convertSRGBToLinear();cA.setXYZ(i,c.r,c.g,c.b)}});
+    items.forEach((o,i)=>{if(o.q)q.copy(o.q);else{e.set(o.rx||0,o.ry||0,0);q.setFromEuler(e)}v.set(o.x,o.y,o.z);s.set(o.sx||o.s,o.sy||o.s,o.sz||o.s);m4.compose(v,q,s);m4.toArray(mA.array,i*16);if(hasC){c.set(o.c).convertSRGBToLinear();cA.setXYZ(i,c.r,c.g,c.b)}});
     const meshes=levels.map(l=>{const g=new THREE.BufferGeometry();g.index=l.geo.index;g.attributes=l.geo.attributes;g.boundingSphere=sphere;
       const im=new THREE.InstancedMesh(g,l.mat,n);im.instanceMatrix=mA;if(cA)im.instanceColor=cA;im.castShadow=!!l.shadow;im.receiveShadow=l.recv!==false;if(l.depth)im.customDepthMaterial=l.depth;if(l.order)im.renderOrder=l.order;im.visible=false;im.userData.world=1;scene.add(im);return im});
     LODS.push({c:sphere.center,r:rad,meshes,ds:levels.map(l=>l.d),n,tag,level:-2,world:1})});
@@ -5229,10 +5354,11 @@ function kingCape(m){const g=new THREE.CylinderGeometry(0.285,0.4,0.52,36,16,tru
       p.setXYZ(i,x+Math.sin(a)*out,y+f*f*(0.015+0.03*spd)*ca,z+Math.cos(a)*out-f*f*(0.03*gust+0.07*spd)*ca)}p.needsUpdate=true;g.computeVertexNormals()})}
 // a pinwheel: a striped stick and four folded paper blades that turn slowly. a pet with a jointed arm holds it in its paw
 // down by its side, the stick upright and the wheel out in front of its shoulder (clear of its face and body); when it
-// greets you its wave lifts the pinwheel up, and the stick stays upright all the while. (a pet with a raised arm holds it up)
+// greets you it raises the pinwheel up (without waving it about), and the stick stays upright all the while. (a pet with a
+// raised arm holds it up)
 const PINH=[];
 function pinwheel(m){const u=m.userData,jointed=!!u.fore,g=new THREE.Group();
-  if(jointed){const J=u.aj;g.position.set(J.q[0]-J.m[0]+0.03,J.q[1]-J.m[1],J.q[2]-J.m[2]+0.06);u.fore.add(g);PINH.push({g,m})}
+  if(jointed){const J=u.aj;g.position.set(J.q[0]-J.m[0]+0.03,J.q[1]-J.m[1],J.q[2]-J.m[2]+0.06);u.fore.add(g);PINH.push({g,m});u.pin=1}   // (u.pin: it greets you by raising the pinwheel, without waving it)
   else{g.position.set(0.32,0.71,0.11);m.add(g)}
   const st=new THREE.Mesh(new _G.Cyl(0.008,0.008,jointed?0.42:0.62,8),M(0xfffaf0));st.position.y=jointed?0:0.15;g.add(st);
   const w=new THREE.Group();w.position.set(0,jointed?0.21:0.47,0.03);g.add(w);const C=[0xff4f6a,0xffd23f,0x3d9be0,0x7cc35a];
@@ -5256,7 +5382,7 @@ function waveUpdate(t,dt){const wp=waveUpdate.v||(waveUpdate.v=[new THREE.Vector
     u.cd-=dt;
     if(u.wv<=0){u.sw=false;if(u.cd<=0&&mode!=='sit'){m.getWorldPosition(p);const dx=camera.position.x-p.x,dz=camera.position.z-p.z,d2=dx*dx+dz*dz;if(d2<20&&d2>0.3){u.wv=3.0;u.cd=10}}
       if(arm.quaternion.w<0.99999)arm.quaternion.slerp(IDQ,Math.min(1,dt*6));if(fore.quaternion.w<0.99999)fore.quaternion.slerp(IDQ,Math.min(1,dt*6));continue}
-    u.wv-=dt;const e=Math.max(0,Math.min(1,(3.0-u.wv-0.25)/0.4,u.wv/0.4)),k=e*e*(3-2*e),th=0.38*Math.sin(t*8.5+u.ph);
+    u.wv-=dt;const e=Math.max(0,Math.min(1,(3.0-u.wv-0.25)/0.4,u.wv/0.4)),k=e*e*(3-2*e),th=u.pin?0:0.38*Math.sin(t*8.5+u.ph);   // (a pet holding a pinwheel just raises it)
     qU.setFromUnitVectors(u.wru,WWU);F.set(-0.05*Math.cos(th)-0.6*Math.sin(th),-0.05*Math.sin(th)+0.6*Math.cos(th),0.8).normalize();qi.copy(qU).invert();F.applyQuaternion(qi);qF.setFromUnitVectors(u.wrf,F);
     arm.quaternion.copy(IDQ).slerp(qU,k);fore.quaternion.copy(IDQ).slerp(qF,k);u.sw=k>0.4;
     if(m.parent===scene){const dx=camera.position.x-m.position.x,dz=camera.position.z-m.position.z;let df=Math.atan2(dx,dz)-m.rotation.y;while(df>Math.PI)df-=Math.PI*2;while(df<-Math.PI)df+=Math.PI*2;m.rotation.y+=df*Math.min(1,dt*7)}}
@@ -5439,7 +5565,7 @@ function fishGeo(kind){if(FISHG[kind])return FISHG[kind];const B={trout:0x7a7a48
       if(Math.abs(z+0.2)<0.04||Math.abs(y)>0.045)mixC(c,BL,0.25)}});return FISHG[kind]=g}
 function fishMesh(kind,sc){const m=new THREE.Mesh(fishGeo(kind),fishMat);m.scale.setScalar(sc||1);m.castShadow=true;scene.add(m);return m}
 const FISH_OBST=[];
-function fishSplash(x,z,big){ripple(x,0.072,z,big?1.2:0.7,1.4);if(!AMB.ready||muted)return;const d=Math.hypot(x-camera.position.x,z-camera.position.z);if(!(d<30))return;SHOT.splash(shotOut(0.05*(1-d/30),0),AC.currentTime)}
+function fishSplash(x,z,big){ripple(x,0.072,z,big?1.2:0.7,1.4);if(!AMB.ready||muted)return;const d=Math.hypot(x-camera.position.x,z-camera.position.z);if(!(d<30))return;SHOT.fishsplash(shotOut(0.07*(1-d/30),0),AC.currentTime,big)}
 // river fish: brown trout swimming up and down just under the surface; now and then one leaps clear of the water in a
 // short arc (only well away from the bridge, travelling away from it, so a leap can never reach it)
 function riverFish(c,hw,n){for(let i=0;i<n;i++){const m=fishMesh('trout',1.4+RS()*0.6);let x=(RS()<0.5?-1:1)*(6+RS()*(AW-9)),z=c+(RS()-0.5)*(hw*2-1.6),dir=RS()<0.5?1:-1,sp=0.5+RS()*0.6,jt=4+RS()*10,jump=null,ph=RS()*6;
@@ -5923,7 +6049,17 @@ function ping(o,f,t,dec,vol){const os=AC.createOscillator(),g=AC.createGain();os
 function hiss(out,t,dur,type,f,q,peak){const s=AC.createBufferSource();s.buffer=AMB.noise;s.playbackRate.value=0.8+Math.random()*0.4;const b=AC.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q||1;const g=AC.createGain();
   s.connect(b);b.connect(g);g.connect(out);env(g,t,Math.min(0.03,dur*0.3),dur*0.2,dur*0.6,peak);s.start(t,Math.random()*1.5);s.stop(t+dur+0.1)}
 const SHOT={
-  cluck:(o,t)=>{const n=2+Math.floor(Math.random()*3);for(let i=0;i<n;i++)blip(o,'square',560+Math.random()*80,300,t+i*0.12,0.07,['bandpass',1100,2])},
+  // a hen's clucking: a run of short, throaty 'buk' sounds at uneven gaps (a rough voice, its pitch dropping through each,
+  // shaped by resonances near 1 and 2.4 kHz, with a raspy flutter), now and then ending in a longer 'ba-GAWK' that rises and falls
+  cluck:(o,t)=>{const voice=(tt,f0,f1,f2,dur,vol,rasp)=>{const os=AC.createOscillator(),os2=AC.createOscillator(),am=AC.createOscillator(),amg=AC.createGain(),mix=AC.createGain(),g=AC.createGain();
+      os.type='sawtooth';os2.type='square';os2.detune.value=-14;[os,os2].forEach(x=>{x.frequency.setValueAtTime(f0,tt);if(f2){x.frequency.exponentialRampToValueAtTime(f1,tt+dur*0.35);x.frequency.exponentialRampToValueAtTime(f2,tt+dur)}else x.frequency.exponentialRampToValueAtTime(f1,tt+dur)});
+      am.type='square';am.frequency.value=rasp;amg.gain.value=0.4;am.connect(amg);amg.connect(mix.gain);mix.gain.value=0.6;
+      [[950+Math.random()*250,4,1],[2400,6,0.45],[3600,8,0.15]].forEach(([f,Q,v])=>{const b=AC.createBiquadFilter(),bg=AC.createGain();b.type='bandpass';b.frequency.value=f;b.Q.value=Q;bg.gain.value=v;os.connect(b);os2.connect(b);b.connect(bg);bg.connect(mix)});
+      mix.connect(g);g.connect(o);g.gain.setValueAtTime(0.0001,tt);g.gain.exponentialRampToValueAtTime(vol,tt+0.008);g.gain.setValueAtTime(vol*0.8,tt+dur*0.45);g.gain.exponentialRampToValueAtTime(0.0001,tt+dur);
+      [os,os2,am].forEach(x=>{x.start(tt);x.stop(tt+dur+0.05)});hiss(o,tt,0.025,'bandpass',1400,1.5,vol*0.35)};
+    const n=2+Math.floor(Math.random()*4),base=300+Math.random()*70;let tt=t;
+    for(let i=0;i<n;i++){const f=base*(0.95+Math.random()*0.12);voice(tt,f*1.18,f*0.82,0,0.05+Math.random()*0.04,0.9,38+Math.random()*14);tt+=0.11+Math.random()*0.16}
+    if(Math.random()<0.3){voice(tt,base*1.1,base*0.9,0,0.06,0.7,40);voice(tt+0.09,base*1.6,base*2.5,base*1.55,0.34,1.1,32)}},
   // a real duck's quack: a short nasal, raspy 'waak' that drops in pitch, strong around 1 kHz and 2.6 kHz, often in a run of a few
   quack:(o,t)=>{const n=1+Math.floor(Math.random()*4),base=0.8+Math.random()*0.45;for(let i=0;i<n;i++){const tt=t+i*(0.17+Math.random()*0.06),f=(540-i*30)*base;
     const os=AC.createOscillator(),am=AC.createOscillator(),amg=AC.createGain(),g=AC.createGain(),b1=AC.createBiquadFilter(),b2=AC.createBiquadFilter(),mix=AC.createGain();
@@ -5947,6 +6083,15 @@ const SHOT={
   swing:(o,t)=>blip(o,'sawtooth',150,190,t,0.3,['bandpass',950,9]),
   bell:(o,t)=>{for(let i=0;i<2;i++)[[523,1],[1046,0.45],[1568,0.22]].forEach(([f,a])=>{const q=AC.createOscillator(),g=AC.createGain();q.frequency.value=f;q.connect(g);g.connect(o);g.gain.setValueAtTime(0.0001,t+i*1.6);g.gain.exponentialRampToValueAtTime(a,t+i*1.6+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+i*1.6+2.6);q.start(t+i*1.6);q.stop(t+i*1.6+2.7)})},
   splash:(o,t)=>hiss(o,t,0.35,'bandpass',1700,1.2,1),
+  // a fish breaking the surface: a quick wet slap of noise and a few droplets pattering back. going back in, a 'plunk': the
+  // bubble it drags under rings with a sharply rising pitch, over a short splash, then the droplets
+  fishsplash:(o,t,big)=>{const drop=(tt,f,vol)=>{const os=AC.createOscillator(),g=AC.createGain();os.type='sine';os.frequency.setValueAtTime(f,tt);os.frequency.exponentialRampToValueAtTime(f*1.9,tt+0.025);
+      g.gain.setValueAtTime(0.0001,tt);g.gain.exponentialRampToValueAtTime(vol,tt+0.003);g.gain.exponentialRampToValueAtTime(0.0001,tt+0.045);os.connect(g);g.connect(o);os.start(tt);os.stop(tt+0.06)};
+    if(big){const os=AC.createOscillator(),g=AC.createGain(),f=420+Math.random()*120;os.type='sine';os.frequency.setValueAtTime(f,t);os.frequency.exponentialRampToValueAtTime(f*2.8,t+0.06);
+      g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.9,t+0.004);g.gain.exponentialRampToValueAtTime(0.0001,t+0.13);os.connect(g);g.connect(o);os.start(t);os.stop(t+0.15);
+      hiss(o,t,0.22,'bandpass',1100,0.7,0.8);hiss(o,t+0.01,0.12,'highpass',3000,0.7,0.35)}
+    else{hiss(o,t,0.14,'bandpass',1800,0.8,0.7);hiss(o,t,0.08,'highpass',3500,0.7,0.4)}
+    const n=(big?4:3)+Math.floor(Math.random()*3);for(let i=0;i<n;i++)drop(t+0.06+Math.random()*0.4,1600+Math.random()*1900,(0.35-i*0.04)*(big?1:0.7))},
   squeak:(o,t)=>{blip(o,'sine',900,1500,t,0.12,null,[30,60]);blip(o,'sine',1100,1300,t+0.16,0.1)}};
 // gate sounds, made to match how long each gate takes to open. wooden gates and doors: the latch lifts with a click and a
 // knock, the hinges give a short wooden creak as it swings, the air moves, and it settles with a soft wooden bump.
@@ -6023,11 +6168,11 @@ function ambUpdate(dt,ts){if(!AMB.ready)return;
   const panOf=(ax,az)=>{const dx=ax-cx,dz=az-cz,d=Math.hypot(dx,dz);return d<0.6?0:(dx*cr-dz*sr)/d};
   const best={};
   for(const s of SNDS){
-    if(LOOPDEF[s.k]){const [ax,az]=srcPos(s,cx,cz),d=Math.hypot(ax-cx,az-cz);if(!best[s.k]||d<best[s.k].d)best[s.k]={d,ax,az};continue}
+    if(LOOPDEF[s.k]){const a=s.act?s.act():1;if(a<=0)continue;const [ax,az]=srcPos(s,cx,cz),d=Math.hypot(ax-cx,az-cz);if(!best[s.k]||d<best[s.k].d)best[s.k]={d,ax,az,a};continue}   // (act: some sources, like the tower's waterfalls, are only sometimes on)
     const D=SHOTDEF[s.k];if(!D)continue;s.t=(s.t==null?Math.random()*D.e[1]:s.t)-dt;if(s.t>0)continue;s.t=D.e[0]+Math.random()*(D.e[1]-D.e[0]);
     if(muted)continue;const [ax,az]=srcPos(s,cx,cz),d=Math.hypot(ax-cx,az-cz);if(d>=D.r)continue;const v=D.v*Math.pow(1-d/D.r,2);if(v<0.002)continue;
     SHOT[s.k](shotOut(v,panOf(ax,az)),now+0.02)}
-  for(const k in LOOPDEF){const c=AMB[k],b=best[k],D=LOOPDEF[k];let v=0,pn=0;if(b&&b.d<D.r){v=D.v*Math.pow(1-b.d/D.r,2);pn=panOf(b.ax,b.az)}
+  for(const k in LOOPDEF){const c=AMB[k],b=best[k],D=LOOPDEF[k];let v=0,pn=0;if(b&&b.d<D.r){v=D.v*Math.pow(1-b.d/D.r,2)*b.a;pn=panOf(b.ax,b.az)}
     if(k==='sea')v*=0.6+0.4*Math.sin(ts*0.45)*Math.sin(ts*0.45);if(k==='river')v*=0.85+0.15*Math.sin(ts*1.7);if(k==='fire')v*=0.85+0.15*Math.sin(ts*0.7)*Math.sin(ts*0.31+2);
     c.g.gain.setTargetAtTime(v,now,0.25);if(c.p)c.p.pan.setTargetAtTime(pn*0.7,now,0.25)}
   AMB.wind.g.gain.setTargetAtTime(0.008+0.035*snowAmt(cz),now,0.8);
@@ -6714,7 +6859,9 @@ function pondDeck(grp,D,k){const R=1.26*Math.max(1,k*0.9)+0.22,W=0x8f6440,Dk=0x6
   const pts=[0,1,2,3].map(i=>{const a=Math.PI/4+i*Math.PI/2;return[Math.cos(a)*lr,Math.sin(a)*lr]});
   pts.forEach(([x,z])=>mesh(new _G.Cyl(0.08,0.095,L,10),Dk,x,-0.14-L/2,z,grp));
   pts.forEach(([x,z],i)=>{const [x2,z2]=pts[(i+1)%4],b=blk(Math.hypot(x2-x,z2-z),0.07,0.06,(x+x2)/2,-0.14-L*0.45,(z+z2)/2,Dk,grp);b.rotation.y=-Math.atan2(z2-z,x2-x)})}
+const CHARGE=20;   // (seconds a laser tower takes to charge; everything that moves with the charge keeps pace with it)
 let FALLTEX=null;   // (falling water: soft vertical streaks, scrolled down the waterfalls)
+let FLOORFLAKE=null,SOFTGLOW=null;   // (the snowflake drawn on the snow round the Snowflake Hollow tower; a soft white glow)
 function towerBody(id,grp,H,k,bd,fd){const S=TSTYLE[id]||TSTYLE.castle,y0=0.9,y1=H-0.5,sh=y1-y0,rb=0.56*k,rt=0.4*k,rAt=y=>rb+(rt-rb)*(y-y0)/sh;
   const dirAway=a=>{const c=Math.cos(a),s=Math.sin(a),dx=c,dz=s;return dx*bd[0]+dz*bd[1]};   // how much angle a points along the beam
   const around=(n,off)=>{const out=[];for(let i=0;i<n;i++){const a=off+i/n*Math.PI*2;out.push([a,Math.cos(a),Math.sin(a)])}return out};
@@ -6740,11 +6887,8 @@ function towerBody(id,grp,H,k,bd,fd){const S=TSTYLE[id]||TSTYLE.castle,y0=0.9,y1
   else if(id==='adding'){   // bright balls round the collar, like a climbing frame's
     around(6,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.2*k,16,12),[0xff6b57,0xffd23f,0x4a86c8,0x6fb35a,0xb48cff,0xff9ecf][i],c*0.95*k,H+0.12,s*0.95*k,grp));
     if(grp.userData.rx)around(4,0).forEach(([a,c,s],i)=>mesh(new _G.Sph(0.18,14,10),[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a][i],c*1.05,0.95,s*1.05,grp))}   // (a tower's own four foot balls are built with its moving parts)
-  else if(id==='times'){   // terracotta bands, a clock face (in times-table hours) and a little tiled roof over the lens
+  else if(id==='times'){   // terracotta bands and a little tiled roof over the lens
     for(let y=y0+2.5;y<y1-0.5;y+=3)mesh(new _G.Cyl(rAt(y)+0.06,rAt(y)+0.06,0.18,20),0xb5523b,0,y,0,grp);
-    {const cy=y0+sh*0.7,r=rAt(cy)+0.03,cl=new THREE.Group();cl.position.set(fd[0]*r,cy,fd[1]*r);cl.rotation.y=Math.atan2(fd[0],fd[1]);grp.add(cl);
-     mesh(new THREE.CircleGeometry(0.34*k,24),0xfffaf0,0,0,0.01,cl);mesh(new _G.Tor(0.34*k,0.035,6,24),0x1d3340,0,0,0.02,cl);
-     [[0.2,0.4],[0.28,1.9]].forEach(([L,a])=>{const h=blk(0.03,L*k,0.02,0,0,0.03,0x1d3340,cl);h.rotation.z=-a;h.position.set(Math.sin(a)*L*k/2,Math.cos(a)*L*k/2,0.03)})}
     around(4,Math.PI/4).forEach(([a,c,s])=>mesh(new _G.Cyl(0.04,0.04,1.25,6),0xfffaf0,c*0.7*k,H+0.62,s*0.7*k,grp));mesh(new _G.Cone(1.0*k,0.75,4),0xb5523b,0,H+1.6,0,grp).rotation.y=Math.PI/4}
   else if(id==='oddeven'){   // a footing of pond stones, rope bands round the boards and lily pads at the foot
     const dk=grp.userData.deck;   // (on its platform in the Even Pond it has neither: the platform is only as big as the plinth)
@@ -6777,13 +6921,13 @@ function towerBody(id,grp,H,k,bd,fd){const S=TSTYLE[id]||TSTYLE.castle,y0=0.9,y1
 // the laser towers. each rises from the spot kept for it near its place's last panel, as tall as it must be for its beam to
 // reach its receiver at the foot of Meridian Hill without passing through anything on the way (a castle wall, a roof, a
 // tree, the cliffs), and never under 12 m, so it is easy to pick out from the ground. once the place is complete it charges
-// for ten seconds, with a rising hum, a pulse of light climbing it faster and faster and sparks circling its lens, and then
+// for twenty seconds, with a rising hum, a pulse of light climbing it faster and faster and sparks circling its lens, and then
 // fires; the receiver lights up when the beam arrives
 // ---- towers with moving parts. Windmill Hill's has sails behind its lens (never in the beam's way) that stand still until
 // it charges, then turn faster and faster until, as it fires, they whirl round, three times as fast as the windmills in the fields. Place Value
 // Castle's great sigil stands in the line of its beam, and slides down the keep wall out of the way when the tower charges
 // (iron scraping down stone). Adding Garden's four coloured balls rise from the foot as it charges and orbit the tower
-// between its first two rings, each at its own height and distance, one going the other way round, so they never meet.
+// between its first and last rings, each at its own height and distance, one going the other way round, so they never meet.
 // Times Table Village's tower waits underground inside the house behind the village's last panel: when it charges, a section
 // of the roof ridge slides aside, the tower rises up through the opening, and four ribbons rise with it and orbit it.
 // Odd and Even Pond's stands on a little platform in the Even Pond, and water pours from each of its rings as it lights.
@@ -6795,8 +6939,8 @@ function towerExtras(Tw,g,H,k,bd,fd,lw,TG){const fx={};
     for(let i=0;i<4;i++){const arm=new THREE.Group();arm.rotation.z=i*Math.PI/2;sails.add(arm);blk(0.11,3.3,0.08,0,1.72,0,0x7a4a2c,arm);blk(0.78,2.5,0.025,0.4,2.05,-0.05,0xf3ecdc,arm);
       for(let q=0;q<6;q++)blk(0.78,0.035,0.04,0.4,0.9+q*0.46,-0.07,0x8a5a3b,arm);blk(0.04,2.5,0.04,0.79,2.05,-0.07,0x8a5a3b,arm)}
     sails.traverse(c=>{if(c.isMesh)c.castShadow=true});mergeDeep(sails,true);fx.sails=sails}
-  if(Tw.id==='adding'){const n=Math.max(4,Math.round((H-1.4)/2.4)),r1=1.8,r2=r1+((H-1.4)-1.7)/(n-1),C=[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a],R=[1.25,1.55,1.85,2.15],Wd=[0.5,-0.42,0.36,0.31];
-    fx.balls=C.map((c,i)=>{const a0=i*Math.PI/2,m=mesh(new _G.Sph(0.18,16,12),c,Math.cos(a0)*1.05,0.95,Math.sin(a0)*1.05,g);m.castShadow=true;return{m,a0,ang:a0,r:R[i],y:r1+(r2-r1)*(0.2+0.2*i),w:Wd[i]}})}
+  if(Tw.id==='adding'){const r1=1.8,r2=1.8+((H-1.4)-1.7),C=[0xffd23f,0x4a86c8,0xff6b57,0x6fb35a],R=[1.25,1.55,1.85,2.15],Wd=[0.5,-0.42,0.36,0.31];
+    fx.balls=C.map((c,i)=>{const a0=i*Math.PI/2,m=mesh(new _G.Sph(0.18,16,12),c,Math.cos(a0)*1.05,0.95,Math.sin(a0)*1.05,g);m.castShadow=true;return{m,a0,ang:a0,r:R[i],y:r1+(r2-r1)*(0.12+0.25*i),w:Wd[i]}})}
   if(Tw.id==='castle'&&Tw.sig&&SIGIL.mesh){const top=SIGIL.y0+3.85;fx.sig={drop:top-(Tw.sig.ys-0.85),low:-1,wx:Tw.sig.wx,wz:Tw.sig.wz,snd:false}}
   if(Tw.id==='times'&&TIMESHOUSE.hatch){const n=Math.max(4,Math.round((H-1.4)/2.4)),y2=1.8+((H-1.4)-1.7)/(n-1),yN=1.8+((H-1.4)-1.7);
     // four ribbons, each at its own height between the second ring and the top one and its own distance out, so they never meet
@@ -6817,7 +6961,60 @@ function towerExtras(Tw,g,H,k,bd,fd,lw,TG){const fx={};
       [0.55,1.05].forEach((y,i)=>{const l=0.5-i*0.15;put(new THREE.BoxGeometry(0.11,l,0.12),0.14,y+0.12,-0.8,ra);put(new THREE.BoxGeometry(0.11,l,0.12),-0.14,y+0.12,0.8,ra)});
       put(new THREE.OctahedronGeometry(0.14),0,1.75,0,ra)}
     put(new THREE.OctahedronGeometry(0.3),0,0,0,0);const big=new THREE.Mesh(mergeGeos(parts),im);big.castShadow=true;big.visible=false;fl.add(big);
-    fx.flake={fl,small,big,im,r0,ro:1.0*k+0.6,cy,a0,Yc:ly+2.9+Math.max(0,sl)*2,s0:0.4*k/1.8,spin:0,cw:lin(0xf8fcff),ci:lin(0xbfe6ff)}}
+    // once it is full size it glows
+    if(!SOFTGLOW)SOFTGLOW=canvasTex(64,64,(c,w,h)=>{const gr=c.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,'rgba(255,255,255,0.9)');gr.addColorStop(0.4,'rgba(255,255,255,0.3)');gr.addColorStop(1,'rgba(255,255,255,0)');c.clearRect(0,0,w,h);c.fillStyle=gr;c.fillRect(0,0,w,h)});
+    const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:SOFTGLOW,color:0xa8dcff,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,toneMapped:false,opacity:0}));glow.scale.set(7,7,1);glow.visible=false;fl.add(glow);
+    // auroras: six curtains of green and violet light round the tower, rippling, that grow brighter as it charges
+    const AU={uOp:{value:0},uT:{value:0}},pos=[],uv=[],sd=[],idx=[],NU=40,NV=6;
+    // (each curtain hangs in folds, seen from above, with a bright green lower edge and rays streaming up into violet)
+    for(let j=0;j<6;j++){const a0=j*Math.PI/3+0.35*Math.sin(j*2.3),span=1.5,r0=3.6+0.7*(j%3),yb=2.6+0.9*(j%2),yt=H+4.5+1.4*((j*5)%3),b=pos.length/3;
+      for(let v=0;v<=NV;v++)for(let u=0;u<=NU;u++){const a=a0+span*u/NU,r=r0+0.75*Math.sin(u/NU*9.4+j*1.7),y=yb+(yt-yb)*v/NV;pos.push(Math.cos(a)*r,y,Math.sin(a)*r);uv.push(u/NU,v/NV);sd.push(j*0.37)}
+      for(let v=0;v<NV;v++)for(let u=0;u<NU;u++){const q=b+v*(NU+1)+u;idx.push(q,q+NU+1,q+1,q+1,q+NU+1,q+NU+2)}}
+    const ag=new THREE.BufferGeometry();ag.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));ag.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));ag.setAttribute('seed',new THREE.Float32BufferAttribute(sd,1));ag.setIndex(idx);
+    const au=new THREE.Mesh(ag,new THREE.ShaderMaterial({uniforms:AU,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+      vertexShader:'attribute float seed;uniform float uT;varying vec2 vU;varying float vS;void main(){vU=uv;vS=seed;vec3 p=position;float w=sin(uv.x*9.0+uT*0.7+seed*3.0)*0.35+sin(uv.x*23.0-uT*1.1+seed*7.0)*0.12;p.xz+=normalize(p.xz)*w*(0.4+uv.y);gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}',
+      fragmentShader:'uniform float uOp,uT;varying vec2 vU;varying float vS;void main(){float v=vU.y,u=vU.x,band=smoothstep(0.0,0.05,v)*(0.2+0.8*exp(-v*3.2))*(1.0-smoothstep(0.7,1.0,v)),r0=0.5+0.5*sin(u*70.0+uT*1.2+sin(u*11.0+uT*0.4+vS*4.0)*3.0),rays=0.2+0.8*r0*r0,edge=smoothstep(0.0,0.15,u)*smoothstep(1.0,0.85,u);vec3 c=mix(vec3(0.2,1.0,0.5),vec3(0.7,0.3,0.95),smoothstep(0.2,0.85,v));c=mix(c,vec3(0.25,0.85,1.0),0.15+0.15*sin(u*6.0+vS*5.0+uT*0.3));gl_FragColor=vec4(c,band*rays*edge*uOp*0.5);}'}));
+    au.visible=false;au.renderOrder=3;au.frustumCulled=false;g.add(au);
+    // and on the snow, a snowflake that grows out from under the tower's foot until it is twice as wide as the plinth
+    if(!FLOORFLAKE)FLOORFLAKE=canvasTex(512,512,(c,w,h)=>{c.clearRect(0,0,w,h);c.translate(256,256);c.strokeStyle='rgba(235,248,255,1)';c.lineCap='round';c.shadowColor='rgba(90,180,255,1)';c.shadowBlur=12;
+      for(let a=0;a<6;a++){c.save();c.rotate(a*Math.PI/3);c.lineWidth=10;c.beginPath();c.moveTo(0,0);c.lineTo(0,-232);c.stroke();c.lineWidth=7;
+        [[70,46],[128,58],[184,40]].forEach(([y,l])=>{c.beginPath();c.moveTo(0,-y);c.lineTo(-l*0.7,-y-l*0.75);c.moveTo(0,-y);c.lineTo(l*0.7,-y-l*0.75);c.stroke()});
+        c.lineWidth=5;c.beginPath();c.moveTo(0,-232);c.lineTo(-14,-216);c.moveTo(0,-232);c.lineTo(14,-216);c.stroke();c.restore()}
+      c.lineWidth=6;c.beginPath();for(let q=0;q<=6;q++){const a=q*Math.PI/3-Math.PI/2;c.lineTo(Math.cos(a)*44,Math.sin(a)*44)}c.stroke();c.setTransform(1,0,0,1,0,0)});
+    const fm=new THREE.MeshBasicMaterial({map:FLOORFLAKE,color:0x6fc4ff,transparent:true,opacity:0,depthWrite:false,toneMapped:false,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-4}),floor=new THREE.Mesh(new THREE.PlaneGeometry(2,2),fm);
+    floor.rotation.x=-Math.PI/2;floor.position.y=0.04;floor.visible=false;floor.renderOrder=1;g.add(floor);
+    fx.flake={fl,small,big,im,r0,ro:1.0*k+0.6,cy,a0,Yc:ly+2.9+Math.max(0,sl)*2,s0:0.4*k/1.8,spin:0,cw:lin(0xf8fcff),ci:lin(0xbfe6ff),glow,gl:0,AU,au,floor,fm,fr:2*1.26*Math.max(1,k*0.9)/0.906}}
+  if(Tw.id==='glass'){
+    // inside the glass, three vines climb the core. while the tower is off they are dead: brown stems and a few curled,
+    // drooping brown leaves. as it charges they come alive from the bottom up: the stems turn green, the dead leaves drop
+    // away and fresh green leaves and flowers open in their place, the line between the two climbing with the charge
+    const sh=H-1.4,y0=0.9,y1=H-0.5,rc=y=>0.55*(0.56*k-0.16*k*(y-y0)/sh),U={value:-0.1},R=mulberry32(91);
+    const leaf=(L,w)=>{const g2=new THREE.BufferGeometry();g2.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0, w/2,L*0.38,0.012, 0,L,0, -w/2,L*0.38,0.012, 0,L*0.42,-0.01],3));g2.setIndex([0,1,4, 1,2,4, 2,3,4, 3,0,4]);return g2};
+    const sets={A:[],D:[]},put=(set,geo,P,dir,tw,col)=>{const X=new THREE.Vector3(-dir.z,0,dir.x).normalize(),Y=dir.clone().normalize(),Z=new THREE.Vector3().crossVectors(X,Y),m4=new THREE.Matrix4().makeBasis(X,Y,Z);
+      m4.premultiply(new THREE.Matrix4().makeRotationAxis(Y,tw));m4.setPosition(P);geo.applyMatrix4(m4);const n=geo.attributes.position.count,c=lin(col),hf=(P.y-y0)/sh;
+      geo.setAttribute('anc',new THREE.Float32BufferAttribute(new Array(n).fill(0).flatMap(()=>[P.x,P.y,P.z]),3));geo.setAttribute('hf',new THREE.Float32BufferAttribute(new Array(n).fill(hf),1));
+      geo.setAttribute('color',new THREE.Float32BufferAttribute(new Array(n).fill(0).flatMap(()=>[c.r,c.g,c.b]),3));if(!geo.attributes.normal)geo.computeVertexNormals();if(!geo.attributes.uv)geo.setAttribute('uv',new THREE.Float32BufferAttribute(new Array(n*2).fill(0),2));sets[set].push(geo)};
+    const stems=[];
+    for(let v=0;v<3;v++){const ph=v*Math.PI*2/3,pts=[],at=y=>{const a=ph+(y-y0)/1.6*Math.PI*2,r=rc(y)+0.025;return[a,new THREE.Vector3(Math.cos(a)*r,y,Math.sin(a)*r)]};
+      for(let y=y0+0.15;y<=y1-0.2;y+=0.06)pts.push(at(y)[1]);stems.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),Math.round(pts.length*1.5),0.022,5,false));
+      for(let y=y0+0.3;y<y1-0.3;y+=0.15)for(const sd of [-0.55,0.55]){const [a,P]=at(y+(R()-0.5)*0.05),out=a+sd+(R()-0.5)*0.3,o=new THREE.Vector3(Math.cos(out),0,Math.sin(out)),gap=rc(P.y)/0.55+0.12-rc(P.y)-0.065;
+        // alive: a fresh leaf reaching out and up (never as far as the glass), and here and there a flower
+        put('A',leaf(Math.min(0.2+R()*0.07,gap/Math.sin(0.95)),0.11+R()*0.04),P,o.clone().multiplyScalar(Math.sin(0.95)).setY(Math.cos(0.95)),(R()-0.5)*0.6,[0x3f8a2f,0x2f7a2a,0x4c9a35][(R()*3)|0]);
+        if(R()<0.22){const f=new THREE.IcosahedronGeometry(0.036,0),Q=P.clone().addScaledVector(o,Math.min(0.08,gap*0.6)).setY(P.y+0.05);put('A',f,Q,new THREE.Vector3(0,1,0),0,[0xff5fa2,0xffc21f,0xfffaf0][(R()*3)|0])}
+        // dead: smaller, curled, hanging down; some already gone
+        if(R()<0.8)put('D',leaf(Math.min(0.14+R()*0.05,gap/Math.sin(2.3)),0.06+R()*0.025),P,o.clone().multiplyScalar(Math.sin(2.3)).setY(Math.cos(2.3)),(R()-0.5)*1.2,[0x6b4a22,0x5a3c1c,0x7d5a2e][(R()*3)|0])}}
+    // the leaves shrink to (or grow from) where they join the stem as the line passes them
+    const leafMat=alive=>{const m=new THREE.MeshStandardMaterial({vertexColors:true,side:THREE.DoubleSide,roughness:0.75});m.customProgramCacheKey=()=>'vine'+alive;
+      m.onBeforeCompile=sh2=>{sh2.uniforms.uThr=U;sh2.vertexShader='attribute vec3 anc;attribute float hf;uniform float uThr;\n'+sh2.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\n'+
+        (alive?'float s=clamp((uThr-hf)/0.06,0.0,1.0);':'float s=1.0-clamp((uThr-hf)/0.03,0.0,1.0);')+'transformed=anc+(transformed-anc)*s;')};return m};
+    ['A','D'].forEach(k2=>{const m=new THREE.Mesh(mergeGeos(sets[k2]),leafMat(k2==='A'));const src=sets[k2];
+      const cat=(name,size)=>{const out=[];src.forEach(gq=>{const a=gq.attributes[name];for(let i=0;i<a.count;i++)for(let j=0;j<size;j++)out.push(a.array[i*size+j])});m.geometry.setAttribute(name,new THREE.Float32BufferAttribute(out,size))};
+      cat('anc',3);cat('hf',1);cat('color',3);m.castShadow=false;g.add(m)});
+    // the stems: green below the line, brown above it
+    const sm2=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.8});sm2.customProgramCacheKey=()=>'vineStem';
+    sm2.onBeforeCompile=sh2=>{sh2.uniforms.uThr=U;sh2.vertexShader='varying float vH;\n'+sh2.vertexShader.replace('#include <begin_vertex>','#include <begin_vertex>\nvH=(position.y-'+y0.toFixed(3)+')/'+sh.toFixed(3)+';');
+      sh2.fragmentShader='uniform float uThr;varying float vH;\n'+sh2.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\ndiffuseColor.rgb*=mix(vec3(0.07,0.26,0.04),vec3(0.2,0.11,0.04),smoothstep(uThr-0.02,uThr+0.02,vH));')};
+    g.add(new THREE.Mesh(mergeGeos(stems),sm2));fx.vine=U}
   if(Tw.id==='oddeven'&&Tw.deck){
     // a waterfall pours from each lamp ring as soon as it lights (the bottom one first, then each in turn up the tower), in a
     // curtain all round that arcs out over the platform's edge into the pond, each landing a little further out than the one
@@ -6833,8 +7030,8 @@ function towerExtras(Tw,g,H,k,bd,fd,lw,TG){const fx={};
       const m=new THREE.Mesh(gg,new THREE.MeshStandardMaterial({color:lin(0xdff3ff),map:FALLTEX,transparent:true,opacity:0.6,depthWrite:false,side:THREE.DoubleSide,roughness:0.12,metalness:0.05,emissive:lin(0x4a90b8),emissiveIntensity:0.35}));
       m.visible=false;m.renderOrder=2;g.add(m);const re=r0+v*sw,foam=new THREE.Mesh(new _G.Ring(re-0.1,re+0.22,40),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false}));
       foam.rotation.x=-Math.PI/2;foam.position.y=yw+0.02+0.003*i;foam.visible=false;g.add(foam);
-      list.push({m,g:gg,foam,sw,c0,rate:Math.max(1,sw/(10-c0)),ramp:Math.min(1.2,10-c0)})}
-    fx.falls={list,NJ,M};
+      const left=(10-c0)*CHARGE/10;list.push({m,g:gg,foam,sw,c0,rate:Math.max(1,sw/left),ramp:Math.min(1.2,left)})}   // (real seconds: water falls at its own pace)
+    fx.falls={list,NJ,M,flow:0};SNDS.push({k:'fountain',x:Tw.x,z:Tw.z,act:()=>fx.falls.flow});   // (they sound like a fountain while they pour)
     // the cable: up a post on the bank, then out over the water to the tower's foot (it lights with the last panel's cable)
     if(Tw.shore){const sp=S2W(Tw.shore[0],Tw.shore[1],PIECES.byId['r'+Tw.r],{}),bx=sp.x-g.position.x,bz=sp.z-g.position.z,by=heightW(sp.x,sp.z)-g.position.y,ph=2.1,bl=Math.hypot(bx,bz)||1,ox=-bx/bl*0.11,oz=-bz/bl*0.11;
       mesh(new _G.Cyl(0.075,0.09,ph,10),0x6a4a2e,bx,by+ph/2,bz,g).castShadow=true;mesh(new _G.Cone(0.11,0.12,10),0x5a3c24,bx,by+ph+0.06,bz,g);mesh(new _G.Sph(0.05,10,8),0xf4f1ea,bx+ox*0.8,by+ph-0.1,bz+oz*0.8,g);
@@ -6846,7 +7043,7 @@ function towerExtras(Tw,g,H,k,bd,fd,lw,TG){const fx={};
 // the sigil scraping down the keep wall: a gritty band of noise that judders (stick and slip) and slowly drops in pitch over a
 // low grind of stone, and a dull clunk as it comes to rest. quiet, and quieter with distance
 function sigilSound(S){if(!AC||!AMB.ready||muted)return;const d=Math.hypot(S.wx-camera.position.x,S.wz-camera.position.z),v=0.3*Math.pow(Math.max(0,1-d/90),1.5);if(v<0.02)return;
-  const o=shotOut(v,0),t=AC.currentTime+0.02,D=6.0,ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=4;bp.frequency.setValueAtTime(2600,t);bp.frequency.exponentialRampToValueAtTime(1500,t+D);
+  const o=shotOut(v,0),t=AC.currentTime+0.02,D=6*CHARGE/10,ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const bp=AC.createBiquadFilter();bp.type='bandpass';bp.Q.value=4;bp.frequency.setValueAtTime(2600,t);bp.frequency.exponentialRampToValueAtTime(1500,t+D);
   const jud=AC.createGain();jud.gain.value=0.5;const lfo=AC.createOscillator(),lg=AC.createGain();lfo.type='sawtooth';lfo.frequency.setValueAtTime(26,t);lfo.frequency.linearRampToValueAtTime(18,t+D);lg.gain.value=0.45;lfo.connect(lg);lg.connect(jud.gain);
   const g=AC.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.6,t+0.5);g.gain.setValueAtTime(0.55,t+D-0.8);g.gain.exponentialRampToValueAtTime(0.0001,t+D);
   ns.connect(bp);bp.connect(jud);jud.connect(g);g.connect(o);ns.start(t,Math.random());ns.stop(t+D+0.1);lfo.start(t);lfo.stop(t+D+0.1);
@@ -6931,8 +7128,8 @@ const HR=9;   // the receivers' height: their dishes are about 10 m up, above th
    // the beam (world coordinates), grown out of the lens when the tower fires: its three layers (a bright core and two
    // fainter glows) are one mesh, each layer's strength baked into its colour, since glow simply adds up
    const bm=new THREE.Group();bm.position.copy(lw);bm.quaternion.setFromUnitVectors(up,dir);bm.visible=false;bm.userData.world=1;scene.add(bm);
-   const core=lin(Tw.col).lerp(new THREE.Color(1,1,1),0.45),mats=[];
-   {const parts=[],cols=[];[[0.11,0.9,core],[0.3,0.3,lin(Tw.col)],[0.68,0.1,lin(Tw.col)]].forEach(([r,op,c])=>{const bg=beamG(r);parts.push(bg);for(let j=0;j<bg.attributes.position.count;j++)cols.push(c.r*op,c.g*op,c.b*op)});
+   const bc=Tw.id==='castle'?0x9aa1a8:Tw.col,core=lin(bc).lerp(new THREE.Color(1,1,1),0.45),mats=[];   // (Place Value Castle's beam is steel grey)
+   {const parts=[],cols=[];[[0.11,0.9,core],[0.3,0.3,lin(bc)],[0.68,0.1,lin(bc)]].forEach(([r,op,c])=>{const bg=beamG(r);parts.push(bg);for(let j=0;j<bg.attributes.position.count;j++)cols.push(c.r*op,c.g*op,c.b*op)});
     const bg=mergeGeos(parts);bg.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
     const m=new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,opacity:1,blending:THREE.AdditiveBlending,depthWrite:false,toneMapped:false,fog:false});
     const c2=new THREE.Mesh(bg,m);c2.renderOrder=5;bm.add(c2);mats.push({m,op:1})}
@@ -6956,28 +7153,28 @@ const towerVol=T=>{const dx=T.wx-camera.position.x,dz=T.wz-camera.position.z,d=M
 const towerPan=T=>{const dx=T.wx-camera.position.x,dz=T.wz-camera.position.z,d=Math.hypot(dx,dz),ry=camera.rotation.y;return d<1?0:(dx*Math.cos(ry)-dz*Math.sin(ry))/d};
 function towerOff(T){T.quiet=false;if(T.rx){T.rx.rm.emissiveIntensity=0.06;T.rx.cm.emissiveIntensity=0.08}T.st=0;T.t=0;T.bm.visible=false;T.RU.uThr.value=-1;T.RU.uDim.value=0.06;T.RU.uP.value=0;T.lensM.emissiveIntensity=0.08;T.lens.scale.setScalar(1);T.motes.visible=false;T.ind.emissiveIntensity=0.05}
 function towerOn(T){T.quiet=true;T.st=3;T.t=0;T.bm.visible=true;T.bm.scale.set(1,T.BL,1);T.motes.visible=true;T.ind.emissiveIntensity=2;T.lens.scale.setScalar(1)}
-// ten seconds of charging: a soft hum that slowly climbs in pitch under a gentle, slowly quickening pulse, with a faint
+// twenty seconds of charging (CHARGE): a soft hum that slowly climbs in pitch under a gentle, slowly quickening pulse, with a faint
 // electric fizz swelling beneath it
 function towerCharge(T){T.st=1;T.t=0;T.ind.emissiveIntensity=2;if(!AC||!AMB.ready)return;
   const t=AC.currentTime+0.03,out=AC.createGain();out.gain.value=towerVol(T);let pn=null;if(AC.createStereoPanner){pn=AC.createStereoPanner();pn.pan.value=towerPan(T)*0.8;out.connect(pn);pn.connect(AMB.out)}else out.connect(AMB.out);T.snd={out,pn,age:0};
-  const bus=AC.createGain();bus.gain.setValueAtTime(0.0001,t);bus.gain.exponentialRampToValueAtTime(0.045,t+2.5);bus.gain.linearRampToValueAtTime(0.11,t+9.6);bus.gain.exponentialRampToValueAtTime(0.0001,t+10.2);bus.connect(out);
-  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.Q.value=4;lp.frequency.setValueAtTime(220,t);lp.frequency.exponentialRampToValueAtTime(1600,t+10);lp.connect(bus);
-  const trem=AC.createGain();trem.gain.value=0.72;trem.connect(lp);const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.setValueAtTime(1.0,t);lfo.frequency.exponentialRampToValueAtTime(6,t+10);lg.gain.value=0.2;lfo.connect(lg);lg.connect(trem.gain);lfo.start(t);lfo.stop(t+10.3);
-  [['sawtooth',55,150,0.4],['sawtooth',55.5,151,0.32],['sine',110,330,0.8],['triangle',220,660,0.18]].forEach(([ty,f0,f1,v])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+10);g.gain.value=v;o.connect(g);g.connect(trem);o.start(t);o.stop(t+10.3)});
-  const ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const nb=AC.createBiquadFilter();nb.type='bandpass';nb.Q.value=1.3;nb.frequency.setValueAtTime(1800,t);nb.frequency.exponentialRampToValueAtTime(4200,t+10);
-  const ng=AC.createGain();ng.gain.setValueAtTime(0.0001,t);ng.gain.exponentialRampToValueAtTime(0.025,t+9.8);ng.gain.exponentialRampToValueAtTime(0.0001,t+10.15);ns.connect(nb);nb.connect(ng);ng.connect(out);ns.start(t);ns.stop(t+10.3)}
+  const bus=AC.createGain();bus.gain.setValueAtTime(0.0001,t);const D=CHARGE;bus.gain.exponentialRampToValueAtTime(0.045,t+D/4);bus.gain.linearRampToValueAtTime(0.11,t+D-0.4);bus.gain.exponentialRampToValueAtTime(0.0001,t+D+0.2);bus.connect(out);
+  const lp=AC.createBiquadFilter();lp.type='lowpass';lp.Q.value=4;lp.frequency.setValueAtTime(220,t);lp.frequency.exponentialRampToValueAtTime(1600,t+D);lp.connect(bus);
+  const trem=AC.createGain();trem.gain.value=0.72;trem.connect(lp);const lfo=AC.createOscillator(),lg=AC.createGain();lfo.frequency.setValueAtTime(1.0,t);lfo.frequency.exponentialRampToValueAtTime(6,t+D);lg.gain.value=0.2;lfo.connect(lg);lg.connect(trem.gain);lfo.start(t);lfo.stop(t+D+0.3);
+  [['sawtooth',55,150,0.4],['sawtooth',55.5,151,0.32],['sine',110,330,0.8],['triangle',220,660,0.18]].forEach(([ty,f0,f1,v])=>{const o=AC.createOscillator(),g=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+D);g.gain.value=v;o.connect(g);g.connect(trem);o.start(t);o.stop(t+D+0.3)});
+  const ns=AC.createBufferSource();ns.buffer=AMB.noise;ns.loop=true;const nb=AC.createBiquadFilter();nb.type='bandpass';nb.Q.value=1.3;nb.frequency.setValueAtTime(1800,t);nb.frequency.exponentialRampToValueAtTime(4200,t+D);
+  const ng=AC.createGain();ng.gain.setValueAtTime(0.0001,t);ng.gain.exponentialRampToValueAtTime(0.025,t+D-0.2);ng.gain.exponentialRampToValueAtTime(0.0001,t+D+0.15);ns.connect(nb);nb.connect(ng);ng.connect(out);ns.start(t);ns.stop(t+D+0.3)}
 // firing: a bright zap that drops away, a crack of noise, a deep thump and a hum that settles
 function towerFire(T){T.st=2;T.t=0;T.bm.visible=true;T.bm.scale.set(1,0.001,1);if(!AC||!AMB.ready)return;
   let o0=T.snd&&T.snd.out;if(!o0){o0=shotOut(towerVol(T),towerPan(T))}const t=AC.currentTime+0.01,o=AC.createGain();o.gain.value=0.5;o.connect(o0);   // (the shot is kept to half the charge's loudness)
   blip(o,'sawtooth',1800,90,t,0.7,['lowpass',3200,1]);blip(o,'square',900,70,t,0.4,['bandpass',1400,2]);hiss(o,t,0.9,'highpass',1800,0.7,0.35);ping(o,68,t,1.3,0.6);
   const hm=AC.createOscillator(),hg=AC.createGain();hm.type='sine';hm.frequency.value=176;hg.gain.setValueAtTime(0.0001,t);hg.gain.exponentialRampToValueAtTime(0.18,t+0.12);hg.gain.exponentialRampToValueAtTime(0.0001,t+2.6);hm.connect(hg);hg.connect(o);hm.start(t);hm.stop(t+2.7)}
 animsW.push((t,dt)=>{for(const T of TWL){if(T.st===0)continue;
-  if(T.snd&&AC){T.snd.age+=dt;if(T.snd.age>14)T.snd=null;else{T.snd.out.gain.setTargetAtTime(towerVol(T),AC.currentTime,0.08);if(T.snd.pn)T.snd.pn.pan.setTargetAtTime(towerPan(T)*0.8,AC.currentTime,0.08)}}
-  if(T.st===1){T.t+=dt;const f=Math.min(1,T.t/10),per=1.7-1.4*f,ph=(t%per)/per;
+  if(T.snd&&AC){T.snd.age+=dt;if(T.snd.age>CHARGE+4)T.snd=null;else{T.snd.out.gain.setTargetAtTime(towerVol(T),AC.currentTime,0.08);if(T.snd.pn)T.snd.pn.pan.setTargetAtTime(towerPan(T)*0.8,AC.currentTime,0.08)}}
+  if(T.st===1){T.t+=dt;const f=Math.min(1,T.t/CHARGE),per=1.7-1.4*f,ph=(t%per)/per;
     {const U=T.RU;U.uThr.value=(f-0.05)/0.85;U.uLit.value=0.8+f;U.uDim.value=0.08;U.uP.value=2.4;U.uPh.value=ph;U.uW.value=55}
     T.lensM.emissiveIntensity=0.15+2.4*f*f+0.6*f*Math.max(0,Math.sin(t*(10+50*f)));T.lens.scale.setScalar(1+0.08*f*Math.sin(t*(6+34*f)));
     T.motes.visible=true;T.mspin+=dt*(1.2+15*f*f);const rr=1.3-0.55*f;T.moteArr.forEach((m,i)=>{const an=T.mspin+i*2.094;m.position.set(Math.cos(an)*rr,T.H+T.LY+Math.sin(T.mspin*0.6+i*2)*0.3*(1-f),Math.sin(an)*rr)});
-    if(T.t>=10)towerFire(T);continue}
+    if(T.t>=CHARGE)towerFire(T);continue}
   T.mats[0].m.opacity=0.86+0.07*Math.sin(t*11+T.r)+0.07*Math.sin(t*7.3+T.r*2);
   if(T.st===2){T.t+=dt;const k=Math.min(1,T.t/0.5),e=1-Math.pow(1-k,3);T.bm.scale.set(1,Math.max(0.001,T.BL*e),1);T.lensM.emissiveIntensity=4.6-2.2*k;T.lens.scale.setScalar(1.28-0.28*k);
     {const U=T.RU;U.uThr.value=2;U.uLit.value=2.8-1.4*k;U.uP.value=0}if(k>=1){T.st=3;refreshFeedback()}}
@@ -6987,7 +7184,7 @@ animsW.push((t,dt)=>{for(const T of TWL){if(T.st===0)continue;
 PROG.on('areaCompleted',(id,quiet)=>{const T=TOWERS[id];if(!T||!T.bm)return;if(quiet)towerOn(T);else if(T.st===0)towerCharge(T)});
 // the towers' moving parts follow the tower's state: still and folded while it is off, moving through the charge, and at
 // rest (sails turning, balls orbiting, roof open, tower up, sigil down) once it is on
-animsW.push((t,dt)=>{const sm=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)};for(const T of TWL){const fx=T.fx;if(!fx)continue;const ct=T.st===0?0:T.st===1?Math.min(10,T.t):10;
+animsW.push((t,dt)=>{const sm=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)};for(const T of TWL){const fx=T.fx;if(!fx)continue;const ct=T.st===0?0:T.st===1?Math.min(10,T.t*10/CHARGE):10;   // (0 to 10 over the charge)
   if(fx.sails)fx.sails.rotation.z-=dt*1.8*(ct/10);   // (still while off; faster and faster as it charges; brisk once it is on)
   if(fx.sig){const low=sm(ct/6);if(T.st===1&&!fx.sig.snd){fx.sig.snd=true;sigilSound(fx.sig)}if(T.st!==1)fx.sig.snd=T.st!==0;
     if(low!==fx.sig.low){fx.sig.low=low;SIGIL.mesh.position.y=SIGIL.y0-fx.sig.drop*low;if(SIGIL.halo)SIGIL.halo.position.y=SIGIL.hy0-fx.sig.drop*low}}
@@ -7003,11 +7200,18 @@ animsW.push((t,dt)=>{const sm=v=>{v=Math.max(0,Math.min(1,v));return v*v*(3-2*v)
     // out from the shaft (0-1 s), twice round the tower and up above the lens (1-6.5 s), in over the top (6.5-7.5 s), then it grows (7.5-9.8 s)
     const pO=sm(ct),pU=sm((ct-1)/5.5),pI=sm((ct-6.5)/1),pG=sm((ct-7.5)/2.3),a=F.a0+0.5*pO+Math.PI*4*pU,rad=(F.r0+(F.ro-F.r0)*pO)*(1-pI);
     F.spin+=dt*0.25*pI;F.fl.position.set(Math.cos(a)*rad,F.cy+(F.Yc-F.cy)*pU+0.05*Math.sin(t*2)*pU*(1-pI)+0.08*Math.sin(t*0.8)*pG,Math.sin(a)*rad);F.fl.rotation.y=Math.atan2(Math.cos(a),Math.sin(a))+F.spin;
-    const grow=pG>0.001;F.small.visible=!grow;F.big.visible=grow;if(grow){F.big.scale.setScalar(F.s0+(1-F.s0)*pG);F.im.color.copy(F.cw).lerp(F.ci,pG);F.im.emissiveIntensity=0.4*pG}}
-  if(fx.falls){const F=fx.falls;let any=false;F.list.forEach(w=>{const e=ct-w.c0;if(e<=0){if(w.m.visible){w.m.visible=false;w.foam.visible=false}return}any=true;
+    // the glow comes up over a second and a half once the snowflake is full size
+    if(T.st===0)F.gl=0;else if(pG>=1)F.gl=Math.min(1,F.gl+dt/1.5);
+    const grow=pG>0.001;F.small.visible=!grow;F.big.visible=grow;if(grow){F.big.scale.setScalar(F.s0+(1-F.s0)*pG);F.im.color.copy(F.cw).lerp(F.ci,pG);F.im.emissiveIntensity=0.4*pG+1.3*F.gl*(0.9+0.1*Math.sin(t*2.2))}
+    F.glow.visible=F.gl>0;F.glow.material.opacity=0.55*F.gl*(0.85+0.15*Math.sin(t*2.2));
+    const av=Math.pow(ct/10,1.4);F.au.visible=av>0;F.AU.uOp.value=av;F.AU.uT.value+=dt;
+    const fg=sm(ct/10);F.floor.visible=ct>0;F.fm.opacity=0.9*Math.min(1,ct/1.5);F.floor.scale.setScalar(0.3+(F.fr-0.3)*fg);F.floor.rotation.z=0.4*fg}
+  if(fx.vine)fx.vine.value=T.st===0?-0.1:-0.05+1.15*ct/10;   // (the line between dead and living climbs with the charge)
+  if(fx.falls){const F=fx.falls;let any=false;F.list.forEach(w=>{const e=(ct-w.c0)*CHARGE/10;if(e<=0){if(w.m.visible){w.m.visible=false;w.foam.visible=false}return}any=true;
       // the water's leading edge falls from the ring (its curtain is drawn down to there), thickening as it pours, and foams once it reaches the pond
       const sf=e*w.rate,p=Math.min(1,e/w.ramp),fp=Math.max(0,Math.min(1,(sf-w.sw)/0.5));w.m.visible=true;w.g.setDrawRange(0,Math.min(F.NJ,Math.ceil(sf/w.sw*F.NJ))*F.M*6);w.m.material.opacity=0.15+0.5*p;
       w.foam.visible=fp>0;w.foam.material.opacity=fp*(0.3+0.08*Math.sin(t*5+w.c0));w.foam.scale.setScalar(1+0.02*Math.sin(t*3.3+w.c0))});
+    F.flow=0;F.list.forEach(w=>{const e=(ct-w.c0)*CHARGE/10;if(e>0)F.flow+=Math.min(1,e/w.ramp)/F.list.length});F.flow=Math.min(1,F.flow*1.6);
     if(any)FALLTEX.offset.y+=dt*1.6}}});
 PROG.on('reset',()=>TWL.forEach(towerOff));
 TWL.forEach(T=>{if(PROG.isComplete(T.id))towerOn(T)});
