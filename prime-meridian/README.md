@@ -24,10 +24,12 @@ Each place teaches one rule with 8 line-drawing panels, from very easy to hard. 
 - **Lanterns:** a lantern by each gate shows dark (not started), amber (under way) or green (complete).
 - **Cables:** a place's yellow cables run from its first panel to the next and on round the place. No cable runs into the first panel.
 - **Finishing a place:** the yellow cable from its last panel runs to the place's laser tower, which stands a few steps away. Each tower is built in its place's style. It charges for ten seconds, with a hum and rings of light climbing it, then fires a beam of its colour to its receiver at the foot of the hill's cliff, between two cave mouths. The receivers match their towers. Each place's hill-side wall is unbroken: the way to the hill is the spoke path. Some towers move as they charge:
-  - **Windmill Hill:** sails behind the lens start turning and speed up to match the windmills in the fields.
-  - **Place Value Castle:** the great sigil stands on iron rails in the beam's path, and slides down out of the way with a quiet scrape.
-  - **Adding Garden:** four coloured balls rise from the foot and orbit the tower, each at its own height and distance, one the other way round.
-  - **Times Table Village:** the tower is folded down inside a little house near the last panel. The roof opens, then the tower rises up through it.
+  - **Windmill Hill:** big sails behind the lens start turning and speed up until they whirl, faster than the windmills in the fields.
+  - **Place Value Castle:** the great sigil on the keep blocks the beam. It slides down the keep wall out of the way, with a quiet scrape of iron on stone.
+  - **Adding Garden:** the four coloured balls at the tower's foot float up and orbit it, each at its own height and distance, one the other way round.
+  - **Times Table Village:** the tower waits underground inside the house behind the last panel. A section of the roof ridge slides aside, then the tower rises through the gap with four coloured ribbons orbiting it.
+  - **Odd and Even Pond:** the tower stands on a small raised platform in the middle of the Even Pond, clear of the ducks and fish. Water pours from each ring as it lights, from the bottom up, and falls into the pond.
+  - **Snowflake Hollow:** the little snowflake on the tower floats off, circles up above the lens, then grows into a big ice snowflake like the one in the igloo.
 - **All nine beams** bring down the barrier round the five final challenges, in the middle of the cavern under the hill.
 - **The five challenges** power the lift with mirrored glass walls. Step in: the door closes, the hatch in the launch pad opens above you, and the lift rises through it. The hatch closes underneath, then the door opens onto the launch pad. The hilltop is twice as high as before, and there's no other way up.
 - **The rocket:** press the button on the launch pad, watch the rocket go, and the "You finished" card follows 5 seconds after lift-off.
