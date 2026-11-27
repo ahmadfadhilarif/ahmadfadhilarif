@@ -174,6 +174,8 @@ The caves, the nine laser receivers, the themed towers and the lift add very lit
 
 The next batch added moving parts to four laser towers, a house round the Times Table Village tower, and paving to close narrow gaps between paths. Draw calls rose to **1,609** at the Welcome Garden, **838** in the castle courtyard and **1,112** in the Times village, 1–3% more. The gap filling adds about half a second to loading.
 
+The batch after that gave the Odd and Even Pond tower a platform and waterfalls, and the Snowflake Hollow tower a snowflake that grows. It also moved the Times Table Village tower into a village house and removed its little house. Draw calls fell slightly, to **1,589** at the Welcome Garden, **827** in the castle courtyard and **1,101** in the Times village. The waterfalls are one mesh per ring, drawn only while the tower charges or is on.
+
 ## Measuring it yourself
 
 Open `index.html?perf` and walk to the Welcome Garden, the castle courtyard and the Times village. On a desktop GPU, compare fps, GPU ms and draw calls with the tables above. Then turn Settings → Limit frame rate off to see the uncapped figures on a fast screen.
