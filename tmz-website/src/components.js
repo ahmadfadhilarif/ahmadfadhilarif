@@ -25,7 +25,7 @@ function card(p, R, opts = {}) {
 
 // 3D viewer trigger (paths are relative to the site root; main.js adds the prefix)
 function view3d(p, cls, label) {
-  const data = JSON.stringify({ n: p.name, c: p.spec.cut, f: p.img, b: p.back });
+  const data = JSON.stringify({ n: p.name, c: p.spec.cut, f: p.img, b: p.back, fb: p.spec.fabric });
   return `<button class="${cls}" type="button" data-3d="${esc(data)}" aria-label="View ${esc(p.name)} in 3D on a mannequin">${label}</button>`;
 }
 

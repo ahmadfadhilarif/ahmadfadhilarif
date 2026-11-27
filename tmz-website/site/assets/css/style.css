@@ -780,10 +780,16 @@ body.drawer-open .drawer-overlay { opacity: 1; visibility: visible; }
 .e404 h1 { margin-top: -50px; font-size: 36px; }
 
 /* lightbox */
-.lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, .9); z-index: 500; display: none; align-items: center; justify-content: center; }
-.lightbox.on { display: flex; }
-.lightbox img { max-width: 90vw; max-height: 90vh; background: var(--card-bg); }
-.lightbox button { position: absolute; top: 20px; right: 25px; border: 0; background: none; color: #fff; font-size: 34px; }
+.lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, .9); z-index: 500; display: none; overflow: hidden; touch-action: none; }
+.lightbox.on { display: block; }
+.lightbox img { position: absolute; left: 50%; top: 50%; max-width: none; background: var(--card-bg); cursor: zoom-in; user-select: none; -webkit-user-select: none; touch-action: none; }
+.lightbox.zoomed img { cursor: grab; }
+.lightbox.zoomed img:active { cursor: grabbing; }
+.lightbox .lb-x { position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); right: 20px; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; font-size: 30px; line-height: 1; z-index: 2; }
+.lightbox .lb-bar { position: absolute; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: 999px; background: rgba(255, 255, 255, .12); z-index: 2; }
+.lightbox .lb-bar button { width: 36px; height: 36px; border: 0; border-radius: 50%; background: #fff; color: #111; font-size: 18px; }
+.lightbox .lb-bar output { min-width: 40px; text-align: center; color: #fff; font: 700 13px var(--font-text); font-variant-numeric: tabular-nums; }
+.lightbox .lb-hint { position: absolute; left: 0; right: 0; top: calc(26px + env(safe-area-inset-top, 0px)); margin: 0; text-align: center; color: rgba(255, 255, 255, .6); font-size: 12px; pointer-events: none; }
 
 /* toast */
 .toast { position: fixed; left: 50%; bottom: 30px; transform: translate(-50%, 30px); background: #111; color: #fff; padding: 12px 22px; border-radius: 30px; font: 700 13px var(--font-text); opacity: 0; transition: .3s; z-index: 600; pointer-events: none; }

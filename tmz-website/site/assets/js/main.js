@@ -203,15 +203,72 @@
   });
 
   // ------------------------------------------------------------ lightbox
-  let lb;
+  // Zoomable up to 3x. The image is resized (not CSS-scaled) so the vector artwork
+  // re-renders sharply at every zoom level.
+  let lb, lbImg, lbZoom = 1, lbX = 0, lbY = 0, lbBase = { w: 0, h: 0 };
+  const LB_MAX = 3;
+  function lbLayout() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const w = lbBase.w * lbZoom, h = lbBase.h * lbZoom;
+    const mxX = Math.max(0, (w - W) / 2 + 40), mxY = Math.max(0, (h - H) / 2 + 40);
+    lbX = Math.max(-mxX, Math.min(mxX, lbX)); lbY = Math.max(-mxY, Math.min(mxY, lbY));
+    lbImg.style.width = w + 'px'; lbImg.style.height = h + 'px';
+    lbImg.style.transform = `translate(${-w / 2 + lbX}px, ${-h / 2 + lbY}px)`;
+    lb.querySelector('output').textContent = lbZoom.toFixed(1) + '×';
+    lb.classList.toggle('zoomed', lbZoom > 1);
+  }
+  function lbSetZoom(z, cx, cy) {
+    z = Math.max(1, Math.min(LB_MAX, z));
+    if (cx !== undefined) { // keep the point under the pointer still
+      const ox = cx - window.innerWidth / 2 - lbX, oy = cy - window.innerHeight / 2 - lbY;
+      lbX -= ox * (z / lbZoom - 1); lbY -= oy * (z / lbZoom - 1);
+    }
+    lbZoom = z; if (z === 1) { lbX = 0; lbY = 0; }
+    lbLayout();
+  }
+  function lbFit() {
+    const nw = lbImg.naturalWidth || 600, nh = lbImg.naturalHeight || 600;
+    const s = Math.min((window.innerWidth * 0.9) / nw, (window.innerHeight * 0.86) / nh);
+    lbBase = { w: nw * s, h: nh * s }; lbLayout();
+  }
   function openLightbox(src) {
     if (!lb) {
       lb = document.createElement('div'); lb.className = 'lightbox';
-      lb.innerHTML = '<button aria-label="Close">&times;</button><img alt="">';
-      lb.addEventListener('click', (e) => { if (e.target !== lb.querySelector('img')) closeLightbox(); });
+      lb.setAttribute('role', 'dialog'); lb.setAttribute('aria-modal', 'true'); lb.setAttribute('aria-label', 'Product image');
+      lb.innerHTML = '<img alt="" draggable="false"><button class="lb-x" aria-label="Close">&times;</button>' +
+        '<div class="lb-bar"><button data-lz="-1" aria-label="Zoom out">&minus;</button><output>1.0×</output><button data-lz="1" aria-label="Zoom in">+</button></div>' +
+        '<p class="lb-hint">Scroll, pinch or click to zoom · Drag to move</p>';
       document.body.appendChild(lb);
+      lbImg = lb.querySelector('img');
+      lbImg.addEventListener('load', lbFit);
+      lb.querySelector('.lb-x').addEventListener('click', closeLightbox);
+      lb.querySelectorAll('[data-lz]').forEach((b) => b.addEventListener('click', () => lbSetZoom(lbZoom * (b.dataset.lz > 0 ? 1.4 : 1 / 1.4))));
+      lb.addEventListener('click', (e) => { if (e.target === lb && lbZoom === 1) closeLightbox(); });
+      lb.addEventListener('wheel', (e) => { e.preventDefault(); lbSetZoom(lbZoom * Math.exp(-e.deltaY * 0.0018), e.clientX, e.clientY); }, { passive: false });
+      const pts = new Map(); let moved = false, last = null, pinch = 0;
+      lbImg.addEventListener('pointerdown', (e) => { lbImg.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); moved = false; last = [e.clientX, e.clientY]; });
+      lbImg.addEventListener('pointermove', (e) => {
+        if (!pts.has(e.pointerId)) return;
+        pts.set(e.pointerId, [e.clientX, e.clientY]);
+        if (pts.size === 2) {
+          const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]);
+          if (pinch) lbSetZoom(lbZoom * (d / pinch), (a[0] + b[0]) / 2, (a[1] + b[1]) / 2);
+          pinch = d; moved = true; return;
+        }
+        const dx = e.clientX - last[0], dy = e.clientY - last[1]; last = [e.clientX, e.clientY];
+        if (Math.abs(dx) + Math.abs(dy) > 1) moved = true;
+        if (lbZoom > 1) { lbX += dx; lbY += dy; lbLayout(); }
+      });
+      const up = (e) => {
+        pts.delete(e.pointerId); if (pts.size < 2) pinch = 0;
+        if (!moved && !pts.size && e.type === 'pointerup') lbSetZoom(lbZoom > 1 ? 1 : 2.5, e.clientX, e.clientY);
+      };
+      lbImg.addEventListener('pointerup', up); lbImg.addEventListener('pointercancel', up);
+      window.addEventListener('resize', () => { if (lb.classList.contains('on')) lbFit(); });
     }
-    lb.querySelector('img').src = src; lb.classList.add('on');
+    lbZoom = 1; lbX = 0; lbY = 0;
+    lbImg.src = src; lb.classList.add('on');
+    if (lbImg.complete) lbFit();
   }
   function closeLightbox() { if (lb) lb.classList.remove('on'); }
   $$('.gallery .shot').forEach((s) => s.addEventListener('click', () => openLightbox($('img', s).src)));

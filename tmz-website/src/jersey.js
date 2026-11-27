@@ -70,6 +70,16 @@ const X = (x) => 600 - x; // mirror helper
  *  seams          decorative stitch lines
  *  chest          logo placement (front), nape (back)
  */
+/** Same strip as band(), returned as its two edge points and the inward offset. */
+function bandInfo(p1, p2, toward, width) {
+  const mx_ = (p1[0] + p2[0]) / 2, my_ = (p1[1] + p2[1]) / 2;
+  let dx = toward[0] - mx_, dy = toward[1] - my_;
+  const L = Math.hypot(dx, dy);
+  return { a: p1, b: p2, d: [(dx / L) * width, (dy / L) * width] };
+}
+/** Mirror an absolute path made of x,y pairs around the centre line. */
+const mirrorPath = (d) => d.replace(/(-?[\d.]+)[ ,](-?[\d.]+)/g, (m, x, y) => `${r(600 - +x)} ${y}`);
+
 function band(p1, p2, toward, width) {
   // polygon strip along segment p1-p2 offset toward point `toward`
   const mx = (p1[0] + p2[0]) / 2, my = (p1[1] + p2[1]) / 2;
@@ -97,9 +107,10 @@ const CUTS = {
     const seamR = raglan ? `M${X(268)} 112Q${X(218)} 150 ${X(aL[0])} ${aL[1]}` : `M${X(sL[0])} ${sL[1]}Q${X(182)} 168 ${X(aL[0])} ${aL[1]}`;
     const toward = [(sL[0] + aL[0]) / 2, (sL[1] + aL[1]) / 2];
     return {
-      shape, nL, nR: [X(nL[0]), nL[1]], hemY: hL[1],
+      shape, nL, nR: [X(nL[0]), nL[1]], hemY: hL[1], hemCtl: hemY,
       sleeves: [sleeveL, sleeveR],
       cuffs: [band(stL, sbL, toward, 13), band([X(stL[0]), stL[1]], [X(sbL[0]), sbL[1]], [X(toward[0]), toward[1]], 13)],
+      cuffInfo: [bandInfo(stL, sbL, toward, 13), bandInfo([X(stL[0]), stL[1]], [X(sbL[0]), sbL[1]], [X(toward[0]), toward[1]], 13)],
       cuffLines: [[stL, sbL], [[X(stL[0]), stL[1]], [X(sbL[0]), sbL[1]]]],
       sides: [`M${aL}L236 236Q230 360 236 500L${hL}Q186 352 ${aL}Z`, `M${X(aL[0])} ${aL[1]}L${X(236)} 236Q${X(230)} 360 ${X(236)} 500L${X(hL[0])} ${hL[1]}Q${X(186)} 352 ${X(aL[0])} ${aL[1]}Z`],
       hem: `M${hL}Q300 ${hemY} ${X(hL[0])} ${hL[1]}L${X(hL[0])} ${hL[1] - 11}Q300 ${hemY - 11} ${hL[0]} ${hL[1] - 11}Z`,
@@ -125,9 +136,10 @@ const CUTS = {
     const seamL = raglan ? `M266 108Q218 150 ${aL}` : `M${sL}Q184 170 ${aL}`;
     const seamR = raglan ? `M${X(266)} 108Q${X(218)} 150 ${X(aL[0])} ${aL[1]}` : `M${X(sL[0])} ${sL[1]}Q${X(184)} 170 ${X(aL[0])} ${aL[1]}`;
     return {
-      shape, nL, nR: [X(nL[0]), nL[1]], hemY: hL[1],
+      shape, nL, nR: [X(nL[0]), nL[1]], hemY: hL[1], hemCtl: hemY,
       sleeves: [sleeveL, sleeveR],
       cuffs: [band(cO, cI, [120, 380], 18), band([X(cO[0]), cO[1]], [X(cI[0]), cI[1]], [X(120), 380], 18)],
+      cuffInfo: [bandInfo(cO, cI, [120, 380], 18), bandInfo([X(cO[0]), cO[1]], [X(cI[0]), cI[1]], [X(120), 380], 18)],
       cuffLines: [[cO, cI], [[X(cO[0]), cO[1]], [X(cI[0]), cI[1]]]],
       sides: [`M${aL}L238 248Q232 370 238 504L${hL}Q190 360 ${aL}Z`, `M${X(aL[0])} ${aL[1]}L${X(238)} 248Q${X(232)} 370 ${X(238)} 504L${X(hL[0])} ${hL[1]}Q${X(190)} 360 ${X(aL[0])} ${aL[1]}Z`],
       hem: `M${hL}Q300 ${hemY} ${X(hL[0])} ${hL[1]}L${X(hL[0])} ${hL[1] - 16}Q300 ${hemY - 16} ${hL[0]} ${hL[1] - 16}Z`,
@@ -146,9 +158,10 @@ const CUTS = {
     const sleeveL = `M${sL}Q120 206 ${cT}L${cB}Q130 268 ${aL}Q206 230 ${sL}Z`;
     const sleeveR = `M${X(sL[0])} ${sL[1]}Q${X(120)} 206 ${X(cT[0])} ${cT[1]}L${X(cB[0])} ${cB[1]}Q${X(130)} 268 ${X(aL[0])} ${aL[1]}Q${X(206)} 230 ${X(sL[0])} ${sL[1]}Z`;
     return {
-      shape, nL, nR: [X(nL[0]), nL[1]], hemY: hL[1],
+      shape, nL, nR: [X(nL[0]), nL[1]], hemY: hL[1], hemCtl: hemY,
       sleeves: [sleeveL, sleeveR],
       cuffs: [band(cT, cB, [130, 250], 14), band([X(cT[0]), cT[1]], [X(cB[0]), cB[1]], [X(130), 250], 14)],
+      cuffInfo: [bandInfo(cT, cB, [130, 250], 14), bandInfo([X(cT[0]), cT[1]], [X(cB[0]), cB[1]], [X(130), 250], 14)],
       cuffLines: [[cT, cB], [[X(cT[0]), cT[1]], [X(cB[0]), cB[1]]]],
       sides: [`M${aL}L250 276Q246 360 250 446L${hL}Q214 360 ${aL}Z`, `M${X(aL[0])} ${aL[1]}L${X(250)} 276Q${X(246)} 360 ${X(250)} 446L${X(hL[0])} ${hL[1]}Q${X(214)} 360 ${X(aL[0])} ${aL[1]}Z`],
       hem: `M${hL}Q300 ${hemY} ${X(hL[0])} ${hL[1]}L${X(hL[0])} ${hL[1] - 12}Q300 ${hemY - 12} ${hL[0]} ${hL[1] - 12}Z`,
@@ -165,7 +178,7 @@ const CUTS = {
     const hemY = 510;
     const shape = (neck) => `M${nL}L${sL}Q214 214 ${aL}Q172 370 ${hL}Q300 ${hemY} ${X(hL[0])} ${hL[1]}Q${X(172)} 370 ${X(aL[0])} ${aL[1]}Q${X(214)} 214 ${X(sL[0])} ${sL[1]}L${X(nL[0])} ${nL[1]}${neck}Z`;
     return {
-      shape, nL, nR: [X(nL[0]), nL[1]], vest: true, hemY: hL[1],
+      shape, nL, nR: [X(nL[0]), nL[1]], vest: true, hemY: hL[1], hemCtl: hemY,
       sleeves: [],
       cuffs: [],
       armholes: [`M${sL}Q214 214 ${aL}`, `M${X(sL[0])} ${sL[1]}Q${X(214)} 214 ${X(aL[0])} ${aL[1]}`],
@@ -175,7 +188,7 @@ const CUTS = {
       chest: { x: 246, y: 196, w: 32 }, nape: { x: 300, y: 130, w: 34 }, centre: { x: 300, y: 320 },
       backNum: { y: 320, size: 130 },
       bbox: [160, 90, 280, 430],
-      meta: { type: 'top', nL, sL, aL, hL, hemY: hL[1] + 7, sleeve: null },
+      meta: { type: 'top', nL, sL, aL, hL, hemY: hL[1] + 7, sleeve: null, armCtl: [214, 214] },
     };
   },
 };
@@ -481,6 +494,39 @@ const P = {
   },
 };
 
+// ---------------------------------------------------------------- premium fabric + finishing details
+/*
+ * Fabric weaves are vector micro-patterns (highlight + shadow strokes), so they stay
+ * crisp at any zoom and read on both light and dark colours.
+ */
+const FABRIC = {
+  ARCTIX: { w: 2.4, h: 2, body: '<path d="M0 .2L1.2 1.7L2.4 .2" stroke="#fff" stroke-opacity=".17" stroke-width=".5" fill="none"/><path d="M0 .78L1.2 2.28L2.4 .78" stroke="#000" stroke-opacity=".22" stroke-width=".45" fill="none"/>' },
+  HEXA: { w: 2.77, h: 4.8, body: '<g fill="#000" fill-opacity=".3"><circle cx="1.385" cy="1.2" r=".52"/><circle cx="0" cy="3.6" r=".52"/><circle cx="2.77" cy="3.6" r=".52"/></g><g fill="#fff" fill-opacity=".1"><circle cx="1.2" cy="1.0" r=".28"/><circle cx="-.18" cy="3.4" r=".28"/><circle cx="2.59" cy="3.4" r=".28"/></g>' },
+  AGILIS: { w: 2, h: 2, rot: -35, body: '<rect width="2" height=".75" fill="#fff" fill-opacity=".1"/><rect y="1" width="2" height=".6" fill="#000" fill-opacity=".16"/>' },
+  QUADRA: { w: 2.8, h: 2.8, body: '<rect x=".4" y=".4" width="2" height="2" fill="#000" fill-opacity=".13"/><path d="M0 .15H2.8M.15 0V2.8" stroke="#fff" stroke-opacity=".16" stroke-width=".3"/>' },
+  MICROTEX: { w: 1.4, h: 1.4, rot: 30, body: '<rect width="1.4" height=".5" fill="#fff" fill-opacity=".08"/><rect y=".72" width="1.4" height=".42" fill="#000" fill-opacity=".12"/>' },
+  TASLAN: { w: 3, h: 1.3, body: '<rect width="3" height=".5" fill="#fff" fill-opacity=".09"/><rect y=".66" width="3" height=".38" fill="#000" fill-opacity=".14"/><rect x="1.4" width=".18" height="1.3" fill="#000" fill-opacity=".06"/>' },
+  RIPSTOP: { w: 6, h: 6, body: '<path d="M0 .3H6M.3 0V6" stroke="#000" stroke-opacity=".24" stroke-width=".55"/><path d="M0 .85H6M.85 0V6" stroke="#fff" stroke-opacity=".12" stroke-width=".3"/><path d="M2 2l2 2M4 2l-2 2" stroke="#000" stroke-opacity=".05" stroke-width=".3"/>' },
+  MESH: { w: 2.6, h: 2.6, body: '<circle cx="1.3" cy="1.3" r=".74" fill="#000" fill-opacity=".34"/><circle cx="1.06" cy="1.06" r=".38" fill="#fff" fill-opacity=".07"/>' },
+};
+function fabricDefs(id, fabric) {
+  const f = FABRIC[fabric] || FABRIC.ARCTIX;
+  return `<pattern id="${id}fb" width="${f.w}" height="${f.h}" patternUnits="userSpaceOnUse"${f.rot ? ` patternTransform="rotate(${f.rot})"` : ''}>${f.body}</pattern>`;
+}
+// coverstitch: dark thread shadow + light thread, tone-on-tone on any colour
+const stitch = (d, o = 1) => `<path d="${d}" fill="none" stroke="#000" stroke-opacity="${(0.34 * o).toFixed(2)}" stroke-width=".7" stroke-dasharray="2 1.3" transform="translate(.3 .35)"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity="${(0.42 * o).toFixed(2)}" stroke-width=".55" stroke-dasharray="2 1.3"/>`;
+// knitted rib: fine lines across a band
+const rib = (d, w) => `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".2" stroke-width="${w}" stroke-dasharray=".55 .85"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="${w}" stroke-dasharray=".3 1.1" stroke-dashoffset=".7"/>`;
+const pt = (p) => `${r(p[0])} ${r(p[1])}`;
+/** TMZ mark drawn through a shared <use>, so it can repeat cheaply. */
+function logoDef(id) { return `<path id="${id}lg" transform="translate(0,2560) scale(0.1,-0.1)" d="${LOGO_D}"/>`; }
+function logoUse(id, cx, cy, w, fill, extra = '') {
+  const s = w / LVW, h = LVH * s;
+  return `<use href="#${id}lg" transform="translate(${r(cx - w / 2 - LVX * s)} ${r(cy - h / 2 - LVY * s)}) scale(${s.toFixed(5)})" fill="${fill}"${extra}/>`;
+}
+// raised heat-transfer print: soft shadow under the logo
+const raisedLogo = (id, cx, cy, w, fill) => logoUse(id, cx + 0.55, cy + 0.7, w, '#000', ' fill-opacity=".32"') + logoUse(id, cx, cy, w, fill);
+
 // ---------------------------------------------------------------- render
 /**
  * spec: {
@@ -507,11 +553,16 @@ function render(spec, view = 'front') {
   const outlineCol = spec.outline || 'rgba(0,0,0,.28)';
   const parts = [];
 
-  defs.push(`<clipPath id="${id}k"><path d="${shapeD}"/></clipPath>`);
+  defs.push(`<clipPath id="${id}k"><path d="${shapeD}"/></clipPath>`, logoDef(id), fabricDefs(id, spec.fabric));
+  const M = g.meta, hemC = g.hemCtl, aL = M.aL, hL = M.hL;
+  const tone = isDark(c.base) ? '#ffffff' : '#111111';
 
-  // inner back of neck (visible through front neckline)
+  // inner back of neck (visible through front neckline) + printed neck label
   if (view === 'front') {
-    parts.push(`<path d="${nk.inner}" fill="${shade(c.inner || c.base, -0.45)}" stroke="${outlineCol}" stroke-width="1.2"/>`);
+    const label = ['crew', 'v', 'scoop', 'polo'].includes(spec.neck || 'crew') && !spec.template
+      ? logoUse(id, 300, g.nL[1] + 26, 11, 'rgba(255,255,255,.55)') + `<text x="300" y="${g.nL[1] + 35}" font-family="Arial, Helvetica, sans-serif" font-size="3.4" letter-spacing=".5" text-anchor="middle" fill="rgba(255,255,255,.5)">M · 100% POLYESTER</text>`
+      : '';
+    parts.push(`<g class="nk-in"><path d="${nk.inner}" fill="${shade(c.inner || c.base, -0.45)}" stroke="${outlineCol}" stroke-width="1.2"/>${label}</g>`);
   }
   // hood behind (windbreaker)
   if (nk.hood) {
@@ -545,26 +596,81 @@ function render(spec, view = 'front') {
     art.push(`<path d="M${a}L${b}" stroke="${c.p2 || c.trim}" stroke-width="3" transform="translate(${i ? -1 : 1} 0)" opacity=".9"/>`);
   });
   if (spec.hemBand) art.push(`<path d="${g.hem}" fill="${c.trim}"/>`);
+  // laser-cut side vents
+  if (!spec.template && (spec.cut === 'tee' || spec.cut === 'vest' || spec.cut === 'wide')) {
+    const y0 = aL[1] + 24, y1 = aL[1] + 0.55 * (hL[1] - aL[1]);
+    defs.push(`<pattern id="${id}pf" width="2.6" height="2.6" patternUnits="userSpaceOnUse"><circle cx="1.3" cy="1.3" r=".55" fill="#000" fill-opacity=".42"/><circle cx="1.12" cy="1.12" r=".25" fill="#fff" fill-opacity=".1"/></pattern><linearGradient id="${id}pg" x1="0" y1="${y0}" x2="0" y2="${y1}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".2" stop-color="#fff"/><stop offset=".8" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="${id}pm"><rect x="0" y="${y0}" width="600" height="${y1 - y0}" fill="url(#${id}pg)"/></mask>`);
+    art.push(`<g mask="url(#${id}pm)" fill="url(#${id}pf)"><rect x="${hL[0] + 7}" y="${y0}" width="17" height="${y1 - y0}"/><rect x="${X(hL[0] + 24)}" y="${y0}" width="17" height="${y1 - y0}"/></g>`);
+  }
+  // tonal monogram print across the lower body
+  if (!spec.template) {
+    const t0 = hL[1] - 96;
+    defs.push(`<pattern id="${id}mg" width="30" height="26" patternUnits="userSpaceOnUse">${logoUse(id, 7.5, 6.5, 8, tone)}${logoUse(id, 22.5, 19.5, 8, tone)}</pattern><linearGradient id="${id}mgg" x1="0" y1="${t0}" x2="0" y2="${hemC}" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".09"/></linearGradient><mask id="${id}mgm"><rect y="${t0}" width="600" height="${hemC - t0 + 6}" fill="url(#${id}mgg)"/></mask>`);
+    art.push(`<rect y="${t0}" width="600" height="${hemC - t0 + 6}" fill="url(#${id}mg)" mask="url(#${id}mgm)"/>`);
+  }
+  // fabric weave
+  art.push(`<rect width="600" height="620" fill="url(#${id}fb)"/>`);
+  // drape: soft folds under the arms, at the waist and on the sleeves
+  defs.push(`<filter id="${id}bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4.5"/></filter>`);
+  {
+    const f = [];
+    const yW = aL[1] + 0.6 * (hL[1] - aL[1]);
+    [1, -1].forEach((sg) => {
+      const P = (dx, dy) => pt([sg > 0 ? aL[0] + dx : X(aL[0] + dx), aL[1] + dy]);
+      f.push(`<path d="M${P(8, 6)}Q${P(46, 34)} ${P(80, 80)}" stroke="#000" stroke-opacity=".17" stroke-width="7"/>`);
+      f.push(`<path d="M${P(18, 0)}Q${P(56, 26)} ${P(90, 70)}" stroke="#fff" stroke-opacity=".1" stroke-width="6"/>`);
+      f.push(`<path d="M${P(10, 20)}Q${P(38, 44)} ${P(58, 74)}" stroke="#000" stroke-opacity=".1" stroke-width="5"/>`);
+      if (M.sleeve) {
+        const b0 = M.sleeve.bot[0], b1 = M.sleeve.bot[1];
+        const q = (p) => (sg > 0 ? p : [X(p[0]), p[1]]);
+        const m1 = q([b0[0] + (b1[0] - b0[0]) * 0.15, b0[1] + (b1[1] - b0[1]) * 0.15 - 8]);
+        const m2 = q([b0[0] + (b1[0] - b0[0]) * 0.55, b0[1] + (b1[1] - b0[1]) * 0.55 - 14]);
+        f.push(`<path d="M${pt(m1)}L${pt(m2)}" stroke="#000" stroke-opacity=".13" stroke-width="5"/>`);
+      }
+    });
+    f.push(`<path d="M${hL[0] + 20} ${r(yW)}Q300 ${r(yW + 14)} ${X(hL[0] + 20)} ${r(yW)}" stroke="#000" stroke-opacity=".08" stroke-width="9"/><path d="M${hL[0] + 24} ${r(yW - 9)}Q300 ${r(yW + 4)} ${X(hL[0] + 24)} ${r(yW - 9)}" stroke="#fff" stroke-opacity=".06" stroke-width="7"/>`);
+    f.push(`<path d="M240 ${hL[1] - 46}L236 ${hL[1] + 4}M360 ${hL[1] - 46}L364 ${hL[1] + 4}" stroke="#000" stroke-opacity=".07" stroke-width="10"/>`);
+    f.push(`<ellipse cx="300" cy="${aL[1] + 8}" rx="74" ry="42" fill="#fff" fill-opacity=".07"/>`);
+    f.push(`<path d="M${g.nL[0] - 6} ${g.nL[1] + 34}Q300 ${g.nL[1] + 52} ${X(g.nL[0] - 6)} ${g.nL[1] + 34}" stroke="#000" stroke-opacity=".06" stroke-width="7"/>`);
+    art.push(`<g fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
+  }
   // fabric shading: soft vertical highlight + edges
   defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
   defs.push(`<linearGradient id="${id}sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>`);
   art.push(`<rect width="600" height="600" fill="url(#${id}sh)"/><rect width="600" height="600" fill="url(#${id}sv)"/>`);
-  parts.push(`<g clip-path="url(#${id}k)">${art.join('')}</g>`);
+  const fin = [];
+  (g.cuffInfo || []).forEach((cf) => {
+    const A = (k) => [cf.a[0] + cf.d[0] * k, cf.a[1] + cf.d[1] * k], B = (k) => [cf.b[0] + cf.d[0] * k, cf.b[1] + cf.d[1] * k];
+    fin.push(rib(`M${pt(A(0.5))}L${pt(B(0.5))}`, r(Math.hypot(cf.d[0], cf.d[1]))));
+    fin.push(stitch(`M${pt(A(1.2))}L${pt(B(1.2))}`));
+  });
+  if (spec.hemBand) fin.push(rib(`M${hL[0]} ${hL[1] - 8}Q300 ${hemC - 8} ${X(hL[0])} ${hL[1] - 8}`, 16));
+  fin.push(stitch(`M${hL[0]} ${hL[1] - (spec.hemBand ? 18 : 6)}Q300 ${hemC - (spec.hemBand ? 18 : 6)} ${X(hL[0])} ${hL[1] - (spec.hemBand ? 18 : 6)}`));
+  fin.push(stitch(`M${hL[0]} ${hL[1] - (spec.hemBand ? 21 : 9)}Q300 ${hemC - (spec.hemBand ? 21 : 9)} ${X(hL[0])} ${hL[1] - (spec.hemBand ? 21 : 9)}`));
+  if (c.side) {
+    const m = g.sides[0].match(/L([\d.]+ [\d.]+Q[\d.]+ [\d.]+ [\d.]+ [\d.]+)/);
+    if (m) { const e = 'M' + m[1]; fin.push(stitch(e), stitch(mirrorPath(e))); }
+  }
+  parts.push(`<g clip-path="url(#${id}k)">${art.join('')}${fin.join('')}</g>`);
 
   // seams
   const seamCol = spec.outline || 'rgba(0,0,0,.25)';
-  g.seams.forEach((d) => parts.push(`<path d="${d}" fill="none" stroke="${seamCol}" stroke-width="1.4"/><path d="${d}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="1" stroke-dasharray="3 3" transform="translate(2 1)"/>`));
+  g.seams.forEach((d) => parts.push(`<path d="${d}" fill="none" stroke="${seamCol}" stroke-width="1.2"/><g transform="translate(2.2 .8)">${stitch(d, 0.9)}</g><g transform="translate(-2 -.6)">${stitch(d, 0.6)}</g>`));
   if (g.armholes) g.armholes.forEach((d) => parts.push(`<path d="${d}" fill="none" stroke="${c.trim}" stroke-width="12"/><path d="${d}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.5" transform="translate(${d.includes('M220') ? 4 : -4} 0)"/>`));
 
   // collar
   if (view === 'front') {
     if (nk.trim) {
       parts.push(`<path d="${nk.trim}" fill="none" stroke="${c.trim}" stroke-width="${nk.trimW}" stroke-linejoin="miter"/>`);
+      parts.push(rib(nk.trim, nk.trimW));
       parts.push(`<path d="${nk.trim}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.4" transform="translate(0 ${nk.trimW / 2 + 1})" opacity=".9"/>`);
+      parts.push(`<g transform="translate(0 ${nk.trimW / 2 + 3.6})">${stitch(nk.trim)}</g>`);
     }
     parts.push(`<path d="${nk.backTrim}" fill="none" stroke="${shade(c.trim, -0.25)}" stroke-width="5"/>`);
   } else {
-    parts.push(`<path d="${nk.backTrim}" fill="none" stroke="${c.trim}" stroke-width="10"/>`);
+    parts.push(`<path d="${nk.backTrim}" fill="none" stroke="${c.trim}" stroke-width="10"/>`, rib(nk.backTrim, 10), `<g transform="translate(0 7)">${stitch(nk.backTrim)}</g>`);
+    // printed neck tape
+    if (!spec.template) parts.push(`<path d="M${g.nL[0] + 8} ${g.nL[1] + 14}Q300 ${g.nL[1] + 28} ${X(g.nL[0] + 8)} ${g.nL[1] + 14}" fill="none" stroke="${shade(c.trim, 0.12)}" stroke-width="3" stroke-opacity=".6"/>`);
   }
   if (nk.polo) {
     const [nL, nR] = [g.nL, g.nR];
@@ -593,14 +699,20 @@ function render(spec, view = 'front') {
   if (view === 'front') {
     const ch = { ...g.chest };
     if (spec.centreLogo) { ch.x = 300; ch.w *= 1.2; }
-    parts.push(logo(ch.x, ch.y, ch.w, logoFill));
+    parts.push(raisedLogo(id, ch.x, ch.y, ch.w, logoFill));
+    if (!spec.template) {
+      const tx = X(hL[0]) - 34, ty = hL[1] - 26, dark = isDark(c.base);
+      parts.push(`<rect x="${tx}" y="${ty}" width="15" height="9" rx="1.2" fill="${dark ? '#f2f2f2' : '#151515'}"/><rect x="${tx + 0.8}" y="${ty + 0.8}" width="13.4" height="7.4" rx=".8" fill="none" stroke="${dark ? '#000' : '#fff'}" stroke-opacity=".35" stroke-width=".35" stroke-dasharray="1 .6"/>${logoUse(id, tx + 7.5, ty + 4.5, 8, dark ? '#111' : '#fff')}`);
+      parts.push(`<text transform="translate(${X(hL[0]) - 12} ${hL[1] - 24}) rotate(-90)" font-family="Arial, Helvetica, sans-serif" font-size="3.6" letter-spacing=".9" fill="${tone}" fill-opacity=".42">TMZ · ENGINEERED FOR PERFORMANCE · CUSTOM TEAMWEAR · MALAYSIA</text>`);
+    }
     if (spec.flag) parts.push(flag(X(ch.x) - 4, ch.y, 32));
     if (spec.chestNumber) parts.push(`<text x="${X(ch.x)}" y="${ch.y + 14}" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif" font-size="40" text-anchor="middle" fill="${logoFill}" opacity=".92">${spec.chestNumber}</text>`);
-    if (spec.bigFront) parts.push(logo(300, g.centre.y + 10, 150, logoFill, ' opacity=".9"'));
+    if (spec.bigFront) parts.push(logoUse(id, 300, g.centre.y + 10, 150, logoFill, ' opacity=".9"'));
   } else {
-    parts.push(logo(g.nape.x, g.nape.y, g.nape.w, logoFill));
+    parts.push(raisedLogo(id, g.nape.x, g.nape.y, g.nape.w, logoFill));
+    if (!spec.template) parts.push(`<text x="300" y="${hL[1] - 16}" font-family="Arial, Helvetica, sans-serif" font-size="3.4" letter-spacing="1" text-anchor="middle" fill="${tone}" fill-opacity=".4">TMZ PERFORMANCE TEAMWEAR · DESIGNED &amp; MADE IN MALAYSIA</text>`);
     if (spec.number) {
-      parts.push(`<text x="300" y="${g.backNum.y + g.backNum.size * 0.36}" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif" font-size="${g.backNum.size}" text-anchor="middle" fill="${logoFill}">${spec.number}</text>`);
+      parts.push(`<text x="300" y="${g.backNum.y + g.backNum.size * 0.36}" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif" font-size="${g.backNum.size}" text-anchor="middle" fill="${logoFill}" stroke="${shade(c.base, isDark(c.base) ? 0.25 : -0.25)}" stroke-width="1.2" paint-order="stroke">${spec.number}</text>`);
     }
     if (spec.name) parts.push(`<text x="300" y="${g.backNum.y - g.backNum.size * 0.5}" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="22" letter-spacing="2" text-anchor="middle" fill="${logoFill}">${spec.name}</text>`);
   }
@@ -622,7 +734,8 @@ function renderPants(spec, view = 'front') {
   const outlineCol = spec.outline || 'rgba(0,0,0,.28)';
   const seamCol = spec.outline || 'rgba(0,0,0,.25)';
   const parts = [];
-  defs.push(`<clipPath id="${id}k"><path d="${g.shape}"/></clipPath>`);
+  defs.push(`<clipPath id="${id}k"><path d="${g.shape}"/></clipPath>`, logoDef(id), fabricDefs(id, spec.fabric || 'MICROTEX'));
+  const tone = isDark(c.base) ? '#ffffff' : '#111111';
   const art = [`<rect width="600" height="600" fill="${c.base}"/><rect y="600" width="600" height="20" fill="${c.base}"/>`];
   if (spec.pattern && P[spec.pattern]) art.push(`<g>${P[spec.pattern]({ id, rand, c, defs })}</g>`);
   // side panels / stripes along the outer seams
@@ -634,7 +747,24 @@ function renderPants(spec, view = 'front') {
   // waistband + ankle cuffs
   art.push(`<path d="M196 86H404V118H196Z" fill="${c.trim}"/>`);
   art.push(`<path d="M206 554L276 554L278 572L204 572Z" fill="${c.trim}"/><path d="M324 554L394 554L396 572L322 572Z" fill="${c.trim}"/>`);
+  art.push(rib('M196 102H404', 32), rib('M205 563L277 563', 18), rib('M323 563L395 563', 18));
   if (view === 'back') art.push(`<path d="M196 94H404M196 101H404M196 108H404" stroke="${shade(c.trim, -0.25)}" stroke-width="1.2"/>`);
+  art.push(`<rect width="600" height="620" fill="url(#${id}fb)"/>`);
+  // drape: crotch pulls, knee breaks, stacked ankles
+  defs.push(`<filter id="${id}bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>`);
+  {
+    const f = [];
+    f.push('<path d="M300 272L262 232M300 272L338 232M296 284L280 330M304 284L320 330" stroke="#000" stroke-opacity=".14" stroke-width="6"/>');
+    [[241, 1], [359, -1]].forEach(([cx]) => {
+      f.push(`<path d="M${cx - 30} 392Q${cx} 404 ${cx + 30} 392" stroke="#000" stroke-opacity=".13" stroke-width="7"/><path d="M${cx - 28} 382Q${cx} 392 ${cx + 28} 382" stroke="#fff" stroke-opacity=".09" stroke-width="6"/>`);
+      [516, 530, 544].forEach((y, k) => f.push(`<path d="M${cx - 28} ${y}Q${cx} ${y + 8} ${cx + 28} ${y}" stroke="${k % 2 ? '#fff' : '#000'}" stroke-opacity="${k % 2 ? '.08' : '.14'}" stroke-width="5"/>`));
+      f.push(`<ellipse cx="${cx + (cx < 300 ? 8 : -8)}" cy="210" rx="34" ry="46" fill="#fff" fill-opacity=".07"/>`);
+    });
+    art.push(`<g fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
+  }
+  // stitching: waistband, cuffs, stripe edges
+  art.push(stitch('M197 121H403'), stitch('M206 551L276 551'), stitch('M324 551L394 551'));
+  if (spec.stripe !== false) art.push(stitch('M206 118Q206 380 230 554'), stitch('M394 118Q394 380 370 554'), stitch('M187 120Q186 380 212 554', 0.6), stitch('M413 120Q414 380 388 554', 0.6));
   // shading: per-leg roundness, crotch shadow
   defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".16" stop-color="#000" stop-opacity="0"/><stop offset=".28" stop-color="#fff" stop-opacity=".07"/><stop offset=".42" stop-color="#000" stop-opacity=".02"/><stop offset=".5" stop-color="#000" stop-opacity=".16"/><stop offset=".58" stop-color="#000" stop-opacity=".02"/><stop offset=".72" stop-color="#fff" stop-opacity=".07"/><stop offset=".84" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
   defs.push(`<radialGradient id="${id}cr" cx="300" cy="300" r="70" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>`);
@@ -643,14 +773,16 @@ function renderPants(spec, view = 'front') {
   // construction lines
   if (view === 'front') {
     parts.push(`<path d="M300 118V256M300 122Q318 170 300 214" stroke="${seamCol}" stroke-width="1.4" fill="none"/>`);
-    parts.push(`<path d="M210 122Q236 150 242 200M390 122Q364 150 358 200" stroke="${seamCol}" stroke-width="1.6" fill="none"/>`);
+    parts.push(`<path d="M210 122Q236 150 242 200M390 122Q364 150 358 200" stroke="${seamCol}" stroke-width="1.6" fill="none"/>`, `<g transform="translate(3 0)">${stitch('M210 122Q236 150 242 200')}</g><g transform="translate(-3 0)">${stitch('M390 122Q364 150 358 200')}</g>`);
     // drawstrings
     const cord = c.p2 && c.p2 !== c.trim ? c.p2 : '#ffffff';
     parts.push(`<circle cx="290" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><circle cx="310" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><path d="M290 104q-6 30 -10 60M310 104q6 30 10 60" stroke="${cord}" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="276" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/><rect x="317" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/>`);
-    parts.push(logo(238, 240, 34, logoFill));
+    parts.push(raisedLogo(id, 238, 240, 34, logoFill));
+    parts.push(`<text transform="translate(400 470) rotate(-86)" font-family="Arial, Helvetica, sans-serif" font-size="3.5" letter-spacing=".9" fill="${tone}" fill-opacity=".42">TMZ TRACK · ENGINEERED FOR PERFORMANCE</text>`);
   } else {
     parts.push(`<path d="M300 118V262" stroke="${seamCol}" stroke-width="1.4"/><path d="M326 150h56v50h-56z" fill="none" stroke="${seamCol}" stroke-width="1.6"/><path d="M326 150h56v14h-56z" fill="${shade(c.base, -0.1)}" stroke="${seamCol}" stroke-width="1.2"/>`);
-    parts.push(logo(300, 102, 26, isDark(c.trim) ? '#ffffff' : '#111111'));
+    parts.push(`<g transform="translate(3 0)">${stitch('M326 164h56M326 150v50h56v-50')}</g>`);
+    parts.push(raisedLogo(id, 300, 102, 26, isDark(c.trim) ? '#ffffff' : '#111111'));
   }
   parts.push(`<path d="${g.shape}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
   return `${svgOpen('pants')}<defs>${defs.join('')}</defs>${parts.join('')}</svg>`;

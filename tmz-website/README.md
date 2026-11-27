@@ -69,22 +69,41 @@ The build regenerates every HTML page and every jersey SVG. `site/assets/css/sty
 The three clubs on the Club page (Iron Fit Society, Strikers FC, Pacesetters Run Club) are
 **sample content**. Replace them with your real partner clubs in `clubs`.
 
+## Fabric and detail
+
+Every product image is generated with premium finishing, drawn as vector detail so it stays
+sharp at any zoom:
+
+* **Fabric weave** per series, taken from the series' fabric list in `data.js`: ARCTIX jersey
+  knit, HEXA honeycomb mesh, AGILIS twill, QUADRA waffle, MICROTEX/TASLAN for jackets and
+  pants, and MESH for running singlets.
+* **Construction:** soft drape folds, coverstitched hems, ribbed collars and cuffs, stitched
+  seams and panels, a printed neck label, a woven hem tag, laser-cut side vents, micro-text, a
+  tonal monogram print, and raised-print logos.
+
+On product pages, click a photo to open the lightbox. Scroll, pinch or click to zoom up to 3×,
+and drag to move around.
+
 ## 3D view
 
 Every product card has a **3D** button, and every product page has a **3D VIEW** button. Each
-opens a popup with the item on a mannequin:
+opens a popup showing the garment as if worn, "ghost mannequin" style, with no mannequin visible:
 
-* **Tops** (jerseys, polos, jackets, windbreakers, singlets) show the upper body: torso and arms.
-  **Pants** show the waist down: legs and feet.
-* The **Male / Female** switch changes the mannequin. The choice is remembered.
+* **Tops** show the upper-body garment; **pants** show the waist down. The neck, hem, cuffs,
+  armholes and waist are real openings, so you can see the darker inside of the fabric.
+* The garment is shaped for an **athletic build**: V-taper waist, chest and shoulder-blade
+  contours, snug sleeves over the biceps, and fitted legs on the pants. The **Male fit / Female
+  fit** switch changes the body shape, and the choice is remembered.
+* **Fabric:** the artwork is wrapped on at up to 4096 px, with a woven surface texture matching
+  the fabric, soft sheen, studio lighting and soft self-shadows. Front and back panels meet
+  exactly on the garment outline with a fine tone-on-tone seam.
 * **Drag** rotates freely around any axis. **Shift-drag** or a two-finger twist rolls around the
   view axis, and the X / Y / Z buttons rotate step by step. **Scroll** or **pinch** zooms from
-  1× to 10× toward the pointer, **right-drag** pans, and **double-click** resets.
+  1× to 3× toward the pointer, **right-drag** pans, and **double-click** resets.
 
-The garment is built in the browser from the product's own front and back SVGs. Its flat outline
-is inflated into a 3D shell, so it always matches the artwork, and any new design you add gets a
-3D view automatically. The viewer loads three.js 0.128.0 from jsDelivr the first time someone
-opens it, so it needs an internet connection.
+The 3D garment is built in the browser from the product's own front and back SVGs, so any new
+design you add gets a 3D view automatically. The viewer loads three.js 0.128.0 from jsDelivr the
+first time someone opens it, so it needs an internet connection.
 
 ## How ordering works (no backend)
 
