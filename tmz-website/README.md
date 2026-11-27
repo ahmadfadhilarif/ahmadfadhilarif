@@ -90,13 +90,15 @@ Every product card has a **3D** button, and every product page has a **3D VIEW**
 opens a popup showing the garment as if worn, "ghost mannequin" style, with no mannequin visible:
 
 * **Tops** show the upper-body garment; **pants** show the waist down. The neck, hem, cuffs,
-  armholes and waist are real openings, so you can see the darker inside of the fabric.
+  armholes and waist are real openings. The inside is black fabric, with the collar band (or
+  waistband) continuing on the inside and the TMZ logo printed top-centre on the inside back.
 * The garment is shaped for an **athletic build**: V-taper waist, chest and shoulder-blade
   contours, snug sleeves over the biceps, and fitted legs on the pants. The **Male fit / Female
   fit** switch changes the body shape, and the choice is remembered.
 * **Fabric:** the artwork is wrapped on at up to 4096 px, with a woven surface texture matching
-  the fabric, soft sheen, studio lighting and soft self-shadows. Front and back panels meet
-  exactly on the garment outline with a fine tone-on-tone seam.
+  the fabric, soft sheen, studio lighting and soft self-shadows. Front and back panels are
+  meshed on one shared outline, so they meet edge to edge with no gaps, finished with a fine
+  tone-on-tone seam.
 * **Drag** rotates freely around any axis. **Shift-drag** or a two-finger twist rolls around the
   view axis, and the X / Y / Z buttons rotate step by step. **Scroll** or **pinch** zooms from
   1× to 3× toward the pointer, **right-drag** pans, and **double-click** resets.

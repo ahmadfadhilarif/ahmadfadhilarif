@@ -514,7 +514,7 @@ function fabricDefs(id, fabric) {
   return `<pattern id="${id}fb" width="${f.w}" height="${f.h}" patternUnits="userSpaceOnUse"${f.rot ? ` patternTransform="rotate(${f.rot})"` : ''}>${f.body}</pattern>`;
 }
 // coverstitch: dark thread shadow + light thread, tone-on-tone on any colour
-const stitch = (d, o = 1) => `<path d="${d}" fill="none" stroke="#000" stroke-opacity="${(0.34 * o).toFixed(2)}" stroke-width=".7" stroke-dasharray="2 1.3" transform="translate(.3 .35)"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity="${(0.42 * o).toFixed(2)}" stroke-width=".55" stroke-dasharray="2 1.3"/>`;
+const stitch = (d, o = 1, tf = '') => `<path d="${d}" fill="none" stroke="#000" stroke-opacity="${(0.34 * o).toFixed(2)}" stroke-width=".7" stroke-dasharray="2 1.3" transform="${tf} translate(.3 .35)"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity="${(0.42 * o).toFixed(2)}" stroke-width=".55" stroke-dasharray="2 1.3"${tf ? ` transform="${tf}"` : ''}/>`;
 // knitted rib: fine lines across a band
 const rib = (d, w) => `<path d="${d}" fill="none" stroke="#000" stroke-opacity=".2" stroke-width="${w}" stroke-dasharray=".55 .85"/><path d="${d}" fill="none" stroke="#fff" stroke-opacity=".08" stroke-width="${w}" stroke-dasharray=".3 1.1" stroke-dashoffset=".7"/>`;
 const pt = (p) => `${r(p[0])} ${r(p[1])}`;
@@ -637,7 +637,7 @@ function render(spec, view = 'front') {
   // fabric shading: soft vertical highlight + edges
   defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
   defs.push(`<linearGradient id="${id}sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>`);
-  art.push(`<rect width="600" height="600" fill="url(#${id}sh)"/><rect width="600" height="600" fill="url(#${id}sv)"/>`);
+  art.push(`<rect class="fs" width="600" height="600" fill="url(#${id}sh)"/><rect class="fs" width="600" height="600" fill="url(#${id}sv)"/>`);
   const fin = [];
   (g.cuffInfo || []).forEach((cf) => {
     const A = (k) => [cf.a[0] + cf.d[0] * k, cf.a[1] + cf.d[1] * k], B = (k) => [cf.b[0] + cf.d[0] * k, cf.b[1] + cf.d[1] * k];
@@ -661,16 +661,13 @@ function render(spec, view = 'front') {
   // collar
   if (view === 'front') {
     if (nk.trim) {
-      parts.push(`<path d="${nk.trim}" fill="none" stroke="${c.trim}" stroke-width="${nk.trimW}" stroke-linejoin="miter"/>`);
-      parts.push(rib(nk.trim, nk.trimW));
-      parts.push(`<path d="${nk.trim}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.4" transform="translate(0 ${nk.trimW / 2 + 1})" opacity=".9"/>`);
-      parts.push(`<g transform="translate(0 ${nk.trimW / 2 + 3.6})">${stitch(nk.trim)}</g>`);
+      parts.push(`<g class="cl"><path d="${nk.trim}" fill="none" stroke="${c.trim}" stroke-width="${nk.trimW}" stroke-linejoin="miter"/>${rib(nk.trim, nk.trimW)}<path d="${nk.trim}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.4" transform="translate(0 ${nk.trimW / 2 + 1})" opacity=".9"/>${stitch(nk.trim, 1, `translate(0 ${nk.trimW / 2 + 3.6})`)}</g>`);
     }
-    parts.push(`<path d="${nk.backTrim}" fill="none" stroke="${shade(c.trim, -0.25)}" stroke-width="5"/>`);
+    parts.push(`<path class="bt" d="${nk.backTrim}" fill="none" stroke="${shade(c.trim, -0.25)}" stroke-width="5"/>`);
   } else {
-    parts.push(`<path d="${nk.backTrim}" fill="none" stroke="${c.trim}" stroke-width="10"/>`, rib(nk.backTrim, 10), `<g transform="translate(0 7)">${stitch(nk.backTrim)}</g>`);
     // printed neck tape
-    if (!spec.template) parts.push(`<path d="M${g.nL[0] + 8} ${g.nL[1] + 14}Q300 ${g.nL[1] + 28} ${X(g.nL[0] + 8)} ${g.nL[1] + 14}" fill="none" stroke="${shade(c.trim, 0.12)}" stroke-width="3" stroke-opacity=".6"/>`);
+    const tape = spec.template ? '' : `<path d="M${g.nL[0] + 8} ${g.nL[1] + 14}Q300 ${g.nL[1] + 28} ${X(g.nL[0] + 8)} ${g.nL[1] + 14}" fill="none" stroke="${shade(c.trim, 0.12)}" stroke-width="3" stroke-opacity=".6"/>`;
+    parts.push(`<g class="cl"><path d="${nk.backTrim}" fill="none" stroke="${c.trim}" stroke-width="10"/>${rib(nk.backTrim, 10)}${stitch(nk.backTrim, 1, 'translate(0 7)')}${tape}</g>`);
   }
   if (nk.polo) {
     const [nL, nR] = [g.nL, g.nR];
@@ -703,14 +700,14 @@ function render(spec, view = 'front') {
     if (!spec.template) {
       const tx = X(hL[0]) - 34, ty = hL[1] - 26, dark = isDark(c.base);
       parts.push(`<rect x="${tx}" y="${ty}" width="15" height="9" rx="1.2" fill="${dark ? '#f2f2f2' : '#151515'}"/><rect x="${tx + 0.8}" y="${ty + 0.8}" width="13.4" height="7.4" rx=".8" fill="none" stroke="${dark ? '#000' : '#fff'}" stroke-opacity=".35" stroke-width=".35" stroke-dasharray="1 .6"/>${logoUse(id, tx + 7.5, ty + 4.5, 8, dark ? '#111' : '#fff')}`);
-      parts.push(`<text transform="translate(${X(hL[0]) - 12} ${hL[1] - 24}) rotate(-90)" font-family="Arial, Helvetica, sans-serif" font-size="3.6" letter-spacing=".9" fill="${tone}" fill-opacity=".42">TMZ · ENGINEERED FOR PERFORMANCE · CUSTOM TEAMWEAR · MALAYSIA</text>`);
+      parts.push(`<text transform="translate(${X(hL[0]) - 40} ${hL[1] - 36}) rotate(-90)" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="5.2" letter-spacing="1.1" fill="${tone}" fill-opacity=".6">TMZ · ENGINEERED FOR PERFORMANCE</text>`);
     }
     if (spec.flag) parts.push(flag(X(ch.x) - 4, ch.y, 32));
     if (spec.chestNumber) parts.push(`<text x="${X(ch.x)}" y="${ch.y + 14}" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif" font-size="40" text-anchor="middle" fill="${logoFill}" opacity=".92">${spec.chestNumber}</text>`);
     if (spec.bigFront) parts.push(logoUse(id, 300, g.centre.y + 10, 150, logoFill, ' opacity=".9"'));
   } else {
     parts.push(raisedLogo(id, g.nape.x, g.nape.y, g.nape.w, logoFill));
-    if (!spec.template) parts.push(`<text x="300" y="${hL[1] - 16}" font-family="Arial, Helvetica, sans-serif" font-size="3.4" letter-spacing="1" text-anchor="middle" fill="${tone}" fill-opacity=".4">TMZ PERFORMANCE TEAMWEAR · DESIGNED &amp; MADE IN MALAYSIA</text>`);
+    if (!spec.template) parts.push(`<text x="300" y="${hL[1] - 20}" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="4.8" letter-spacing="1.1" text-anchor="middle" fill="${tone}" fill-opacity=".58">TMZ PERFORMANCE TEAMWEAR · MALAYSIA</text>`);
     if (spec.number) {
       parts.push(`<text x="300" y="${g.backNum.y + g.backNum.size * 0.36}" font-family="Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif" font-size="${g.backNum.size}" text-anchor="middle" fill="${logoFill}" stroke="${shade(c.base, isDark(c.base) ? 0.25 : -0.25)}" stroke-width="1.2" paint-order="stroke">${spec.number}</text>`);
     }
@@ -718,7 +715,7 @@ function render(spec, view = 'front') {
   }
 
   // silhouette outline on top
-  parts.push(`<path d="${shapeD}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
+  parts.push(`<path class="ol" d="${shapeD}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
 
   return `${svgOpen(spec.cut)}<defs>${defs.join('')}</defs>${parts.join('')}</svg>`;
 }
@@ -768,7 +765,7 @@ function renderPants(spec, view = 'front') {
   // shading: per-leg roundness, crotch shadow
   defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".16" stop-color="#000" stop-opacity="0"/><stop offset=".28" stop-color="#fff" stop-opacity=".07"/><stop offset=".42" stop-color="#000" stop-opacity=".02"/><stop offset=".5" stop-color="#000" stop-opacity=".16"/><stop offset=".58" stop-color="#000" stop-opacity=".02"/><stop offset=".72" stop-color="#fff" stop-opacity=".07"/><stop offset=".84" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
   defs.push(`<radialGradient id="${id}cr" cx="300" cy="300" r="70" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>`);
-  art.push(`<rect x="186" y="80" width="228" height="500" fill="url(#${id}sh)"/><rect width="600" height="600" fill="url(#${id}cr)"/>`);
+  art.push(`<rect class="fs" x="186" y="80" width="228" height="500" fill="url(#${id}sh)"/><rect class="fs" width="600" height="600" fill="url(#${id}cr)"/>`);
   parts.push(`<g clip-path="url(#${id}k)">${art.join('')}</g>`);
   // construction lines
   if (view === 'front') {
@@ -778,13 +775,13 @@ function renderPants(spec, view = 'front') {
     const cord = c.p2 && c.p2 !== c.trim ? c.p2 : '#ffffff';
     parts.push(`<circle cx="290" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><circle cx="310" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><path d="M290 104q-6 30 -10 60M310 104q6 30 10 60" stroke="${cord}" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="276" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/><rect x="317" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/>`);
     parts.push(raisedLogo(id, 238, 240, 34, logoFill));
-    parts.push(`<text transform="translate(400 470) rotate(-86)" font-family="Arial, Helvetica, sans-serif" font-size="3.5" letter-spacing=".9" fill="${tone}" fill-opacity=".42">TMZ TRACK · ENGINEERED FOR PERFORMANCE</text>`);
+    parts.push(`<text transform="translate(366 470) rotate(-86)" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="5" letter-spacing="1.1" fill="${tone}" fill-opacity=".6">TMZ TRACK · PERFORMANCE</text>`);
   } else {
     parts.push(`<path d="M300 118V262" stroke="${seamCol}" stroke-width="1.4"/><path d="M326 150h56v50h-56z" fill="none" stroke="${seamCol}" stroke-width="1.6"/><path d="M326 150h56v14h-56z" fill="${shade(c.base, -0.1)}" stroke="${seamCol}" stroke-width="1.2"/>`);
     parts.push(`<g transform="translate(3 0)">${stitch('M326 164h56M326 150v50h56v-50')}</g>`);
     parts.push(raisedLogo(id, 300, 102, 26, isDark(c.trim) ? '#ffffff' : '#111111'));
   }
-  parts.push(`<path d="${g.shape}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
+  parts.push(`<path class="ol" d="${g.shape}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
   return `${svgOpen('pants')}<defs>${defs.join('')}</defs>${parts.join('')}</svg>`;
 }
 

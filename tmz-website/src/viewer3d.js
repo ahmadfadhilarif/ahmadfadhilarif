@@ -71,7 +71,7 @@
    * Fetches the SVG, removes the painted inside-of-neck layer (so the neck is a real
    * opening) and rasterises it at texture resolution, so the print stays sharp up close.
    */
-  function rasterize(url, vb, size, strip) {
+  function rasterize(url, vb, size, mode) {
     var W = vb[2] >= vb[3] ? size : Math.round((size * vb[2]) / vb[3]);
     var H = vb[2] >= vb[3] ? Math.round((size * vb[3]) / vb[2]) : size;
     var draw = function (img) {
@@ -81,13 +81,71 @@
     };
     return fetch(url)
       .then(function (r) { if (!r.ok) throw new Error('fetch'); return r.text(); })
-      .then(function (txt) {
-        if (strip) txt = txt.replace(/<g class="nk-in">[\s\S]*?<\/g>/, '');
-        txt = txt.replace(/(<svg[^>]*?)width="\d+" height="\d+"/, '$1width="' + W + '" height="' + H + '"');
-        var blobUrl = URL.createObjectURL(new Blob([txt], { type: 'image/svg+xml' }));
-        return loadImage(blobUrl).then(function (img) { var c = draw(img); URL.revokeObjectURL(blobUrl); return c; });
+      .then(function (src) {
+        // 3D uses real lighting and real openings: drop the flat drawing's outline,
+        // baked shading, painted inside-of-neck and the back collar seen through it
+        var txt = src.replace(/<path class="ol"[^>]*\/>/g, '').replace(/<rect class="fs"[^>]*\/>/g, '');
+        if (mode === 'front') txt = txt.replace(/<g class="nk-in">[\s\S]*?<\/g>/, '').replace(/<path class="bt"[^>]*\/>/g, '');
+        return svgCanvas(txt, W, H).then(function (c) { return { canvas: c, svg: src }; });
       })
-      .catch(function () { return loadImage(url).then(draw); });
+      .catch(function () { return loadImage(url).then(function (img) { return { canvas: draw(img), svg: '' }; }); });
+  }
+  function svgCanvas(txt, W, H) {
+    txt = txt.replace(/(<svg[^>]*?)width="\d+" height="\d+"/, '$1width="' + W + '" height="' + H + '"');
+    var blobUrl = URL.createObjectURL(new Blob([txt], { type: 'image/svg+xml' }));
+    return loadImage(blobUrl).then(function (img) {
+      var c = document.createElement('canvas'); c.width = W; c.height = H;
+      c.getContext('2d').drawImage(img, 0, 0, W, H);
+      URL.revokeObjectURL(blobUrl);
+      return c;
+    });
+  }
+  // extend edge colours outward so texture filtering never pulls in transparent black
+  function bleed(c) {
+    var W = c.width, H = c.height, k = 4;
+    var sm = document.createElement('canvas'); sm.width = Math.ceil(W / k); sm.height = Math.ceil(H / k);
+    var sx = sm.getContext('2d'); sx.drawImage(c, 0, 0, sm.width, sm.height);
+    var tmp = document.createElement('canvas'); tmp.width = sm.width; tmp.height = sm.height;
+    var tx = tmp.getContext('2d');
+    for (var r = 1; r <= 7; r++) {
+      tx.clearRect(0, 0, tmp.width, tmp.height); tx.drawImage(sm, 0, 0);
+      sx.globalCompositeOperation = 'destination-over';
+      [[r, 0], [-r, 0], [0, r], [0, -r], [r, r], [-r, -r], [r, -r], [-r, r]].forEach(function (d) { sx.drawImage(tmp, d[0], d[1]); });
+      sx.globalCompositeOperation = 'source-over';
+    }
+    var cx = c.getContext('2d');
+    cx.globalCompositeOperation = 'destination-over'; cx.drawImage(sm, 0, 0, W, H); cx.globalCompositeOperation = 'source-over';
+    return c;
+  }
+  /*
+   * Inside of the garment: black fabric, the collar / waistband continuing on the inside,
+   * and the TMZ logo printed at the top centre of the inside back (drawn mirrored so it
+   * reads correctly when you look in from the front).
+   */
+  function insideCanvas(meta, svgF, svgB, which, trim, size) {
+    var vb = meta.vb, W = vb[2] >= vb[3] ? size : Math.round((size * vb[2]) / vb[3]), H = vb[2] >= vb[3] ? Math.round((size * vb[3]) / vb[2]) : size;
+    var parts = ['<rect x="' + vb[0] + '" y="' + vb[1] + '" width="' + vb[2] + '" height="' + vb[3] + '" fill="#0d0d0e"/>'];
+    var defs = '';
+    if (meta.type === 'bottom') {
+      var t = trim || '#151515';
+      parts.push('<rect x="190" y="84" width="220" height="35" fill="' + t + '"/><path d="M190 101.5H410" stroke="#000" stroke-opacity=".22" stroke-width="35" stroke-dasharray=".55 .85"/>');
+      parts.push('<path d="M190 122H410" stroke="#fff" stroke-opacity=".25" stroke-width=".6" stroke-dasharray="2 1.3"/>');
+    } else {
+      var cl = ((which === 'front' ? svgF : svgB).match(/<g class="cl">[\s\S]*?<\/g>/) || [''])[0];
+      parts.push(cl);
+    }
+    if (which === 'back') {
+      var lg = (svgB.match(/<path id="[^"]+lg"[^>]*\/>/) || [''])[0], id = (lg.match(/id="([^"]+)"/) || [])[1];
+      if (id) {
+        defs = lg;
+        var L = META._logo, w = 26, sc = w / L[2], h = L[3] * sc;
+        var cy = meta.type === 'bottom' ? 146 : meta.nL[1] + 42;
+        parts.push('<g transform="translate(600 0) scale(-1 1)"><use href="#' + id + '" transform="translate(' + (300 - w / 2 - L[0] * sc).toFixed(2) + ' ' + (cy - h / 2 - L[1] * sc).toFixed(2) + ') scale(' + sc.toFixed(5) + ')" fill="#d6d6d6"/>' +
+          '<text x="300" y="' + (cy + h / 2 + 8).toFixed(1) + '" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="4.4" letter-spacing="1.4" text-anchor="middle" fill="#a8a8a8">PREMIUM TEAMWEAR</text></g>');
+      }
+    }
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb.join(' ') + '" width="' + W + '" height="' + H + '"><defs>' + defs + '</defs>' + parts.join('') + '</svg>';
+    return svgCanvas(svg, W, H).then(bleed);
   }
 
   // ------------------------------------------------------------------ garment analysis
@@ -98,6 +156,7 @@
    * the largest inscribed disc covering it, giving round sleeves and an oval body.
    */
   function analyse(meta, frontCanvas, backCanvas) {
+    if (frontCanvas.canvas) { frontCanvas = frontCanvas.canvas; backCanvas = backCanvas.canvas; }
     var vb = meta.vb, cell = vb[2] / GRID, GX = GRID, GY = Math.round(vb[3] / cell), N = GX * GY;
     var cv = document.createElement('canvas'); cv.width = GX; cv.height = GY;
     var cx = cv.getContext('2d', { willReadFrequently: true });
@@ -107,8 +166,17 @@
     cx.save(); cx.translate(GX, 0); cx.scale(-1, 1); cx.drawImage(backCanvas, 0, 0, GX, GY); cx.restore();
     var bk = cx.getImageData(0, 0, GX, GY).data;
     // union of front and (mirrored) back coverage: one outline shared by both panels
-    var mask = new Uint8Array(N), aug = new Uint8Array(N), cov = new Float32Array(N);
-    for (var i = 0; i < N; i++) { cov[i] = Math.max(a[i * 4 + 3], bk[i * 4 + 3]) / 255; mask[i] = cov[i] > 0.5 ? 1 : 0; }
+    var mask = new Uint8Array(N), aug = new Uint8Array(N), cov = new Float32Array(N), covF = new Float32Array(N), covB = new Float32Array(N);
+    for (var i = 0; i < N; i++) { covF[i] = a[i * 4 + 3] / 255; covB[i] = bk[i * 4 + 3] / 255; cov[i] = Math.max(covF[i], covB[i]); mask[i] = cov[i] > 0.5 ? 1 : 0; }
+    // neck region: each panel follows its own neckline there (front V / scoop, higher back neck)
+    var neck = new Uint8Array(N);
+    if (meta.type !== 'bottom') {
+      cx.clearRect(0, 0, GX, GY); cx.fillStyle = '#000';
+      var nx0 = (meta.nL[0] + 6 - vb[0]) / cell, nx1 = (594 - meta.nL[0] - vb[0]) / cell;
+      cx.fillRect(nx0, 0, nx1 - nx0, (meta.nL[1] + 104 - vb[1]) / cell);
+      var nd = cx.getImageData(0, 0, GX, GY).data;
+      for (i = 0; i < N; i++) neck[i] = nd[i * 4 + 3] > 100 ? 1 : 0;
+    }
 
     // open edges
     cx.clearRect(0, 0, GX, GY); cx.fillStyle = '#000';
@@ -176,7 +244,7 @@
       }
       h = h2;
     }
-    return { vb: vb, cell: cell, GX: GX, GY: GY, mask: mask, aug: aug, cov: cov, h: h, rgbF: a, rgbB: bk };
+    return { vb: vb, cell: cell, GX: GX, GY: GY, mask: mask, aug: aug, cov: cov, covF: covF, covB: covB, neck: neck, h: h, rgbF: a, rgbB: bk };
   }
 
   function openPolys(meta) {
@@ -192,7 +260,7 @@
     }
     var nL = meta.nL, hL = meta.hL;
     P.push([[hL[0] - 4, hL[1] - 30], [604 - hL[0], hL[1] - 30], [604 - hL[0], meta.hemY + 220], [hL[0] - 4, meta.hemY + 220]]);
-    P.push([[nL[0] + 6, nL[1] - 220], [594 - nL[0], nL[1] - 220], [594 - nL[0], nL[1] + 34], [nL[0] + 6, nL[1] + 34]]);
+    P.push([[nL[0] + 6, nL[1] - 220], [594 - nL[0], nL[1] - 220], [594 - nL[0], nL[1] + 104], [nL[0] + 6, nL[1] + 104]]);
     if (!meta.sleeve && meta.armCtl) { // singlet: armholes are openings, not seams
       var bz = function (t) { var u = 1 - t, C = meta.armCtl; return [u * u * meta.sL[0] + 2 * u * t * C[0] + t * t * meta.aL[0] - 3, u * u * meta.sL[1] + 2 * u * t * C[1] + t * t * meta.aL[1]]; };
       var arm = [[meta.sL[0] - 3, meta.sL[1] - 60]].concat([0, 0.2, 0.4, 0.6, 0.8, 0.94].map(bz)).concat([[meta.aL[0] - 90, meta.aL[1] - 20], [meta.sL[0] - 160, meta.sL[1] - 60]]);
@@ -309,7 +377,9 @@
    * cuffs, waist, ankles) the outline keeps its height, leaving a real opening.
    */
   function panelGeometry(G, shape, sign) {
-    var GX = G.GX, GY = G.GY, cov = G.cov, pos = [], uv = [], idx = [];
+    var GX = G.GX, GY = G.GY, pos = [], uv = [], idx = [];
+    var own = sign > 0 ? G.covF : G.covB, cov = new Float32Array(GX * GY);
+    for (var c0 = 0; c0 < cov.length; c0++) cov[c0] = G.neck[c0] ? own[c0] : G.cov[c0];
     var vid = new Int32Array(GX * GY).fill(-1), eid = {};
     var fx = function (gi) { return G.vb[0] + (gi + 0.5) * G.cell; }, fy = function (gj) { return G.vb[1] + (gj + 0.5) * G.cell; };
     var N = GX * GY, Z = new Float32Array(N), WX = new Float32Array(N), WY = new Float32Array(N);
@@ -358,6 +428,24 @@
     var sampleCol = function (arr, i, fj) { var j0 = clamp(Math.floor(fj), 0, GY - 1), j1 = clamp(j0 + 1, 0, GY - 1), t = clamp(fj - j0, 0, 1); return [lerp(arr[j0 * GX + i], arr[j1 * GX + i], t) + (fj < 0 ? fj : fj > GY - 1 ? fj - GY + 1 : 0) * G.cell, 0]; };
     spread(GY, GX, function (j, i) { return j * GX + i; }, TU, fx, function (j, fi) { return sampleRow(WX, j, fi); }, 0);
     spread(GX, GY, function (i, j) { return j * GX + i; }, TV, fy, function (i, fj) { return sampleCol(WY, i, fj); }, 1);
+    (function smoothWrap() {
+      var K = [1, 3, 5, 3, 1];
+      [[TU, function (n) { return fx(n % GX); }, GX], [TV, function (n) { return fy((n - (n % GX)) / GX); }, 1]].forEach(function (cfg) {
+        var arr = cfg[0], base = cfg[1], step = cfg[2], D = new Float32Array(N);
+        for (var n = 0; n < N; n++) D[n] = arr[n] - base(n);
+        for (n = 0; n < N; n++) {
+          if (cov[n] <= 0.5 || !D[n]) continue;
+          var sum = 0, wsum = 0;
+          for (var k = -2; k <= 2; k++) {
+            var m = n + k * step;
+            if (m < 0 || m >= N || cov[m] <= 0.5) continue;
+            if (step === 1 && Math.floor(m / GX) !== Math.floor(n / GX)) continue;
+            sum += D[m] * K[k + 2]; wsum += K[k + 2];
+          }
+          arr[n] = base(n) + sum / wsum;
+        }
+      });
+    })();
     function push(x, y, z, tu, tv) {
       var w = shape.warp(x, y);
       pos.push((w[0] - 300) / 100, -w[1] / 100, (sign * z) / 100);
@@ -401,7 +489,8 @@
         if (ins[k] !== ins[(k + 1) % 4]) poly.push(edge(c, nx));
       }
       for (var q = 1; q < poly.length - 1; q++) {
-        if (sign > 0) idx.push(poly[0], poly[q], poly[q + 1]); else idx.push(poly[0], poly[q + 1], poly[q]);
+        // corners run TL→TR→BR→BL (clockwise seen from +z), so reverse for outward-facing fronts
+        if (sign > 0) idx.push(poly[0], poly[q + 1], poly[q]); else idx.push(poly[0], poly[q], poly[q + 1]);
       }
     }
     return { pos: new Float32Array(pos), uv: new Float32Array(uv), idx: idx, seamV: seamV };
@@ -470,7 +559,7 @@
 
   // thin seam strip along each line, coloured from the surrounding fabric
   function seamGeometry(G, lines, shape) {
-    var pos = [], col = [], idx = [], SEG = 8, R = 0.0095;
+    var pos = [], col = [], idx = [], SEG = 6, R = 0.0048;
     var srgb = function (v) { v /= 255; return Math.pow(v, 2.2); };
     function colourAt(gi, gj) {
       var r = 0, g = 0, b = 0, n = 0;
@@ -481,7 +570,7 @@
         [G.rgbF, G.rgbB].forEach(function (src) { if (src[k + 3] > 200) { r += src[k]; g += src[k + 1]; b += src[k + 2]; n++; } });
       }
       if (!n) return [0.2, 0.2, 0.2];
-      return [srgb(r / n) * 0.9, srgb(g / n) * 0.9, srgb(b / n) * 0.9];
+      return [srgb(r / n) * 0.95, srgb(g / n) * 0.95, srgb(b / n) * 0.95];
     }
     lines.forEach(function (ln) {
       var P = ln.map(function (p) { var w = shape.warp(p[0], p[1]); return [(w[0] - 300) / 100, -w[1] / 100, 0]; });
@@ -569,7 +658,7 @@
     renderer.toneMapping = T.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.08;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = T.PCFSoftShadowMap;
+    renderer.shadowMap.type = T.PCFShadowMap; // filtered with a radius for soft, smooth edges
     scene = new T.Scene();
     scene.environment = studioEnvironment();
     camera = new T.PerspectiveCamera(26, 1, 0.1, 200);
@@ -578,8 +667,9 @@
     key = new T.DirectionalLight(0xffffff, 0.95);
     key.position.set(5, 8, 7);
     key.castShadow = true;
-    key.shadow.mapSize.set(2048, 2048);
-    key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 4;
+    var big = renderer.capabilities.maxTextureSize >= 8192 && !(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    key.shadow.mapSize.set(big ? 4096 : 2048, big ? 4096 : 2048);
+    key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 7;
     scene.add(key); scene.add(key.target);
     pivot = new T.Group(); scene.add(pivot);
     new ResizeObserver(resize).observe(ui.stage);
@@ -621,19 +711,19 @@
     return t;
   }
 
-  function materials(frontCanvas, backCanvas, fabric) {
+  function materials(cv, fabric) {
     var normal = texture(fabricNormalCanvas(fabric, 2048), false);
     var outer = function (map) {
       return new T.MeshPhysicalMaterial({
         map: map, normalMap: normal, normalScale: new T.Vector2(0.55, 0.55), roughness: 0.72, metalness: 0,
-        sheen: new T.Color(0.2, 0.2, 0.21), alphaTest: 0.35, side: T.FrontSide, envMapIntensity: 0.95,
+        sheen: new T.Color(0.2, 0.2, 0.21), side: T.FrontSide, envMapIntensity: 0.95,
       });
     };
     var inner = function (map) {
-      return new T.MeshStandardMaterial({ map: map, color: 0x6c6c6c, roughness: 0.95, metalness: 0, alphaTest: 0.35, side: T.BackSide, envMapIntensity: 0.45 });
+      return new T.MeshStandardMaterial({ map: map, normalMap: normal, normalScale: new T.Vector2(0.45, 0.45), roughness: 0.88, metalness: 0, side: T.BackSide, envMapIntensity: 0.55 });
     };
-    var mf = texture(frontCanvas, true), mb = texture(backCanvas, true);
-    return { outerF: outer(mf), outerB: outer(mb), innerF: inner(mf), innerB: inner(mb), seam: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0, envMapIntensity: 0.8 }), maps: [mf, mb, normal] };
+    var mf = texture(cv.front, true), mb = texture(cv.back, true), inF = texture(cv.inFront, true), inB = texture(cv.inBack, true);
+    return { outerF: outer(mf), outerB: outer(mb), innerF: inner(inF), innerB: inner(inB), seam: new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0, envMapIntensity: 0.8 }), maps: [mf, mb, inF, inB, normal] };
   }
 
   function disposeModel() {
@@ -664,7 +754,7 @@
     pivot.add(model);
     st.size = size;
     var ext = Math.max(size.x, size.y, size.z);
-    var sc = key.shadow.camera; sc.left = sc.bottom = -ext; sc.right = sc.top = ext; sc.near = 0.1; sc.far = 40; sc.updateProjectionMatrix();
+    var sc = key.shadow.camera, half = ext * 0.6; sc.left = sc.bottom = -half; sc.right = sc.top = half; sc.near = 0.1; sc.far = 40; sc.updateProjectionMatrix();
     fitDist();
   }
 
@@ -870,10 +960,13 @@
         if (st.assets && st.assets.key === key_) return st.assets;
         var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
         var size = !coarse && renderer.capabilities.maxTextureSize >= 8192 ? 4096 : 2048;
-        return Promise.all([rasterize(root + data.f, meta.vb, size, true), rasterize(root + data.b, meta.vb, size, false)]).then(function (cv) {
-          if (st.assets) st.assets.mats.maps.forEach(function (t) { t.dispose(); });
-          var G = analyse(meta, cv[0], cv[1]);
-          return { key: key_, meta: meta, G: G, seams: seamLines(G), mats: materials(cv[0], cv[1], data.fb || 'ARCTIX') };
+        return Promise.all([rasterize(root + data.f, meta.vb, size, 'front'), rasterize(root + data.b, meta.vb, size, 'back')]).then(function (cv) {
+          var G = analyse(meta, cv[0].canvas, cv[1].canvas);
+          return Promise.all([insideCanvas(meta, cv[0].svg, cv[1].svg, 'front', data.tr, 2048), insideCanvas(meta, cv[0].svg, cv[1].svg, 'back', data.tr, 2048)]).then(function (ins) {
+            if (st.assets) st.assets.mats.maps.forEach(function (t) { t.dispose(); });
+            var mats = materials({ front: bleed(cv[0].canvas), back: bleed(cv[1].canvas), inFront: ins[0], inBack: ins[1] }, data.fb || 'ARCTIX');
+            return { key: key_, meta: meta, G: G, seams: seamLines(G), mats: mats };
+          });
         });
       })
       .then(function (assets) {
