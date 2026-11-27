@@ -67,6 +67,9 @@ Object.values(ctx.templates).forEach((t) => {
   n += 3;
 });
 
+// ----------------------------------------------------------------- 3D viewer (landmarks injected)
+write('assets/js/viewer3d.js', fs.readFileSync(path.join(__dirname, 'viewer3d.js'), 'utf8').replace('/*__META__*/ {}', '/*__META__*/ ' + JSON.stringify(J.META)));
+
 // ----------------------------------------------------------------- pages
 const pages = {
   'index.html': P.home(ctx),

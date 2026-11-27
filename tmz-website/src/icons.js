@@ -28,6 +28,7 @@ const I = {
   box: '<path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" d="M12 2 21 7v10l-9 5-9-5V7zm0 0v0M3 7l9 5 9-5M12 12v10"/>',
   stretch: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M4 4h5M4 4v5M4 4l6 6M20 4h-5M20 4v5M20 4l-6 6M4 20h5M4 20v-5M4 20l6-6M20 20h-5M20 20v-5M20 20l-6-6"/>',
   air: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M3 9h12a3 3 0 1 0-3-3M3 15h16a3 3 0 1 1-3 3M3 12h9"/>',
+  cube: '<path fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7zM3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
   drop: '<path fill="none" stroke="currentColor" stroke-width="1.6" d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11zM8.5 15h7"/>',
 };
 module.exports = (name, cls = '') => `<svg class="icon${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${I[name] || ''}</svg>`;

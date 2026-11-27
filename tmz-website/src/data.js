@@ -256,6 +256,21 @@ const series = [
       { cut: 'vest', neck: 'scoop', pattern: 'pinstripe', layout: {}, number: true, pals: ['white', 'neon', 'olive', 'violet', 'teal'] },
     ],
   },
+  {
+    slug: 'track-pants',
+    name: 'TRACK PANTS',
+    code: 'TP',
+    isNew: true,
+    sports: ['TRAINING', 'WARM-UP', 'TRAVEL'],
+    theme: { bg: '#23262d', bg2: '#4a5262', ink: '#ffffff', motif: 'stripes' },
+    description: 'Tapered track pants with an elastic drawstring waist, side stripes and ankle cuffs. Match them to your jerseys and jackets for a full team kit, with your crest on the thigh.',
+    blurb: 'Tapered track pants with side stripes and ankle cuffs. Pair them with your jerseys and jackets for a full team kit.',
+    fabrics: ['MICROTEX', 'TASLAN', 'RIPSTOP', 'MESH'],
+    designs: [
+      { cut: 'pants', neck: 'waist', pattern: null, layout: { side: true }, pals: ['black', 'ocean', 'maroon', 'olive', 'graphite'] },
+      { cut: 'pants', neck: 'waist', pattern: 'camo', layout: { side: true }, pals: ['carbon', 'navyWave', 'forest', 'sand', 'crimson'] },
+    ],
+  },
 ];
 
 // Menu structure (mirrors the reference layout)
@@ -272,6 +287,7 @@ const menu = [
       { series: 'windbreaker' },
       { series: 'training-jacket' },
       { series: 'bib' },
+      { series: 'track-pants' },
     ],
   },
   { label: 'COLLABORATION', key: 'collab', children: [{ label: 'CLUB', href: 'club.html' }] },

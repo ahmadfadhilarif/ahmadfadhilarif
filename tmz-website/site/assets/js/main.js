@@ -348,6 +348,26 @@
     range.addEventListener('input', upd); upd();
   }
 
+  // ------------------------------------------------------------ 3D viewer (loaded on first use)
+  let v3d = null;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-3d]');
+    if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    let data;
+    try { data = JSON.parse(b.dataset['3d']); } catch (err) { return; }
+    if (!v3d) {
+      v3d = new Promise((res, rej) => {
+        const s = document.createElement('script');
+        s.src = CFG.root + 'assets/js/viewer3d.js';
+        s.onload = res;
+        s.onerror = () => { v3d = null; rej(new Error('viewer')); };
+        document.head.appendChild(s);
+      });
+    }
+    v3d.then(() => window.TMZ3D.open(data, CFG.root)).catch(() => toast('Could not open the 3D view. Check your connection and try again.'));
+  }, true);
+
   // ------------------------------------------------------------ year
   $$('[data-year]').forEach((el) => (el.textContent = new Date().getFullYear()));
 })();

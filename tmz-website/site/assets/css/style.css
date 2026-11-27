@@ -1024,3 +1024,73 @@ body.drawer-open .drawer-overlay { opacity: 1; visibility: visible; }
   .hero-cta .btn { min-height: 30px; padding: 6px 14px; font-size: 11px; border-radius: 6px; }
   .orbitban .banner-center-btn .btn { min-height: 32px; padding: 6px 14px; font-size: 11px; }
 }
+.custom-grid.pants .side { width: 46%; }
+.measure.pants img { width: 38%; }
+
+/* =========================================================================
+   3D viewer
+   ========================================================================= */
+.btn-3d {
+  position: absolute; top: 8px; right: 8px; z-index: 4; width: 38px; height: 38px; border-radius: 50%;
+  border: 0; background: #fff; color: #111; font: 800 11px/1 var(--font-wide); letter-spacing: .02em;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .14); transition: transform .2s, background .2s, color .2s;
+}
+.btn-3d:hover, .btn-3d:focus-visible { background: #111; color: #fff; transform: scale(1.06); }
+.v3d-trigger {
+  position: absolute; left: 75px; bottom: 15px; z-index: 3; height: 50px; padding: 0 18px 0 14px; border-radius: 25px; border: 0;
+  display: inline-flex; align-items: center; gap: 8px; background: #111; color: #fff; font: 700 12px var(--font-text); letter-spacing: .06em;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18); transition: transform .2s, box-shadow .2s;
+}
+.v3d-trigger .icon { font-size: 20px; }
+.v3d-trigger:hover, .v3d-trigger:focus-visible { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .25); }
+html.v3d-open, html.v3d-open body { overflow: hidden; }
+.v3d { position: fixed; inset: 0; z-index: 800; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(10, 10, 12, .72); }
+.v3d-panel {
+  position: relative; width: min(1120px, 100%); height: min(780px, 100%); background: #fff; border-radius: 16px; overflow: hidden;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto; box-shadow: 0 30px 80px rgba(0, 0, 0, .35);
+}
+.v3d-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px 12px 22px; border-bottom: 1px solid #eee; }
+.v3d-k { display: block; font: 700 10px var(--font-wide); letter-spacing: .2em; color: #999; }
+.v3d-name { font: 600 20px/1.2 var(--font-title); color: #222; margin: 2px 0 0; }
+.v3d-x { width: 40px; height: 40px; border-radius: 50%; border: 0; background: #f3f3f3; font-size: 26px; line-height: 1; color: #222; }
+.v3d-x:hover { background: #e6e6e6; }
+.v3d-stage { position: relative; min-height: 0; background: radial-gradient(70% 70% at 50% 40%, #ffffff 0%, #eeeeec 60%, #dcdcd9 100%); }
+.v3d-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline: none; }
+.v3d-canvas:active { cursor: grabbing; }
+.v3d-load, .v3d-err { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: #555; font: 600 14px var(--font-text); pointer-events: none; }
+.v3d-err { color: #a02a2a; padding: 30px; text-align: center; }
+.v3d-spin { width: 38px; height: 38px; border-radius: 50%; border: 3px solid #ddd; border-top-color: #111; animation: v3dspin .9s linear infinite; }
+@keyframes v3dspin { to { transform: rotate(360deg); } }
+.v3d-pad { position: absolute; top: 14px; right: 14px; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(255, 255, 255, .86); box-shadow: 0 4px 16px rgba(0, 0, 0, .08); }
+.v3d-pad div { display: flex; align-items: center; gap: 6px; }
+.v3d-pad span { width: 16px; font: 700 11px var(--font-wide); color: #666; text-align: center; }
+.v3d-pad button, .v3d-views button { height: 32px; min-width: 32px; padding: 0 8px; border: 1px solid #e2e2e2; border-radius: 8px; background: #fff; color: #222; font: 700 15px var(--font-text); touch-action: none; user-select: none; -webkit-user-select: none; }
+.v3d-pad button:hover, .v3d-views button:hover { border-color: #999; }
+.v3d-pad button:active { background: #111; color: #fff; border-color: #111; }
+.v3d-views { position: absolute; top: 14px; left: 14px; display: flex; gap: 6px; }
+.v3d-views button { font-size: 12px; padding: 0 12px; background: rgba(255, 255, 255, .9); }
+.v3d-hint { position: absolute; left: 0; right: 0; bottom: 10px; margin: 0; padding: 0 16px; text-align: center; font-size: 12px; color: #777; pointer-events: none; }
+.v3d-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; padding: 12px 18px; border-top: 1px solid #eee; }
+.v3d-seg { display: inline-flex; padding: 3px; border-radius: 999px; background: #f1f1f1; }
+.v3d-seg button { border: 0; background: transparent; padding: 8px 18px; border-radius: 999px; font: 700 13px var(--font-text); color: #555; }
+.v3d-seg button.on { background: #111; color: #fff; }
+.v3d-zoom { display: flex; align-items: center; gap: 8px; flex: 1 1 260px; max-width: 420px; }
+.v3d-zoom button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid #e2e2e2; background: #fff; font-size: 18px; color: #222; flex: none; }
+.v3d-zoom input { flex: 1; min-width: 0; accent-color: #111; }
+.v3d-zoom output { width: 48px; font: 700 13px var(--font-text); color: #222; font-variant-numeric: tabular-nums; text-align: right; }
+.v3d-reset { border: 1px solid #ddd; background: #fff; border-radius: 999px; padding: 9px 18px; font: 700 13px var(--font-text); color: #222; }
+.v3d-reset:hover { border-color: #333; }
+.v3d button:focus-visible { outline: 2px solid #111; outline-offset: 2px; }
+@media (max-width: 768px) {
+  .v3d { padding: 0; }
+  .v3d-panel { width: 100%; height: 100%; border-radius: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .v3d-head { padding-top: calc(12px + env(safe-area-inset-top, 0px)); }
+  .v3d-name { font-size: 17px; }
+  .v3d-pad { top: auto; bottom: 40px; right: 10px; padding: 6px; }
+  .v3d-views { top: 10px; left: 10px; }
+  .v3d-hint { font-size: 11px; bottom: 8px; text-align: left; padding-right: 130px; }
+  .v3d-bar { padding: 10px 12px; gap: 10px; }
+  .v3d-zoom { order: 3; flex-basis: 100%; max-width: none; }
+  .v3d-trigger { left: 72px; height: 44px; bottom: 18px; padding: 0 14px 0 12px; }
+  .btn-3d { width: 34px; height: 34px; font-size: 10px; }
+}

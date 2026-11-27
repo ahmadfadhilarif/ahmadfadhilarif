@@ -131,6 +131,7 @@ function productBody(p, ctx) {
       <div class="shot"><img src="${R + p.back}" alt="${esc(p.name)} back"></div>
       ${labels ? `<div class="labels">${labels}</div>` : ''}
       <button class="zoom-btn" type="button" aria-label="Enlarge image">${icon('expand')}</button>
+      ${C.view3d(p, 'v3d-trigger', `${icon('cube')}<span>3D VIEW</span>`)}
     </div>
     <div class="summary">
       <div class="crumb-row"><div><a href="${R}index.html">Home</a><span class="sep">/</span><a href="${R + crumbHref}">${esc(crumbLabel)}</a></div>

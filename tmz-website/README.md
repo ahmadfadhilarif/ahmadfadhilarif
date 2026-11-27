@@ -13,9 +13,9 @@ banners are HTML/CSS compositions, so there are no third-party photos or logos.
 tmz-website/
 ├── site/                  ← the finished website (deploy this folder)
 │   ├── index.html         home
-│   ├── court.html …       10 teamwear series pages (court, vertex, prism, orbit,
-│   │                      on-field, volt, esport, windbreaker, training-jacket, bib)
-│   ├── product/*.html     191 product pages
+│   ├── court.html …       11 teamwear series pages (court, vertex, prism, orbit, on-field,
+│   │                      volt, esport, windbreaker, training-jacket, bib, track-pants)
+│   ├── product/*.html     201 product pages
 │   ├── solo.html, running.html, shop.html, club.html, tmz-loyalty.html
 │   ├── contact-us.html, about-us.html, track-order.html
 │   ├── shopping-cart.html, checkout.html, my-account.html
@@ -29,6 +29,7 @@ tmz-website/
     ├── components.js      cards, banners, product detail panels
     ├── pages.js           page templates
     ├── catalog.js         products, lookups and page helpers (also bundled for the browser)
+    ├── viewer3d.js        3D mannequin viewer (copied to site/assets/js with garment landmarks)
     ├── build.js           writes everything into /site (or --artifact <dir>)
     └── tmz-logo-original.jpg
 ```
@@ -67,6 +68,23 @@ The build regenerates every HTML page and every jersey SVG. `site/assets/css/sty
 
 The three clubs on the Club page (Iron Fit Society, Strikers FC, Pacesetters Run Club) are
 **sample content**. Replace them with your real partner clubs in `clubs`.
+
+## 3D view
+
+Every product card has a **3D** button, and every product page has a **3D VIEW** button. Each
+opens a popup with the item on a mannequin:
+
+* **Tops** (jerseys, polos, jackets, windbreakers, singlets) show the upper body: torso and arms.
+  **Pants** show the waist down: legs and feet.
+* The **Male / Female** switch changes the mannequin. The choice is remembered.
+* **Drag** rotates freely around any axis. **Shift-drag** or a two-finger twist rolls around the
+  view axis, and the X / Y / Z buttons rotate step by step. **Scroll** or **pinch** zooms from
+  1× to 10× toward the pointer, **right-drag** pans, and **double-click** resets.
+
+The garment is built in the browser from the product's own front and back SVGs. Its flat outline
+is inflated into a 3D shell, so it always matches the artwork, and any new design you add gets a
+3D view automatically. The viewer loads three.js 0.128.0 from jsDelivr the first time someone
+opens it, so it needs an internet connection.
 
 ## How ordering works (no backend)
 

@@ -107,6 +107,7 @@ const CUTS = {
       chest: { x: 236, y: 168, w: 34 }, nape: { x: 300, y: 138, w: 38 }, centre: { x: 300, y: 300 },
       backNum: { y: 300, size: 120 },
       bbox: [80, 90, 440, 430],
+      meta: { type: 'top', nL, sL, aL, hL, hemY: hL[1] + 7, sleeve: { top: [sL, stL], bot: [aL, sbL] } },
     };
   },
   // long sleeves hanging down (jackets, windbreakers, e-sport long sleeve)
@@ -134,6 +135,7 @@ const CUTS = {
       chest: { x: 238, y: 168, w: 34 }, nape: { x: 300, y: 136, w: 38 }, centre: { x: 300, y: 300 },
       backNum: { y: 300, size: 120 },
       bbox: [70, 90, 460, 430],
+      meta: { type: 'top', nL, sL, aL, hL, hemY: hL[1] + 6, sleeve: { top: [sL, cO], bot: [aL, cI] } },
     };
   },
   // oversized long sleeve, arms spread (motorsport collection)
@@ -154,6 +156,7 @@ const CUTS = {
       chest: { x: 300, y: 222, w: 30 }, nape: { x: 300, y: 204, w: 32 }, centre: { x: 300, y: 310 },
       backNum: { y: 330, size: 90 },
       bbox: [30, 170, 540, 290],
+      meta: { type: 'top', nL, sL, aL, hL, hemY: hL[1] + 4, sleeve: { top: [sL, cT], bot: [aL, cB] } },
     };
   },
   // sleeveless (basketball / running singlet / training bib)
@@ -172,8 +175,18 @@ const CUTS = {
       chest: { x: 246, y: 196, w: 32 }, nape: { x: 300, y: 130, w: 34 }, centre: { x: 300, y: 320 },
       backNum: { y: 320, size: 130 },
       bbox: [160, 90, 280, 430],
+      meta: { type: 'top', nL, sL, aL, hL, hemY: hL[1] + 7, sleeve: null },
     };
   },
+};
+
+// track pants: waistband, two tapered legs, ankle cuffs
+CUTS.pants = function () {
+  const shape = 'M200 88L400 88L402 116Q414 158 414 200Q412 380 388 556L390 570L328 570L330 556Q318 400 304 272Q300 264 296 272Q282 400 270 556L272 570L210 570L212 556Q188 380 186 200Q186 158 198 116Z';
+  return {
+    shape,
+    meta: { type: 'bottom', waistY: 88, bandY: 116, hipY: 200, crotch: [300, 270], ankleY: 568, ankleL: [[212, 556], [270, 556]], waist: [200, 400] },
+  };
 };
 
 // ---------------------------------------------------------------- necklines
@@ -475,7 +488,14 @@ const P = {
  *   pattern, colors: {base,p1,p2,p3,trim,sleeve?,side?}, number?, name?, flag?
  * }
  */
+const VB = { tee: '66 78 468 468', long: '46 14 508 508', wide: '24 36 552 552', vest: '75 78 450 450', pants: '120 70 360 516' };
+function svgOpen(cut) {
+  const vb = (VB[cut] || '0 0 600 600').split(' ').map(Number);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb.join(' ')}" width="600" height="${Math.round((600 * vb[3]) / vb[2])}">`;
+}
+
 function render(spec, view = 'front') {
+  if (spec.cut === 'pants') return renderPants(spec, view);
   const g = CUTS[spec.cut](spec);
   const nk = neckline(spec.neck || 'crew', g);
   const c = spec.colors;
@@ -588,8 +608,52 @@ function render(spec, view = 'front') {
   // silhouette outline on top
   parts.push(`<path d="${shapeD}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
 
-  const VB = { tee: '66 78 468 468', long: '46 14 508 508', wide: '24 36 552 552', vest: '75 78 450 450' };
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${VB[spec.cut] || '0 0 600 600'}" width="600" height="600"><defs>${defs.join('')}</defs>${parts.join('')}</svg>`;
+  return `${svgOpen(spec.cut)}<defs>${defs.join('')}</defs>${parts.join('')}</svg>`;
+}
+
+/** Track pants, front or back view. */
+function renderPants(spec, view = 'front') {
+  const g = CUTS.pants();
+  const c = spec.colors;
+  const id = 'p' + String(spec.id).replace(/[^a-z0-9]/gi, '') + (view === 'back' ? 'b' : 'f');
+  const rand = rng(spec.id + (spec.pattern || ''));
+  const defs = [];
+  const logoFill = spec.logoColor || (isDark(c.base) ? '#ffffff' : '#111111');
+  const outlineCol = spec.outline || 'rgba(0,0,0,.28)';
+  const seamCol = spec.outline || 'rgba(0,0,0,.25)';
+  const parts = [];
+  defs.push(`<clipPath id="${id}k"><path d="${g.shape}"/></clipPath>`);
+  const art = [`<rect width="600" height="600" fill="${c.base}"/><rect y="600" width="600" height="20" fill="${c.base}"/>`];
+  if (spec.pattern && P[spec.pattern]) art.push(`<g>${P[spec.pattern]({ id, rand, c, defs })}</g>`);
+  // side panels / stripes along the outer seams
+  if (spec.stripe !== false) {
+    const col = c.side || c.p2 || c.trim;
+    art.push(`<path d="M186 118Q185 380 211 560L229 560Q204 380 204 118Z" fill="${col}"/><path d="M414 118Q415 380 389 560L371 560Q396 380 396 118Z" fill="${col}"/>`);
+    art.push(`<path d="M208 118Q208 380 232 560M392 118Q392 380 368 560" stroke="${c.trim}" stroke-width="3" fill="none" opacity=".9"/>`);
+  }
+  // waistband + ankle cuffs
+  art.push(`<path d="M196 86H404V118H196Z" fill="${c.trim}"/>`);
+  art.push(`<path d="M206 554L276 554L278 572L204 572Z" fill="${c.trim}"/><path d="M324 554L394 554L396 572L322 572Z" fill="${c.trim}"/>`);
+  if (view === 'back') art.push(`<path d="M196 94H404M196 101H404M196 108H404" stroke="${shade(c.trim, -0.25)}" stroke-width="1.2"/>`);
+  // shading: per-leg roundness, crotch shadow
+  defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".16" stop-color="#000" stop-opacity="0"/><stop offset=".28" stop-color="#fff" stop-opacity=".07"/><stop offset=".42" stop-color="#000" stop-opacity=".02"/><stop offset=".5" stop-color="#000" stop-opacity=".16"/><stop offset=".58" stop-color="#000" stop-opacity=".02"/><stop offset=".72" stop-color="#fff" stop-opacity=".07"/><stop offset=".84" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
+  defs.push(`<radialGradient id="${id}cr" cx="300" cy="300" r="70" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>`);
+  art.push(`<rect x="186" y="80" width="228" height="500" fill="url(#${id}sh)"/><rect width="600" height="600" fill="url(#${id}cr)"/>`);
+  parts.push(`<g clip-path="url(#${id}k)">${art.join('')}</g>`);
+  // construction lines
+  if (view === 'front') {
+    parts.push(`<path d="M300 118V256M300 122Q318 170 300 214" stroke="${seamCol}" stroke-width="1.4" fill="none"/>`);
+    parts.push(`<path d="M210 122Q236 150 242 200M390 122Q364 150 358 200" stroke="${seamCol}" stroke-width="1.6" fill="none"/>`);
+    // drawstrings
+    const cord = c.p2 && c.p2 !== c.trim ? c.p2 : '#ffffff';
+    parts.push(`<circle cx="290" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><circle cx="310" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><path d="M290 104q-6 30 -10 60M310 104q6 30 10 60" stroke="${cord}" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="276" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/><rect x="317" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/>`);
+    parts.push(logo(238, 240, 34, logoFill));
+  } else {
+    parts.push(`<path d="M300 118V262" stroke="${seamCol}" stroke-width="1.4"/><path d="M326 150h56v50h-56z" fill="none" stroke="${seamCol}" stroke-width="1.6"/><path d="M326 150h56v14h-56z" fill="${shade(c.base, -0.1)}" stroke="${seamCol}" stroke-width="1.2"/>`);
+    parts.push(logo(300, 102, 26, isDark(c.trim) ? '#ffffff' : '#111111'));
+  }
+  parts.push(`<path d="${g.shape}" fill="none" stroke="${outlineCol}" stroke-width="${spec.outlineWidth || 1.6}" stroke-linejoin="round"/>`);
+  return `${svgOpen('pants')}<defs>${defs.join('')}</defs>${parts.join('')}</svg>`;
 }
 
 /** Simplified Malaysian flag. */
@@ -601,4 +665,6 @@ function flag(cx, cy, w) {
   return s;
 }
 
-module.exports = { render, logo, shade, mix, isDark, rng, PATTERNS: Object.keys(P).filter((k) => !k.startsWith('_')), LOGO_D, LOGO_VIEWBOX: [LVX, LVY, LVW, LVH] };
+const META = Object.fromEntries(Object.keys(CUTS).map((k) => [k, { ...CUTS[k]({}).meta, vb: VB[k].split(' ').map(Number) }]));
+
+module.exports = { render, logo, shade, mix, isDark, rng, VB, META, PATTERNS: Object.keys(P).filter((k) => !k.startsWith('_')), LOGO_D, LOGO_VIEWBOX: [LVX, LVY, LVW, LVH] };

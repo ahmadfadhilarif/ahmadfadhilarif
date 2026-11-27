@@ -18,8 +18,15 @@ function card(p, R, opts = {}) {
     : '';
   return `<div class="product-card${opts.big ? ' big' : ''}" data-cats="${esc(p.cats.join('|'))}" data-price="${p.price || ''}" data-color="${p.color}" data-name="${esc(p.name)}" data-order="${p.order || 0}">
   <a class="thumb" href="${R + p.url}" aria-label="${esc(p.name)}">${labels.length ? `<div class="labels">${labels.join('')}</div>` : ''}<img class="main has-alt" src="${R + p.img}" alt="${esc(p.name)}" loading="lazy" width="600" height="600"><img class="alt" src="${R + p.back}" alt="" loading="lazy" width="600" height="600"></a>
+  ${view3d(p, 'btn-3d', '3D')}
   <div class="info"><a class="name" href="${R + p.url}">${esc(p.name)}</a><div class="cats${p.type === 'teamwear' ? ' upper' : ''}">${esc(p.catLabel)}</div>${price}</div>
 </div>`;
+}
+
+// 3D viewer trigger (paths are relative to the site root; main.js adds the prefix)
+function view3d(p, cls, label) {
+  const data = JSON.stringify({ n: p.name, c: p.spec.cut, f: p.img, b: p.back });
+  return `<button class="${cls}" type="button" data-3d="${esc(data)}" aria-label="View ${esc(p.name)} in 3D on a mannequin">${label}</button>`;
 }
 
 // ------------------------------------------------------------------ jersey fan used in banners
@@ -39,9 +46,9 @@ function seriesBanner(s, designs, R, variant = 'page', href = '#designs', withBt
   const k = variant === 'slide' ? 1.04 : 1;
   const n = designs.length;
   const ts = (9.2 * Math.min(1, 5.2 / s.name.length)).toFixed(2);
-  const widths = n >= 5 ? [12, 13.5, 16, 13.5, 12] : [15.5, 18.5, 15.5];
-  const lift = n >= 5 ? [3, 1, -1.5, 1, 3] : [2, -1.5, 2];
-  const rot = n >= 5 ? [-5, -2.5, 0, 2.5, 5] : [-4, 0, 4];
+  const widths = n >= 5 ? [12, 13.5, 16, 13.5, 12] : n === 2 ? [13, 13] : [15.5, 18.5, 15.5];
+  const lift = n >= 5 ? [3, 1, -1.5, 1, 3] : n === 2 ? [0, 0] : [2, -1.5, 2];
+  const rot = n >= 5 ? [-5, -2.5, 0, 2.5, 5] : n === 2 ? [-3, 3] : [-4, 0, 4];
   const ratio = variant === 'slide' ? 'ratio-2-1' : 'ratio-series';
   const jrow = variant === 'slide'
     ? `right:0;top:12%;width:56%;height:66%`
@@ -59,7 +66,7 @@ function seriesBanner(s, designs, R, variant = 'page', href = '#designs', withBt
     <div class="sb-sports">${s.sports.map(esc).join(' &nbsp;•&nbsp; ')}</div>
     <div class="sb-btns"><span class="solid">EXPLORE DESIGNS ${icon('arrowDown')}</span><span class="ghost">${n} DESIGNS × 5 COLOURWAYS</span></div>
   </div>
-  <div class="jrow" style="${jrow}">${fan(designs, R, { widths: scaled(widths), lift, rot, gap: n >= 5 ? -2.8 : -3 })}</div>
+  <div class="jrow" style="${jrow}">${fan(designs, R, { widths: scaled(widths), lift, rot, gap: n >= 5 ? -2.8 : n === 2 ? 2 : -3 })}</div>
   ${balls}
   ${withBtn ? `<span class="hero-cta"><span class="btn">CUSTOM YOURS</span></span>` : ''}
 </a>`;
@@ -160,7 +167,10 @@ function seriesPanels(s, designs, R, template) {
   const board = designs
     .map((p, i) => `<figure style="left:${pos[i][0]}%;top:${pos[i][1]}%"><figcaption>${esc(p.code)}</figcaption><img src="${R + p.img}" alt="${esc(p.name)}" loading="lazy"></figure>`)
     .join('');
-  const sizes = [['XS', 16.5, 25.5, 8.1], ['S', 17.5, 26.5, 8.4], ['M', 18.5, 27.5, 8.7], ['L', 19.5, 28.5, 9.0], ['XL', 20.5, 29.5, 9.3], ['2XL', 21.5, 30.5, 9.6], ['3XL', 22.5, 31.0, 9.9], ['4XL', 23.5, 31.5, 9.9], ['5XL', 24.5, 32.0, 9.9], ['6XL', 25.5, 32.5, 10.2], ['7XL', 26.5, 33.0, 10.2], ['8XL', 27.5, 33.5, 10.2]];
+  const pants = designs[0] && designs[0].spec.cut === 'pants';
+  const sizes = pants
+    ? [['XS', 12.5, 36.5, 26.5], ['S', 13.5, 37.5, 27.0], ['M', 14.5, 38.5, 27.5], ['L', 15.5, 39.5, 28.0], ['XL', 16.5, 40.5, 28.5], ['2XL', 17.5, 41.0, 29.0], ['3XL', 18.5, 41.5, 29.0], ['4XL', 19.5, 42.0, 29.5], ['5XL', 20.5, 42.5, 29.5]]
+    : [['XS', 16.5, 25.5, 8.1], ['S', 17.5, 26.5, 8.4], ['M', 18.5, 27.5, 8.7], ['L', 19.5, 28.5, 9.0], ['XL', 20.5, 29.5, 9.3], ['2XL', 21.5, 30.5, 9.6], ['3XL', 22.5, 31.0, 9.9], ['4XL', 23.5, 31.5, 9.9], ['5XL', 24.5, 32.0, 9.9], ['6XL', 25.5, 32.5, 10.2], ['7XL', 26.5, 33.0, 10.2], ['8XL', 27.5, 33.5, 10.2]];
   return `
 <section class="dpanel">
   <div class="dp-intro">
@@ -187,19 +197,24 @@ function seriesPanels(s, designs, R, template) {
 <section class="dpanel">
   ${panelHead(s, R)}
   <h3>Customize it your way</h3>
-  <div class="custom-grid">
+  ${pants ? `<div class="custom-grid pants">
+    <div class="side"><span class="tagm">FRONT</span><img src="${R + template.front}" alt="Front placement guide" loading="lazy">
+      <span class="chip" style="left:66%;top:34%">TEAM LOGO</span><span class="ov" style="left:33%;top:62%;--s:1.4">19</span><span class="ov" style="left:67%;top:70%;--s:.7">SPONSOR</span></div>
+    <div class="side"><span class="tagm">BACK</span><img src="${R + template.back}" alt="Back placement guide" loading="lazy">
+      <span class="ov" style="left:50%;top:15%;--s:.8">NAME</span><span class="chip" style="left:30%;top:40%">LOGO</span><span class="ov" style="left:30%;top:66%;--s:1.4">19</span></div>
+  </div>` : `<div class="custom-grid">
     <div class="side"><span class="tagm">FRONT</span><img src="${R + template.front}" alt="Front placement guide" loading="lazy">
       <span class="ov" style="left:50%;top:40%;--s:1.8">19</span><span class="ov" style="left:50%;top:55%;--s:.8">SPONSOR</span>
       <span class="chip" style="left:62%;top:30%">TEAM LOGO</span><span class="chip" style="left:24%;top:31%;--r:-30deg">LOGO</span><span class="chip" style="left:80%;top:31%;--r:30deg">LOGO</span></div>
     <div class="side"><span class="tagm">BACK</span><img src="${R + template.back}" alt="Back placement guide" loading="lazy">
       <span class="ov" style="left:50%;top:30%;--s:1">NAME</span><span class="ov" style="left:50%;top:38%;--s:4">19</span><span class="ov" style="left:50%;top:66%;--s:.8">SPONSOR<br>SPONSOR</span>
       <span class="chip" style="left:22%;top:31%;--r:-30deg">LOGO</span><span class="chip" style="left:80%;top:31%;--r:30deg">LOGO</span></div>
-  </div>
+  </div>`}
   <div class="notes4"><h4>Given above is the example(s) for your reference</h4>
-    <div class="n"><i>01</i><p>The team logo and numbers on the jersey will be arranged accordingly to your design.</p></div>
+    <div class="n"><i>01</i><p>The team logo and numbers on the ${pants ? 'pants' : 'jersey'} will be arranged accordingly to your design.</p></div>
     <div class="n"><i>02</i><p>The amount of sponsors/logos to be added is unlimited.</p></div>
     <div class="n"><i>03</i><p>Additional elements such as team mascot, flags &amp; change of colour are <mark>FREE</mark>.</p></div>
-    <div class="n"><i>04</i><p>${site.brand} logo from the front part of the jersey is irreplaceable.</p></div>
+    <div class="n"><i>04</i><p>${site.brand} logo from the front part of the ${pants ? 'pants' : 'jersey'} is irreplaceable.</p></div>
   </div>
 </section>
 <section class="dpanel">
@@ -212,10 +227,12 @@ function seriesPanels(s, designs, R, template) {
   ${panelHead(s, R)}
   <div class="size-grid">
     <div><h3>Size chart</h3><div class="small">All measurements in inches. Actual size may vary ±0.5" · 1 inch = 2.54 cm</div>
-      <div class="pills"><span class="on">Adults</span><span>Regular fit</span><span>Short sleeve</span></div>
-      <div class="measure"><img src="${R + template.front}" alt="Measurement guide" loading="lazy"><div class="legend"><div><b>Pit to pit</b>Lay the garment flat. Measure straight across the chest, armpit to armpit.</div><div><b>Length</b>From the highest point of the shoulder straight down to the bottom hem.</div><div><b>Sleeve</b>From the shoulder seam to the end of the sleeve.</div></div></div>
+      <div class="pills"><span class="on">Adults</span><span>Regular fit</span><span>${pants ? 'Tapered leg' : 'Short sleeve'}</span></div>
+      <div class="measure${pants ? ' pants' : ''}"><img src="${R + template.front}" alt="Measurement guide" loading="lazy"><div class="legend">${pants
+        ? '<div><b>Waist</b>Lay flat and measure straight across the relaxed waistband.</div><div><b>Length</b>From the top of the waistband down to the ankle cuff.</div><div><b>Inseam</b>From the crotch seam down the inner leg to the cuff.</div>'
+        : '<div><b>Pit to pit</b>Lay the garment flat. Measure straight across the chest, armpit to armpit.</div><div><b>Length</b>From the highest point of the shoulder straight down to the bottom hem.</div><div><b>Sleeve</b>From the shoulder seam to the end of the sleeve.</div>'}</div></div>
     </div>
-    <div><table class="size-table"><thead><tr><th>SIZE</th><th>PIT TO PIT</th><th>LENGTH</th><th>SLEEVE</th></tr></thead><tbody>${sizes.map((r) => `<tr>${r.map((c) => `<td>${typeof c === 'number' ? c.toFixed(1) : c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <div><table class="size-table"><thead><tr>${(pants ? ['SIZE', 'WAIST', 'LENGTH', 'INSEAM'] : ['SIZE', 'PIT TO PIT', 'LENGTH', 'SLEEVE']).map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${sizes.map((r) => `<tr>${r.map((c) => `<td>${typeof c === 'number' ? c.toFixed(1) : c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
   </div>
 </section>`;
 }
@@ -229,6 +246,6 @@ function soloDetails(p, R, template) {
 }
 
 module.exports = {
-  card, seriesBanner, pitLaneSlide, clubSlide, teamSlide, runSlide, orbitBanner, tile, soloTile, loyaltyStrip, ctaBand,
+  card, view3d, seriesBanner, pitLaneSlide, clubSlide, teamSlide, runSlide, orbitBanner, tile, soloTile, loyaltyStrip, ctaBand,
   seriesPanels, soloDetails, money, LOGO_B, LOGO_W,
 };
