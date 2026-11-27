@@ -176,6 +176,8 @@ The next batch added moving parts to four laser towers, a house round the Times 
 
 The batch after that gave the Odd and Even Pond tower a platform and waterfalls, and the Snowflake Hollow tower a snowflake that grows. It also moved the Times Table Village tower into a village house and removed its little house. Draw calls fell slightly, to **1,589** at the Welcome Garden, **827** in the castle courtyard and **1,101** in the Times village. The waterfalls are one mesh per ring, drawn only while the tower charges or is on.
 
+The next batch added the Snowflake Hollow auroras and floor pattern and the glasshouse tower's vines. It also added posts and overhead spans for cables over water, smooth panel side paths and a new kingfisher. Draw calls stayed level: **1,605** at the Welcome Garden, **824** in the castle courtyard and **1,083** in the Times village. The auroras and vines cost a few draw calls each, and the auroras are drawn only while their tower charges or is on.
+
 ## Measuring it yourself
 
 Open `index.html?perf` and walk to the Welcome Garden, the castle courtyard and the Times village. On a desktop GPU, compare fps, GPU ms and draw calls with the tables above. Then turn Settings → Limit frame rate off to see the uncapped figures on a fast screen.
