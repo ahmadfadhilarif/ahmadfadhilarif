@@ -610,30 +610,6 @@ function render(spec, view = 'front') {
   }
   // fabric weave
   art.push(`<rect width="600" height="620" fill="url(#${id}fb)"/>`);
-  // drape: soft folds under the arms, at the waist and on the sleeves
-  defs.push(`<filter id="${id}bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4.5"/></filter>`);
-  {
-    const f = [];
-    const yW = aL[1] + 0.6 * (hL[1] - aL[1]);
-    [1, -1].forEach((sg) => {
-      const P = (dx, dy) => pt([sg > 0 ? aL[0] + dx : X(aL[0] + dx), aL[1] + dy]);
-      f.push(`<path d="M${P(8, 6)}Q${P(46, 34)} ${P(80, 80)}" stroke="#000" stroke-opacity=".17" stroke-width="7"/>`);
-      f.push(`<path d="M${P(18, 0)}Q${P(56, 26)} ${P(90, 70)}" stroke="#fff" stroke-opacity=".1" stroke-width="6"/>`);
-      f.push(`<path d="M${P(10, 20)}Q${P(38, 44)} ${P(58, 74)}" stroke="#000" stroke-opacity=".1" stroke-width="5"/>`);
-      if (M.sleeve) {
-        const b0 = M.sleeve.bot[0], b1 = M.sleeve.bot[1];
-        const q = (p) => (sg > 0 ? p : [X(p[0]), p[1]]);
-        const m1 = q([b0[0] + (b1[0] - b0[0]) * 0.15, b0[1] + (b1[1] - b0[1]) * 0.15 - 8]);
-        const m2 = q([b0[0] + (b1[0] - b0[0]) * 0.55, b0[1] + (b1[1] - b0[1]) * 0.55 - 14]);
-        f.push(`<path d="M${pt(m1)}L${pt(m2)}" stroke="#000" stroke-opacity=".13" stroke-width="5"/>`);
-      }
-    });
-    f.push(`<path d="M${hL[0] + 20} ${r(yW)}Q300 ${r(yW + 14)} ${X(hL[0] + 20)} ${r(yW)}" stroke="#000" stroke-opacity=".08" stroke-width="9"/><path d="M${hL[0] + 24} ${r(yW - 9)}Q300 ${r(yW + 4)} ${X(hL[0] + 24)} ${r(yW - 9)}" stroke="#fff" stroke-opacity=".06" stroke-width="7"/>`);
-    f.push(`<path d="M240 ${hL[1] - 46}L236 ${hL[1] + 4}M360 ${hL[1] - 46}L364 ${hL[1] + 4}" stroke="#000" stroke-opacity=".07" stroke-width="10"/>`);
-    f.push(`<ellipse cx="300" cy="${aL[1] + 8}" rx="74" ry="42" fill="#fff" fill-opacity=".07"/>`);
-    f.push(`<path d="M${g.nL[0] - 6} ${g.nL[1] + 34}Q300 ${g.nL[1] + 52} ${X(g.nL[0] - 6)} ${g.nL[1] + 34}" stroke="#000" stroke-opacity=".06" stroke-width="7"/>`);
-    art.push(`<g class="dr" fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
-  }
   // fabric shading: soft vertical highlight + edges
   defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
   defs.push(`<linearGradient id="${id}sv" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".06"/><stop offset=".8" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>`);
@@ -747,18 +723,6 @@ function renderPants(spec, view = 'front') {
   art.push(rib('M196 102H404', 32), rib('M205 563L277 563', 18), rib('M323 563L395 563', 18));
   if (view === 'back') art.push(`<path d="M196 94H404M196 101H404M196 108H404" stroke="${shade(c.trim, -0.25)}" stroke-width="1.2"/>`);
   art.push(`<rect width="600" height="620" fill="url(#${id}fb)"/>`);
-  // drape: crotch pulls, knee breaks, stacked ankles
-  defs.push(`<filter id="${id}bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>`);
-  {
-    const f = [];
-    f.push('<path d="M300 272L262 232M300 272L338 232M296 284L280 330M304 284L320 330" stroke="#000" stroke-opacity=".14" stroke-width="6"/>');
-    [[241, 1], [359, -1]].forEach(([cx]) => {
-      f.push(`<path d="M${cx - 30} 392Q${cx} 404 ${cx + 30} 392" stroke="#000" stroke-opacity=".13" stroke-width="7"/><path d="M${cx - 28} 382Q${cx} 392 ${cx + 28} 382" stroke="#fff" stroke-opacity=".09" stroke-width="6"/>`);
-      [516, 530, 544].forEach((y, k) => f.push(`<path d="M${cx - 28} ${y}Q${cx} ${y + 8} ${cx + 28} ${y}" stroke="${k % 2 ? '#fff' : '#000'}" stroke-opacity="${k % 2 ? '.08' : '.14'}" stroke-width="5"/>`));
-      f.push(`<ellipse cx="${cx + (cx < 300 ? 8 : -8)}" cy="210" rx="34" ry="46" fill="#fff" fill-opacity=".07"/>`);
-    });
-    art.push(`<g class="dr" fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
-  }
   // stitching: waistband, cuffs, stripe edges
   art.push(stitch('M197 121H403'), stitch('M206 551L276 551'), stitch('M324 551L394 551'));
   if (spec.stripe !== false) art.push(stitch('M206 118Q206 380 230 554'), stitch('M394 118Q394 380 370 554'), stitch('M187 120Q186 380 212 554', 0.6), stitch('M413 120Q414 380 388 554', 0.6));

@@ -6,18 +6,15 @@
  *  - The garment is built from the product's own front/back artwork: the flat
  *    silhouette is inflated into a 3D shell, then shaped to a fit build (V-taper
  *    waist, chest and shoulder-blade contours, snug sleeves / legs). The artwork
- *    is wrapped on at up to 4096 px. Real fabric folds (underarm drape, waist,
- *    elbow / knee breaks, stacked ankles, hem wave) are modelled in the geometry
- *    and shaded with ambient occlusion; the surface uses a fine, irregular knit /
+ *    is wrapped on at up to 4096 px; the surface uses a fine, irregular knit /
  *    weave (normal, roughness and fibre maps tiled at thread scale) with sheen.
+ *    The fabric is smooth: no wrinkles.
  *  - Front and back panels meet on the real outline of the artwork, closed by a
  *    thin seam in the local fabric colour, so there are no gaps; open edges get
  *    a rolled hem.
  *  - Collars, plackets, zip collars, zip tape, pockets and waistbands are separate
  *    raised layers with real thickness; buttons, zip teeth and puller, cords,
  *    aglets and eyelets are modelled as 3D hardware.
- *  - Light physics: when the garment is turned it lags, swings back on a spring
- *    and ripples, anchored at the shoulders / waistband (vertex shader).
  *  - Drag rotates freely about any axis (arcball), Shift-drag / two-finger twist
  *    rolls about the view axis, wheel / pinch zooms 1x-3x toward the pointer,
  *    right-drag / two-finger drag pans.
@@ -70,20 +67,6 @@
   var mx = function (p) { return [600 - p[0], p[1]]; };
   var lerp = function (a, b, t) { return a + (b - a) * t; };
   function hash(i, j, s) { var h = Math.sin(i * 127.1 + j * 311.7 + s * 74.7) * 43758.5453; return h - Math.floor(h); }
-  function vnoise(x, y, s) {
-    var i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j; fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy);
-    return lerp(lerp(hash(i, j, s), hash(i + 1, j, s), fx), lerp(hash(i, j + 1, s), hash(i + 1, j + 1, s), fx), fy);
-  }
-  // a soft fabric fold along P0 -> P1: a ridge with shallow valleys either side, fading at both ends
-  function foldLine(x, y, P0, P1, amp, w) {
-    var dx = P1[0] - P0[0], dy = P1[1] - P0[1], L2 = dx * dx + dy * dy;
-    var t = ((x - P0[0]) * dx + (y - P0[1]) * dy) / L2;
-    if (t < -0.1 || t > 1.1) return 0;
-    var q = ((x - P0[0]) * dy - (y - P0[1]) * dx) / Math.sqrt(L2);
-    if (Math.abs(q) > 5 * w) return 0;
-    var env = smooth(-0.08, 0.2, t) * (1 - smooth(0.55, 1.08, t));
-    return amp * env * (g1(q, w) - 0.45 * g1(q - 1.9 * w, w) - 0.45 * g1(q + 1.9 * w, w));
-  }
   function boxBlur(src, W, H, r, passes) {
     var a = new Float32Array(src), b = new Float32Array(W * H), x, y, k, s, c;
     for (var p = 0; p < passes; p++) {
@@ -137,9 +120,9 @@
       .then(function (src) {
         // 3D uses real lighting and real openings: drop the flat drawing's outline,
         // baked shading, painted inside-of-neck and the back collar seen through it
-        // (painted drape, too: the 3D garment has real folds) and the hardware modelled in 3D
+        // and the hardware modelled in 3D
         var txt = src.replace(/<path class="ol"[^>]*\/>/g, '').replace(/<rect class="fs"[^>]*\/>/g, '')
-          .replace(/<g class="dr"[\s\S]*?<\/g>/g, '').replace(/<(?:path|rect|circle) class="(?:zp|ds|dt|ag)"[^>]*\/>/g, '');
+          .replace(/<(?:path|rect|circle) class="(?:zp|ds|dt|ag)"[^>]*\/>/g, '');
         if (mode === 'front') txt = txt.replace(/<g class="nk-in">[\s\S]*?<\/g>/, '').replace(/<path class="bt"[^>]*\/>/g, '');
         return svgCanvas(txt, W, H).then(function (c) { return { canvas: c, svg: src }; });
       })
@@ -294,20 +277,33 @@
     var o = cx.getImageData(0, 0, GX, GY).data;
     for (i = 0; i < N; i++) aug[i] = mask[i] || o[i * 4 + 3] > 100 ? 1 : 0;
 
-    // chamfer distance transform (grid units); cells beyond the grid count as inside
-    var INF = 1e9, d = new Float32Array(N), S2 = Math.SQRT2;
-    for (i = 0; i < N; i++) d[i] = aug[i] ? INF : 0;
+    // chamfer distance transform (grid units); cells beyond the grid count as inside.
+    // Cells on the outline are seeded with their sub-cell distance to the anti-aliased edge
+    // (the same interpolation the mesh outline uses), so slanted edges stay smooth.
+    var INF = 1e9, d = new Float32Array(N), S2 = Math.SQRT2, covA = new Float32Array(N);
+    for (i = 0; i < N; i++) covA[i] = Math.max(cov[i], o[i * 4 + 3] / 255);
     var x, y, j, v;
+    var frac = function (j, n) { return clamp((covA[j] - 0.5) / ((covA[j] - covA[n]) || 1e-6), 0.02, 1); };
     for (y = 0; y < GY; y++) for (x = 0; x < GX; x++) {
-      j = y * GX + x; if (!d[j]) continue; v = d[j];
-      if (x > 0) v = Math.min(v, d[j - 1] + 1);
-      if (y > 0) { v = Math.min(v, d[j - GX] + 1); if (x > 0) v = Math.min(v, d[j - GX - 1] + S2); if (x < GX - 1) v = Math.min(v, d[j - GX + 1] + S2); }
+      j = y * GX + x;
+      if (!aug[j]) { d[j] = 0; continue; }
+      var tx = 0, ty = 0;
+      if (x > 0 && !aug[j - 1]) tx = frac(j, j - 1);
+      if (x < GX - 1 && !aug[j + 1]) tx = tx ? Math.min(tx, frac(j, j + 1)) : frac(j, j + 1);
+      if (y > 0 && !aug[j - GX]) ty = frac(j, j - GX);
+      if (y < GY - 1 && !aug[j + GX]) ty = ty ? Math.min(ty, frac(j, j + GX)) : frac(j, j + GX);
+      d[j] = tx && ty ? (tx * ty) / Math.hypot(tx, ty) + 0.5 : tx || ty ? (tx || ty) + 0.5 : INF;
+    }
+    for (y = 0; y < GY; y++) for (x = 0; x < GX; x++) {
+      j = y * GX + x; if (!aug[j]) continue; v = d[j];
+      if (x > 0 && aug[j - 1]) v = Math.min(v, d[j - 1] + 1);
+      if (y > 0) { if (aug[j - GX]) v = Math.min(v, d[j - GX] + 1); if (x > 0 && aug[j - GX - 1]) v = Math.min(v, d[j - GX - 1] + S2); if (x < GX - 1 && aug[j - GX + 1]) v = Math.min(v, d[j - GX + 1] + S2); }
       d[j] = v;
     }
     for (y = GY - 1; y >= 0; y--) for (x = GX - 1; x >= 0; x--) {
-      j = y * GX + x; if (!d[j]) continue; v = d[j];
-      if (x < GX - 1) v = Math.min(v, d[j + 1] + 1);
-      if (y < GY - 1) { v = Math.min(v, d[j + GX] + 1); if (x < GX - 1) v = Math.min(v, d[j + GX + 1] + S2); if (x > 0) v = Math.min(v, d[j + GX - 1] + S2); }
+      j = y * GX + x; if (!aug[j]) continue; v = d[j];
+      if (x < GX - 1 && aug[j + 1]) v = Math.min(v, d[j + 1] + 1);
+      if (y < GY - 1) { if (aug[j + GX]) v = Math.min(v, d[j + GX] + 1); if (x < GX - 1 && aug[j + GX + 1]) v = Math.min(v, d[j + GX + 1] + S2); if (x > 0 && aug[j + GX - 1]) v = Math.min(v, d[j + GX - 1] + S2); }
       d[j] = v;
     }
     for (i = 0; i < N; i++) if (d[i] >= INF) d[i] = GX;
@@ -316,7 +312,8 @@
     var R = new Float32Array(d);
     for (y = 0; y < GY; y++) for (x = 0; x < GX; x++) {
       j = y * GX + x; var r = d[j]; if (r < 1.5) continue;
-      if ((x > 0 && d[j - 1] > r) || (x < GX - 1 && d[j + 1] > r) || (y > 0 && d[j - GX] > r) || (y < GY - 1 && d[j + GX] > r)) continue;
+      var rt = r + 0.5; // ridge (near-local maximum): sub-cell distances rarely tie exactly along a sloped ridge
+      if ((x > 0 && d[j - 1] > rt) || (x < GX - 1 && d[j + 1] > rt) || (y > 0 && d[j - GX] > rt) || (y < GY - 1 && d[j + GX] > rt)) continue;
       var ri = Math.ceil(r), r2 = r * r;
       for (var yy = Math.max(0, y - ri); yy <= Math.min(GY - 1, y + ri); yy++) {
         var dy = yy - y;
@@ -402,90 +399,78 @@
     var sl = null;
     if (meta.sleeve) {
       var A0 = mid(meta.sleeve.top[0], meta.sleeve.bot[0]), A1 = mid(meta.sleeve.top[1], meta.sleeve.bot[1]);
-      var dir = norm(sub(A1, A0));
-      sl = { A0: A0, dir: dir, n: [dir[1], -dir[0]], L: len(sub(A1, A0)),
-        w0: len(sub(meta.sleeve.top[0], meta.sleeve.bot[0])) / 2, w1: len(sub(meta.sleeve.top[1], meta.sleeve.bot[1])) / 2 };
+      var dir = norm(sub(A1, A0)), B0 = meta.sleeve.bot[0], B1 = meta.sleeve.bot[1], L_ = len(sub(A1, A0));
+      var long = L_ > 200, ang = Math.atan2(-dir[0], dir[1]);
+      sl = { A0: A0, dir: dir, n: [dir[1], -dir[0]], L: L_,
+        w0: len(sub(meta.sleeve.top[0], meta.sleeve.bot[0])) / 2, w1: len(sub(meta.sleeve.top[1], meta.sleeve.bot[1])) / 2,
+        B0: B0, bd: norm(sub(B1, B0)),
+        snug: long ? 0.3 : 0.17, // slimmer long sleeves
+        flare: long ? 0.26 : 0.22, fs: long ? 0.86 : 0.7, // wider cuff opening, right at the end of the sleeve
+        // long sleeves hang straight down in the flat drawing: turn them out like a jersey sleeve (about 30 degrees)
+        turn: long ? Math.max(0, (30 * Math.PI) / 180 - ang) : 0,
+        pivot: [lerp(meta.sL[0], meta.aL[0], 0.32) + 4 * s, lerp(meta.sL[1], meta.aL[1], 0.32)] };
     }
     function sleeveCoords(x, y) { // left-side sleeve coordinates for a point (mirrored for the right)
       if (!sl) return null;
       var px = x < 300 ? x : 600 - x, rel = [px - sl.A0[0], y - sl.A0[1]];
       var t = dot(rel, sl.dir) / sl.L, sp = dot(rel, sl.n), hw = lerp(sl.w0, sl.w1, clamp(t, 0, 1)) * 0.9;
-      var w = smooth(-0.04, 0.14, t) * (1 - smooth(1.15, 1.5, Math.abs(sp) / Math.max(hw, 1)));
-      return { t: t, sp: sp, w: w, px: px };
+      // below the armpit, only points on the sleeve's side of its inner seam belong to the sleeve
+      var di = (sl.bd[0] * (y - sl.B0[1]) - sl.bd[1] * (px - sl.B0[0]));
+      var own = lerp(1, smooth(-14, -2, di), smooth(aL[1] - 20, aL[1] + 10, y));
+      var w = smooth(-0.04, 0.14, t) * (1 - smooth(1.15, 1.5, Math.abs(sp) / Math.max(hw, 1))) * own;
+      var wr = smooth(-0.15, 0.45, t) * (1 - smooth(1.15, 1.5, Math.abs(sp) / Math.max(hw, 1))) * own;
+      return { t: t, sp: sp, w: w, wr: wr, px: px };
     }
+    var fArm = curve(taper, yA); // sleeves follow the shoulders, not the waist taper
     function warp(x, y) {
-      var f = y <= yA ? taper[0][1] : curve(taper, y);
-      var sc = sleeveCoords(x, y), X = x;
-      if (sc && sc.w > 0) { // snug sleeve: pull towards the sleeve axis
-        var k = 1 - 0.17 * sc.w;
+      var sc = sleeveCoords(x, y), X = x, ws = 0;
+      if (sc && (sc.w > 0 || sc.wr > 0)) {
+        ws = Math.max(sc.w, sc.wr);
+        // snug along the arm, opening out to the full width (and a little more) at the cuff
+        var k = (1 - sl.snug * sc.w * (1 - smooth(0.55, 0.92, sc.t))) * (1 + sl.flare * sc.w * smooth(sl.fs, 1.0, sc.t));
         var lx = sl.A0[0] + sl.dir[0] * sc.t * sl.L + sl.n[0] * sc.sp * k;
-        X = x < 300 ? lx : 600 - lx;
-        y = sl.A0[1] + sl.dir[1] * sc.t * sl.L + sl.n[1] * sc.sp * k;
+        var ly = sl.A0[1] + sl.dir[1] * sc.t * sl.L + sl.n[1] * sc.sp * k;
+        if (sl.turn) {
+          var a = sl.turn * sc.wr, ca = Math.cos(a), sa = Math.sin(a), rx = lx - sl.pivot[0], ry = ly - sl.pivot[1];
+          lx = sl.pivot[0] + ca * rx - sa * ry; ly = sl.pivot[1] + sa * rx + ca * ry;
+        }
+        X = x < 300 ? lx : 600 - lx; y = ly;
       }
+      var f = lerp(y <= yA ? taper[0][1] : curve(taper, y), fArm, ws);
       var e = 300 - edge(y), dx = X - 300;
       if (Math.abs(dx) <= e) return [300 + dx * f, y];
       return [X - Math.sign(dx) * e * (1 - f), y];
     }
+    // the hood (windbreakers) lies back behind the neck instead of standing up as a blob
+    var hoodW = 300 - nL[0] + 34;
+    function hoodAt(x, y) { return smooth(nL[1] - 12, nL[1] - 50, y) * smooth(hoodW + 30, hoodW, Math.abs(x - 300)); }
+    function zoff(x, y) { return -18 * hoodAt(x, y); }
     function depth(x, y, side) {
       var sc = sleeveCoords(x, y), ws = sc ? sc.w : 0, wt = 1 - ws;
       var e = Math.max(1, 300 - edge(y)), u = (x - 300) / e, au = Math.abs(u);
       var f = y <= yA ? taper[0][1] : curve(taper, y);
       var m = Math.pow(f, 0.6);
       if (side > 0) {
-        if (female) {
-          m *= 1 + 0.3 * g1(au - 0.4, 0.21) * g1(y - (yA + 16 * s), 26 * s) - 0.04 * g1(y - (yA + 0.5 * H), 0.2 * H) * g1(u, 0.6);
-        } else {
-          m *= 1 + 0.15 * g1(au - 0.45, 0.27) * g1(y - (yA - 8 * s), 34 * s)
-                 - 0.05 * g1(u, 0.06) * g1(y - (yA - 6 * s), 46 * s)
-                 - 0.06 * g1(y - (yA + 0.45 * H), 0.25 * H) * g1(u, 0.7);
+        if (female) { // fuller bust: rounded on top, a clear underline, a soft cleavage
+          var yb = yA + 14 * s, vb = y < yb ? g1(y - yb, 30 * s) : g1(y - yb, 15 * s);
+          m *= 1 + 0.46 * g1(au - 0.4, 0.2) * vb - 0.06 * g1(u, 0.06) * vb - 0.05 * g1(y - (yA + 0.5 * H), 0.2 * H) * g1(u, 0.6);
+        } else { // defined pecs: full upper chest, a crisp lower pec line, sternum groove
+          var yc = yA - 14 * s, vp = y < yc ? g1(y - yc, 42 * s) : g1(y - yc, 14 * s);
+          m *= 1 + 0.3 * g1(au - 0.42, 0.25) * vp - 0.08 * g1(u, 0.07) * vp
+                 - 0.07 * g1(y - (yA + 0.45 * H), 0.25 * H) * g1(u, 0.7);
         }
       } else {
         m *= 1 + (female ? 0.06 : 0.11) * g1(au - 0.42, 0.24) * g1(y - (yA - 14 * s), 40 * s)
                - 0.05 * g1(u, 0.05) * g1(y - (yA + 0.2 * H), 0.45 * H)
                - (female ? 0.07 : 0.04) * g1(y - (yA + 0.58 * H), 0.2 * H);
       }
-      var mSleeve = 0.86 * (1 + (side > 0 ? 0.14 : 0.1) * g1((sc ? sc.t : 0) - 0.33, 0.16));
+      m *= lerp(1, 0.38, hoodAt(x, y));
+      var t = sc ? sc.t : 0, cuff = sl ? smooth(sl.fs, 1.0, t) : 0;
+      var mSleeve = (sl && sl.L > 200 ? 0.8 : 0.86) * (1 + (side > 0 ? 0.14 : 0.1) * g1(t - 0.33, 0.16));
+      mSleeve = lerp(mSleeve, 1, smooth(0.6, 1.0, t)) * (1 + (sl ? sl.flare : 0) * cuff);
       return wt * m + ws * mSleeve;
     }
-    // fabric folds (artwork units, added to the shell height)
-    var A0 = [aL[0] + 4 * s, yA + 6 * s], TAU = Math.PI * 2;
-    function fold(x, y, side) {
-      var px = x < 300 ? x : 600 - x, sc = sleeveCoords(x, y), ws = sc ? sc.w : 0, ph = side > 0 ? 0 : 1.7, rs = x < 300 ? 0 : 0.9, ft = 0, f = 0;
-      if (side > 0) {
-        ft += foldLine(px, y, A0, [aL[0] + 60 * s, yA + 64 * s], female ? 2.4 : 3.0, 4.2 * s);
-        ft += foldLine(px, y, A0, [aL[0] + 34 * s, yA + 88 * s], 2.3, 3.6 * s);
-        ft += foldLine(px, y, A0, [aL[0] + 76 * s, yA + 36 * s], 1.7, 3.3 * s);
-        ft += foldLine(px, y, [nL[0] + 8 * s, nL[1] + 10 * s], [nL[0] + 36 * s, yA - 14 * s], 1.0, 5 * s);
-      } else {
-        ft += foldLine(px, y, A0, [aL[0] + 54 * s, yA + 52 * s], 2.6, 4 * s);
-        ft += foldLine(px, y, A0, [aL[0] + 30 * s, yA + 76 * s], 2.0, 3.4 * s);
-      }
-      var yW = yA + (side > 0 ? 0.6 : 0.68) * H, xe = edge(yW);
-      ft += foldLine(px, y, [xe + 2, yW - 4 * s], [xe + 44 * s, yW + 6 * s], side > 0 ? 1.6 : 1.9, 3.2 * s);
-      ft += foldLine(px, y, [xe + 2, yW + 14 * s], [xe + 38 * s, yW + 24 * s], side > 0 ? 1.2 : 1.5, 3 * s);
-      ft += 1.25 * smooth(yH - 40 * s, yH, y) * Math.cos((TAU * (x - 300)) / (54 * s) + ph + 0.6); // hem wave
-      f += ft * (1 - ws);
-      if (sc && ws > 0) {
-        var tl = sc.t * sl.L, fs = 0;
-        if (sl.L > 200) { // long sleeve: elbow and cuff bunching
-          fs += 2.3 * g1(sc.t - 0.58, 0.08) * Math.cos((TAU * (tl + 0.3 * sc.sp)) / (12 * s) + rs);
-          fs += 1.8 * smooth(0.8, 0.9, sc.t) * (1 - smooth(0.97, 1.02, sc.t)) * Math.cos((TAU * (tl - 0.2 * sc.sp)) / (9 * s) + rs + ph);
-          fs += 1.1 * g1(sc.t - 0.25, 0.12) * Math.cos((TAU * (tl + 0.6 * sc.sp)) / (20 * s) + ph);
-        } else {
-          fs += 1.5 * g1(sc.t - 0.45, 0.22) * Math.cos((TAU * (tl + 0.55 * sc.sp)) / (17 * s) + rs + ph);
-        }
-        f += fs * ws;
-      }
-      var sd = side > 0 ? 1 : 7; // gentle irregular drape
-      return f + 1.4 * (vnoise(x / 46, y / 46, sd) - 0.5) + 0.4 * (vnoise(x / 21, y / 21, sd + 3) - 0.5);
-    }
-    // how freely each point swings (0 at the shoulders, 1 at the hem / sleeve ends)
-    function sway(x, y) {
-      var sc = sleeveCoords(x, y), ws = sc ? sc.w : 0;
-      var wt = Math.pow(clamp((y - (nL[1] + 30 * s)) / Math.max(1, yH - nL[1] - 30 * s), 0, 1), 1.5);
-      return lerp(wt, sc ? 0.85 * Math.pow(clamp(sc.t, 0, 1), 1.4) : 0, ws);
-    }
-    return { warp: warp, depth: depth, fold: fold, sway: sway, anchorY: nL[1] + 30 * s };
+    return { warp: warp, depth: depth, zoff: zoff };
   }
 
   function legShape(meta, female) {
@@ -495,37 +480,23 @@
       var px = x < 300 ? x : 600 - x, rel = [px - Hj[0], y - Hj[1]];
       return { t: dot(rel, dir) / L, sp: dot(rel, n), w: smooth(236, 300, y), px: px };
     }
+    // a trim, athletic fit: slim legs tapering to the ankle, neat hips and a flat front
     function warp(x, y) {
-      var lc = legCoords(x, y), k = 1 - 0.13 * lc.w;
+      var lc = legCoords(x, y), k = (1 - 0.2 * lc.w) * (1 - 0.08 * lc.w * smooth(0.45, 1, lc.t));
       var lx = Hj[0] + dir[0] * lc.t * L + n[0] * lc.sp * k, ly = Hj[1] + dir[1] * lc.t * L + n[1] * lc.sp * k;
       var X = lc.w > 0 ? (x < 300 ? lx : 600 - lx) : x, Y = lc.w > 0 ? ly : y;
+      X = 300 + (X - 300) * (1 - (0.03 + 0.11 * smooth(110, 250, y)) * (1 - lc.w));
       if (female) X = 300 + (X - 300) * (1 + 0.035 * g1(Y - 210, 50));
       return [X, Y];
     }
     function depth(x, y, side) {
       var lc = legCoords(x, y), t = lc.t, wl = lc.w, u = (x - 300) / 114, au = Math.abs(u);
-      var m = 1 - 0.12 * wl;
-      if (side > 0) m *= 1 + wl * (0.14 * g1(t - 0.28, 0.13) + 0.03 * g1(t - 0.53, 0.04));
-      else m *= 1 + (1 - wl) * (female ? 0.28 : 0.2) * g1(au - 0.45, 0.3) * g1(y - 215, 40) + wl * (0.06 * g1(t - 0.25, 0.12) + 0.16 * g1(t - 0.68, 0.1));
+      var m = lerp(0.76, 0.8, wl);
+      if (side > 0) m *= 1 - 0.2 * (1 - wl) * g1(u, 0.45) * smooth(120, 210, y) + wl * 0.06 * g1(t - 0.28, 0.13);
+      else m *= 1 + (1 - wl) * (female ? 0.14 : 0.07) * g1(au - 0.45, 0.3) * g1(y - 215, 40) + wl * (0.03 * g1(t - 0.25, 0.12) + 0.07 * g1(t - 0.68, 0.1));
       return m;
     }
-    // crotch pulls, knee breaks, stacked ankles, gathered elastic waist
-    function fold(x, y, side) {
-      var px = x < 300 ? x : 600 - x, dk = px - 241, f = 0;
-      if (side > 0) {
-        f += foldLine(x, y, [300, 272], [262, 232], 2.4, 3.6) + foldLine(x, y, [300, 272], [338, 232], 2.4, 3.6);
-        f += foldLine(x, y, [296, 284], [280, 330], 1.8, 3.2) + foldLine(x, y, [304, 284], [320, 330], 1.8, 3.2);
-      }
-      var yk = 392 + 0.006 * dk * dk, ex = g1(dk, 28);
-      if (side > 0) f += 2.0 * ex * (g1(y - yk, 3.4) - 0.4 * g1(y - yk - 8, 3.4) - 0.4 * g1(y - yk + 8, 3.4));
-      else f += 2.6 * ex * (g1(y - yk, 3.4) - 0.5 * g1(y - yk - 6, 3) + 0.8 * g1(y - yk - 12, 3.4) - 0.4 * g1(y - yk - 18, 3));
-      [[514, 2.6, 1], [528, -2.2, -1], [542, 2.6, 1]].forEach(function (r) { f += r[1] * g1(y - (r[0] + r[2] * 0.008 * dk * dk), 3) * g1(dk, 34); });
-      f += 0.7 * smooth(86, 92, y) * (1 - smooth(114, 120, y)) * Math.cos((2 * Math.PI * x) / 7.5);
-      var sd = side > 0 ? 2 : 9;
-      return f + 1.4 * (vnoise(x / 46, y / 46, sd) - 0.5) + 0.4 * (vnoise(x / 21, y / 21, sd + 3) - 0.5);
-    }
-    function sway(x, y) { return Math.pow(clamp((y - 124) / (meta.ankleY - 124), 0, 1), 1.25); }
-    return { warp: warp, depth: depth, fold: fold, sway: sway, anchorY: 100 };
+    return { warp: warp, depth: depth, zoff: function () { return 0; } };
   }
 
   // marching squares over a grid: corners inside get their own vertex, the outline gets
@@ -558,14 +529,14 @@
   // ------------------------------------------------------------------ garment geometry (flat units; converted to world at the end)
   /*
    * Meshes one panel with marching squares on the shared outline: interior grid points
-   * carry the shell height (body shape + fabric folds), and the outline points are
+   * carry the shell height (body shape), and the outline points are
    * interpolated on the cell edges. Along seams the outline sits on the mid-plane (z = 0)
    * and is shared exactly by the front and back panels, so they meet edge to edge. Along
    * open edges (neck, hem, cuffs, waist, ankles) the outline keeps its height, leaving a
-   * real opening. Vertex colours carry ambient occlusion; aSway how freely a point swings.
+   * real opening. Vertex colours carry the soft shadow round raised layers.
    */
   function panelGeometry(G, shape, sign, LM) {
-    var GX = G.GX, GY = G.GY, pos = [], uv = [], col = [], swa = [], idx = [];
+    var GX = G.GX, GY = G.GY, pos = [], uv = [], col = [], idx = [];
     var own = sign > 0 ? G.covF : G.covB, cov = new Float32Array(GX * GY);
     for (var c0 = 0; c0 < cov.length; c0++) cov[c0] = G.neck[c0] ? own[c0] : G.cov[c0];
     var vid = new Int32Array(GX * GY).fill(-1), eid = {};
@@ -574,7 +545,7 @@
     var N = GX * GY, Z = new Float32Array(N), ZE = new Float32Array(N), WX = new Float32Array(N), WY = new Float32Array(N);
     for (var n0 = 0; n0 < N; n0++) {
       var i0 = n0 % GX, j0 = (n0 - i0) / GX, hv = G.h[n0], X0 = fx(i0), Y0 = fy(j0);
-      if (hv > 0) ZE[n0] = Math.max(0, hv * shape.depth(X0, Y0, sign) + shape.fold(X0, Y0, sign) * smooth(1.5, 8, G.d[n0]));
+      if (hv > 0) ZE[n0] = hv * shape.depth(X0, Y0, sign);
       Z[n0] = cov[n0] > 0.5 ? ZE[n0] : 0;
       var w0 = shape.warp(X0, Y0); WX[n0] = w0[0]; WY[n0] = w0[1];
     }
@@ -648,24 +619,17 @@
         if (m > 0.5 && lift > LIFT[n]) LIFT[n] = lift;
       }
     });
-    // ambient occlusion: fold valleys, the armpit crease and the shadow line round raised layers
-    var AO = new Float32Array(N).fill(1), LGb = boxBlur(LG, GX, GY, Math.max(2, Math.round(3.2 / G.cell)), 2), ZS = boxBlur(ZE, GX, GY, 1, 1);
-    var st2 = Math.max(2, Math.round(3.4 / G.cell)), kc = 0.75 / (st2 * G.cell * st2 * G.cell);
-    for (n0 = 0; n0 < N; n0++) {
-      if (cov[n0] <= 0.2) continue;
-      var ii = n0 % GX, jj = (n0 - ii) / GX;
-      if (ii < st2 || jj < st2 || ii >= GX - st2 || jj >= GY - st2) continue;
-      var lap = ZS[n0 - st2] + ZS[n0 + st2] + ZS[n0 - st2 * GX] + ZS[n0 + st2 * GX] - 4 * ZS[n0];
-      AO[n0] = clamp(1 - clamp(lap * kc - 0.015, 0, 0.2) - 0.3 * clamp(LGb[n0] - LG[n0], 0, 1), 0.55, 1);
-    }
+    // soft contact shadow round raised layers
+    var AO = new Float32Array(N).fill(1), LGb = boxBlur(LG, GX, GY, Math.max(2, Math.round(3.2 / G.cell)), 2);
+    for (n0 = 0; n0 < N; n0++) if (cov[n0] > 0.2) AO[n0] = clamp(1 - 0.3 * clamp(LGb[n0] - LG[n0], 0, 1), 0.7, 1);
     AO = boxBlur(AO, GX, GY, 1, 1);
 
     function push(x, y, z, tu, tv, a) {
       var w = shape.warp(x, y);
-      pos.push((w[0] - 300) / 100, -w[1] / 100, (sign * z) / 100);
+      pos.push((w[0] - 300) / 100, -w[1] / 100, (sign * z + shape.zoff(x, y)) / 100);
       var u = (tu - G.vb[0]) / G.vb[2];
       uv.push(sign > 0 ? u : 1 - u, 1 - (tv - G.vb[1]) / G.vb[3]);
-      col.push(a, a, a); swa.push(shape.sway(x, y));
+      col.push(a, a, a);
       return pos.length / 3 - 1;
     }
     var seamV = [], openIn = {}, openSeg = []; // seam outline points + outward direction; open-edge points
@@ -698,7 +662,7 @@
       function (a, b, c) { if (sign > 0) idx.push(a, c, b); else idx.push(a, b, c); },
       function (a, b) { if (openIn[a] !== undefined && openIn[b] !== undefined) openSeg.push(a, b); });
     return {
-      pos: new Float32Array(pos), uv: new Float32Array(uv), col: new Float32Array(col), sw: new Float32Array(swa), idx: idx, seamV: seamV,
+      pos: new Float32Array(pos), uv: new Float32Array(uv), col: new Float32Array(col), idx: idx, seamV: seamV,
       openIn: openIn, openSeg: openSeg, cov: cov, ZE: ZE, TU: TU, TV: TV, LIFT: LIFT, LIFTs: boxBlur(LIFT, GX, GY, 2, 2), at: sampler(G), sign: sign, artX: artX,
     };
   }
@@ -706,7 +670,7 @@
   // a point on the panel surface (world units) and its local frame: right, up, outward normal
   function surfAt(P, shape, x, y) {
     var w = shape.warp(x, y);
-    return [(w[0] - 300) / 100, -w[1] / 100, (P.sign * P.at(P.ZE, x, y)) / 100];
+    return [(w[0] - 300) / 100, -w[1] / 100, (P.sign * P.at(P.ZE, x, y) + shape.zoff(x, y)) / 100];
   }
   function frameAt(G, P, shape, x, y) {
     var h = G.cell * 0.7, p = surfAt(P, shape, x, y);
@@ -744,12 +708,12 @@
       V[j * W + i] = Math.min(c, maskAt(LM, L.a, P.artX(P.at(P.TU, x, y)), P.at(P.TV, x, y)));
     }
     var D = chamfer(V, W, H), R = Math.max(1.2, lift * 1.3);
-    var pos = [], uv = [], col = [], swa = [], idx = [], vid = {}, edgeXY = {}, segs = [];
+    var pos = [], uv = [], col = [], idx = [], vid = {}, edgeXY = {}, segs = [];
     function vtx(x, y, h, a) {
       var F = frameAt(G, P, shape, x, y), tu = P.at(P.TU, x, y), tv = P.at(P.TV, x, y), u = (tu - vb[0]) / vb[2];
       pos.push(F.p[0] + (F.n[0] * h) / 100, F.p[1] + (F.n[1] * h) / 100, F.p[2] + (F.n[2] * h) / 100);
       uv.push(sign > 0 ? u : 1 - u, 1 - (tv - vb[1]) / vb[3]);
-      col.push(a, a, a); swa.push(shape.sway(x, y));
+      col.push(a, a, a);
       return pos.length / 3 - 1;
     }
     var top = function (dist) { var e = clamp((dist * cs) / R, 0, 1); return lift * (0.5 + 0.5 * Math.sqrt(1 - (1 - e) * (1 - e))); };
@@ -776,7 +740,7 @@
       var A = wallV(segs[q]), B = wallV(segs[q + 1]);
       idx.push(A[1], B[1], B[0], A[1], B[0], A[0]);
     }
-    return { pos: new Float32Array(pos), uv: new Float32Array(uv), col: new Float32Array(col), sw: new Float32Array(swa), idx: idx };
+    return { pos: new Float32Array(pos), uv: new Float32Array(uv), col: new Float32Array(col), idx: idx };
   }
 
   // rolled hem along the open edges (hem, cuffs, neck, waist, ankles): a thin round edge
@@ -799,7 +763,7 @@
       });
       if (line.length > 3) lines.push(line);
     }
-    var pos = [], col = [], swa = [], idx = [], SEG = 6, R = 0.0062, rgb = P.sign > 0 ? G.rgbF : G.rgbB;
+    var pos = [], col = [], idx = [], SEG = 6, R = 0.0062, rgb = P.sign > 0 ? G.rgbF : G.rgbB;
     var lin = function (v) { return Math.pow(v / 255, 2.2) * 0.9; };
     lines.forEach(function (ln) {
       var base = pos.length / 3, Pp = P.pos;
@@ -815,7 +779,7 @@
         for (var s = 0; s < SEG; s++) {
           var th = (s / SEG) * Math.PI * 2, cA = Math.cos(th) * R, sA = Math.sin(th) * R;
           pos.push(Pp[v * 3] + n1[0] * cA + n2[0] * sA, Pp[v * 3 + 1] + n1[1] * cA + n2[1] * sA, Pp[v * 3 + 2] + n1[2] * cA + n2[2] * sA);
-          col.push(cc[0], cc[1], cc[2]); swa.push(P.sw[v]);
+          col.push(cc[0], cc[1], cc[2]);
         }
       }
       for (k = 0; k < ln.length - 1; k++) for (var s2 = 0; s2 < SEG; s2++) {
@@ -823,7 +787,7 @@
         idx.push(i0, i2, i1, i1, i2, i3);
       }
     });
-    return { pos: new Float32Array(pos), col: new Float32Array(col), sw: new Float32Array(swa), idx: idx };
+    return { pos: new Float32Array(pos), col: new Float32Array(col), idx: idx };
   }
 
   // marching squares on the artwork coverage: the real seam lines (open edges excluded)
@@ -889,7 +853,7 @@
 
   // thin seam strip along each line, coloured from the surrounding fabric
   function seamGeometry(G, lines, shape) {
-    var pos = [], col = [], sw = [], idx = [], SEG = 6, R = 0.0048;
+    var pos = [], col = [], idx = [], SEG = 6, R = 0.0048;
     var srgb = function (v) { v /= 255; return Math.pow(v, 2.2); };
     function colourAt(gi, gj) {
       var r = 0, g = 0, b = 0, n = 0;
@@ -903,7 +867,7 @@
       return [srgb(r / n) * 0.95, srgb(g / n) * 0.95, srgb(b / n) * 0.95];
     }
     lines.forEach(function (ln) {
-      var P = ln.map(function (p) { var w = shape.warp(p[0], p[1]); return [(w[0] - 300) / 100, -w[1] / 100, 0]; });
+      var P = ln.map(function (p) { var w = shape.warp(p[0], p[1]); return [(w[0] - 300) / 100, -w[1] / 100, shape.zoff(p[0], p[1]) / 100]; });
       var base = pos.length / 3;
       for (var k = 0; k < P.length; k++) {
         var a = P[Math.max(0, k - 1)], b = P[Math.min(P.length - 1, k + 1)];
@@ -911,8 +875,8 @@
         var nx = -ty, ny = tx, c = colourAt(ln[k][2], ln[k][3]);
         for (var s = 0; s < SEG; s++) {
           var th = (s / SEG) * Math.PI * 2, cz = Math.cos(th) * R, cn = Math.sin(th) * R * 0.75;
-          pos.push(P[k][0] + nx * cn, P[k][1] + ny * cn, cz);
-          col.push(c[0], c[1], c[2]); sw.push(shape.sway(ln[k][0], ln[k][1]));
+          pos.push(P[k][0] + nx * cn, P[k][1] + ny * cn, P[k][2] + cz);
+          col.push(c[0], c[1], c[2]);
         }
       }
       for (k = 0; k < P.length - 1; k++) for (var s2 = 0; s2 < SEG; s2++) {
@@ -920,7 +884,7 @@
         idx.push(i0, i2, i1, i1, i2, i3);
       }
     });
-    return { pos: new Float32Array(pos), col: new Float32Array(col), sw: new Float32Array(sw), idx: idx };
+    return { pos: new Float32Array(pos), col: new Float32Array(col), idx: idx };
   }
 
   // ------------------------------------------------------------------ fabric micro-structure (normal, roughness and fibre maps)
@@ -1065,7 +1029,6 @@
     g.setAttribute('position', new T.BufferAttribute(f32(o.pos), 3));
     if (o.uv) g.setAttribute('uv', new T.BufferAttribute(f32(o.uv), 2));
     if (o.col) g.setAttribute('color', new T.BufferAttribute(f32(o.col), 3));
-    if (o.sw) g.setAttribute('aSway', new T.BufferAttribute(f32(o.sw), 1));
     g.setIndex(o.idx);
     g.computeVertexNormals();
     return g;
@@ -1079,43 +1042,18 @@
     return t;
   }
 
-  /*
-   * Shared shader additions:
-   *  - sway: every vertex is displaced by a lag rotation (cloth trailing the turn and
-   *    springing back), a travelling ripple and a little centrifugal flare, all scaled by
-   *    its aSway weight. Driven only by the rest position, so every part moves together.
-   *  - weave: normal / roughness / fibre maps are sampled at thread scale (vUv * uWeave).
-   */
-  var SW = null;
-  function swayUniforms() {
-    if (!SW) SW = { uLag: { value: new T.Vector3() }, uOff: { value: new T.Vector3() }, uTime: { value: 0 }, uFlut: { value: 0 }, uFlare: { value: 0 } };
-    return SW;
-  }
-  var SWAY_DECL = 'attribute float aSway;\nuniform vec3 uLag;\nuniform vec3 uOff;\nuniform float uTime;\nuniform float uFlut;\nuniform float uFlare;\n';
-  var SWAY_BODY = [
-    '{',
-    '  vec3 rp = position - uOff;',
-    '  transformed += cross(uLag, rp * vec3(1.0, 0.5, 1.0)) * aSway;',
-    '  float rl = length(rp.xz);',
-    '  vec3 rd = rl > 1e-4 ? vec3(rp.x / rl, 0.0, rp.z / rl) : vec3(0.0);',
-    '  float ph = rp.y * 5.2 + rp.x * 1.6 - uTime * 6.0;',
-    '  transformed += rd * ((sin(ph) * 0.65 + sin(ph * 1.83 + 1.3) * 0.35) * uFlut + uFlare) * aSway * smoothstep(0.0, 0.25, rl);',
-    '}'].join('\n');
+  // fabric maps are sampled at thread scale (vUv * uWeave) instead of once across the garment
   function enhance(mat, weave) {
-    var U = swayUniforms();
+    if (!weave) return mat;
     mat.onBeforeCompile = function (sh) {
-      for (var k in U) sh.uniforms[k] = U[k];
-      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\n' + SWAY_DECL).replace('#include <begin_vertex>', '#include <begin_vertex>\n' + SWAY_BODY);
-      if (weave) {
-        sh.uniforms.uWeave = { value: weave };
-        sh.fragmentShader = sh.fragmentShader
-          .replace('#include <common>', '#include <common>\nuniform vec2 uWeave;')
-          .replace('#include <normal_fragment_maps>', T.ShaderChunk.normal_fragment_maps.split('texture2D( normalMap, vUv )').join('texture2D( normalMap, vUv * uWeave )'))
-          .replace('#include <roughnessmap_fragment>', T.ShaderChunk.roughnessmap_fragment.split('texture2D( roughnessMap, vUv )').join('texture2D( roughnessMap, vUv * uWeave )'))
-          .replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_ROUGHNESSMAP\n{ vec4 fb = texture2D( roughnessMap, vUv * uWeave ); float mo = texture2D( roughnessMap, vUv * uWeave * 0.371 + 0.37 ).r; diffuseColor.rgb *= ( 0.88 + 0.2 * fb.b ) * ( 0.965 + 0.07 * mo ); }\n#endif');
-      }
+      sh.uniforms.uWeave = { value: weave };
+      sh.fragmentShader = sh.fragmentShader
+        .replace('#include <common>', '#include <common>\nuniform vec2 uWeave;')
+        .replace('#include <normal_fragment_maps>', T.ShaderChunk.normal_fragment_maps.split('texture2D( normalMap, vUv )').join('texture2D( normalMap, vUv * uWeave )'))
+        .replace('#include <roughnessmap_fragment>', T.ShaderChunk.roughnessmap_fragment.split('texture2D( roughnessMap, vUv )').join('texture2D( roughnessMap, vUv * uWeave )'))
+        .replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_ROUGHNESSMAP\n{ vec4 fb = texture2D( roughnessMap, vUv * uWeave ); float mo = texture2D( roughnessMap, vUv * uWeave * 0.371 + 0.37 ).r; diffuseColor.rgb *= ( 0.88 + 0.2 * fb.b ) * ( 0.965 + 0.07 * mo ); }\n#endif');
     };
-    mat.customProgramCacheKey = function () { return weave ? 'tmz-weave' : 'tmz-sway'; };
+    mat.customProgramCacheKey = function () { return 'tmz-weave'; };
     return mat;
   }
 
@@ -1135,7 +1073,6 @@
     return {
       outerF: outer(mf), outerB: outer(mb), layerF: outer(mf, T.DoubleSide), layerB: outer(mb, T.DoubleSide), innerF: inner(inF), innerB: inner(inB),
       seam: enhance(new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0, envMapIntensity: 0.8 })),
-      depth: enhance(new T.MeshDepthMaterial({ depthPacking: T.RGBADepthPacking })),
       metal: enhance(new T.MeshPhysicalMaterial({ color: 0xc6c8cb, metalness: 1, roughness: 0.3, envMapIntensity: 1.15, clearcoat: 0.3, clearcoatRoughness: 0.2 })),
       maps: [mf, mb, inF, inB, nrm, rgh],
     };
@@ -1151,29 +1088,23 @@
   }
 
   // ------------------------------------------------------------------ 3D hardware
-  function bake(g, F, off, sway) { // place a part built in a local frame (x right, y up, z out) on the garment
+  function bake(g, F, off) { // place a part built in a local frame (x right, y up, z out) on the garment
     var m = new T.Matrix4().makeBasis(new T.Vector3().fromArray(F.r), new T.Vector3().fromArray(F.u), new T.Vector3().fromArray(F.n));
     m.setPosition(F.p[0] + (F.n[0] * off) / 100, F.p[1] + (F.n[1] * off) / 100, F.p[2] + (F.n[2] * off) / 100);
     g.applyMatrix4(m);
-    return withSway(g, sway);
-  }
-  function withSway(g, sway) {
-    var n = g.attributes.position.count, a = new Float32Array(n);
-    for (var i = 0; i < n; i++) a[i] = typeof sway === 'function' ? sway(i) : sway;
-    g.setAttribute('aSway', new T.BufferAttribute(a, 1));
     return g;
   }
   function merge(list) {
-    var P = [], Nn = [], I = [], S = [], base = 0;
+    var P = [], Nn = [], I = [], base = 0;
     list.forEach(function (g) {
-      var p = g.attributes.position, nr = g.attributes.normal, sw = g.attributes.aSway;
-      for (var i = 0; i < p.count; i++) { P.push(p.getX(i), p.getY(i), p.getZ(i)); Nn.push(nr.getX(i), nr.getY(i), nr.getZ(i)); S.push(sw ? sw.getX(i) : 0); }
+      var p = g.attributes.position, nr = g.attributes.normal;
+      for (var i = 0; i < p.count; i++) { P.push(p.getX(i), p.getY(i), p.getZ(i)); Nn.push(nr.getX(i), nr.getY(i), nr.getZ(i)); }
       if (g.index) for (i = 0; i < g.index.count; i++) I.push(g.index.getX(i) + base); else for (i = 0; i < p.count; i++) I.push(i + base);
       base += p.count;
       g.dispose();
     });
     var out = new T.BufferGeometry();
-    out.setAttribute('position', new T.Float32BufferAttribute(P, 3)); out.setAttribute('normal', new T.Float32BufferAttribute(Nn, 3)); out.setAttribute('aSway', new T.Float32BufferAttribute(S, 1));
+    out.setAttribute('position', new T.Float32BufferAttribute(P, 3)); out.setAttribute('normal', new T.Float32BufferAttribute(Nn, 3));
     out.setIndex(I);
     return out;
   }
@@ -1210,7 +1141,7 @@
       var m = enhance(new T.MeshPhysicalMaterial(Object.assign({ color: new T.Color(col || '#f2f2f2'), roughness: 0.38, metalness: 0, clearcoat: 0.45, clearcoatRoughness: 0.3, side: T.DoubleSide }, opts || {})));
       return m;
     };
-    var addMesh = function (g, mat, own) { var m = new T.Mesh(g, mat); m.castShadow = m.receiveShadow = true; m.customDepthMaterial = M.depth; m.userData.own = !!own; out.push(m); };
+    var addMesh = function (g, mat, own) { var m = new T.Mesh(g, mat); m.castShadow = m.receiveShadow = true; m.userData.own = !!own; out.push(m); };
     [['front', panels[0]], ['back', panels[1]]].forEach(function (pv) {
       var H = HW[pv[0]], P = pv[1];
       if (!H) return;
@@ -1226,7 +1157,7 @@
         g.setAttribute('uv', new T.BufferAttribute(uvA, 2));
         g.rotateX(Math.PI / 2); g.scale(0.01, 0.01, 0.01);
         var F = frame(b.x, b.y);
-        addMesh(bake(g, F, P.at(P.LIFT, X(b.x), b.y) + 0.05, shape.sway(X(b.x), b.y)), plastic('#ffffff', { map: buttonTexture(b.col), roughness: 0.3, clearcoat: 0.6 }), true);
+        addMesh(bake(g, F, P.at(P.LIFT, X(b.x), b.y) + 0.05), plastic('#ffffff', { map: buttonTexture(b.col), roughness: 0.3, clearcoat: 0.6 }), true);
       });
       // zip: interlocking teeth along the tape, slider and pull tab
       H.zt.forEach(function (z) {
@@ -1235,17 +1166,17 @@
           var side = k % 2 ? 1 : -1, g = new T.BoxGeometry(2.5, 1.0, 1.0);
           g.translate(side * 0.6, 0, 0); g.scale(0.01, 0.01, 0.01);
           var F = frame(z.x, y);
-          teeth.push(bake(g, F, (P.at(P.LIFT, X(z.x), y) || 1.2) + 0.45, shape.sway(X(z.x), y)));
+          teeth.push(bake(g, F, (P.at(P.LIFT, X(z.x), y) || 1.2) + 0.45));
         }
         if (teeth.length) addMesh(merge(teeth), M.metal);
       });
       H.zp.forEach(function (zp) {
-        var y0 = zp.y - zp.h / 2 + 4.5, F = frame(zp.x, y0), lift = Math.max(liftAt(zp.x, y0), 1.2), sw = shape.sway(X(zp.x), y0);
+        var y0 = zp.y - zp.h / 2 + 4.5, F = frame(zp.x, y0), lift = Math.max(liftAt(zp.x, y0), 1.2);
         var body = new T.ExtrudeGeometry(roundRect(8.4, 7.4, 2.2), { depth: 1.6, bevelEnabled: true, bevelThickness: 0.55, bevelSize: 0.55, bevelSegments: 2, curveSegments: 6 });
         body.scale(0.01, 0.01, 0.01);
         var tab = new T.ExtrudeGeometry(roundRect(5.6, 13, 2.4, [0, 4.2, 1.5, 2.1]), { depth: 0.7, bevelEnabled: true, bevelThickness: 0.25, bevelSize: 0.3, bevelSegments: 2, curveSegments: 8 });
         tab.translate(0, -6.5, 0); tab.rotateX(-0.28); tab.translate(0, 0.5, 2.0); tab.scale(0.01, 0.01, 0.01);
-        addMesh(merge([bake(body, F, lift + 0.3, sw), bake(tab, F, lift + 0.3, function (i) { return sw; })]), M.metal);
+        addMesh(merge([bake(body, F, lift + 0.3), bake(tab, F, lift + 0.3)]), M.metal);
       });
       // cords with braided texture, and their tips (plastic toggles / metal aglets)
       H.ds.forEach(function (cd) {
@@ -1256,13 +1187,11 @@
           pts.push(new T.Vector3(F.p[0] + (F.n[0] * off) / 100, F.p[1] + (F.n[1] * off) / 100, F.p[2] + (F.n[2] * off) / 100)); flat.push([X(x), y, t]);
         }
         var curve = new T.CatmullRomCurve3(pts), TS = 60, RS = 8, tube = new T.TubeGeometry(curve, TS, r / 100, RS, false);
-        var w0 = shape.sway(flat[0][0], flat[0][1]);
-        withSway(tube, function (i) { var t = Math.floor(i / (RS + 1)) / TS; return w0 + 0.45 * Math.pow(t, 1.4); });
         var len = 0; for (k = 1; k < pts.length; k++) len += pts[k].distanceTo(pts[k - 1]);
         var tex = cordTexture(); tex.repeat.set((len * 100) / 2.4, 1);
         addMesh(tube, enhance(new T.MeshPhysicalMaterial({ color: new T.Color(cd.col || '#ffffff'), map: tex, roughness: 0.62, sheen: new T.Color(0.3, 0.3, 0.3), metalness: 0 })), true);
         // tip at the cord end
-        var end = pts[pts.length - 1], dir = new T.Vector3().subVectors(end, pts[pts.length - 3]).normalize(), wEnd = w0 + 0.45;
+        var end = pts[pts.length - 1], dir = new T.Vector3().subVectors(end, pts[pts.length - 3]).normalize();
         var best = null, bd = 1e9;
         H.dt.concat(H.ag).forEach(function (tp) { var d = Math.hypot(tp.x - cd.p1[0], tp.y - cd.p1[1]); if (d < bd) { bd = d; best = tp; } });
         if (!best || bd > 14) return;
@@ -1272,13 +1201,12 @@
         g.scale(0.01, 0.01, 0.01);
         g.applyMatrix4(new T.Matrix4().makeRotationFromQuaternion(new T.Quaternion().setFromUnitVectors(new T.Vector3(0, 1, 0), dir)));
         g.translate(end.x + (dir.x * (L / 2 - 1)) / 100, end.y + (dir.y * (L / 2 - 1)) / 100, end.z + (dir.z * (L / 2 - 1)) / 100);
-        withSway(g, wEnd);
         if (metal) addMesh(g, M.metal); else addMesh(g, plastic(best.col), true);
       });
       // metal eyelets round the cord exits
       H.ey.forEach(function (e) {
         var g = new T.TorusGeometry(e.r * 0.92, 0.75, 10, 28); g.scale(0.01, 0.01, 0.01);
-        addMesh(bake(g, frame(e.x, e.y), P.at(P.LIFT, X(e.x), e.y) + 0.3, shape.sway(X(e.x), e.y)), M.metal);
+        addMesh(bake(g, frame(e.x, e.y), P.at(P.LIFT, X(e.x), e.y) + 0.3), M.metal);
       });
     });
     return out;
@@ -1296,7 +1224,7 @@
       for (var q = 0; q < sv.length; q += 3) nrm.setXYZ(sv[q], sv[q + 1], sv[q + 2], 0);
       nrm.needsUpdate = true;
     });
-    var add = function (g, mat, cast, receive) { var m = new T.Mesh(g, mat); m.castShadow = !!cast; m.receiveShadow = !!receive; if (cast) m.customDepthMaterial = M.depth; model.add(m); return m; };
+    var add = function (g, mat, cast, receive) { var m = new T.Mesh(g, mat); m.castShadow = !!cast; m.receiveShadow = !!receive; model.add(m); return m; };
     add(gf, M.outerF, true, true); add(gf, M.innerF); add(gb, M.outerB, true, true); add(gb, M.innerB);
     var sg = seamGeometry(G, A.seams, shape);
     if (sg.idx.length) add(geom(sg), M.seam);
@@ -1307,7 +1235,6 @@
       pl[1].list.forEach(function (L) { var lg = layerGeometry(G, pl[0], shape, pl[1], L); if (lg) add(geom(lg), pl[2], true, true); });
     });
     hardware(G, [front, back], shape, A.HW, M).forEach(function (m) { model.add(m); });
-    swayUniforms().uOff.value.set(0, -shape.anchorY / 100, 0);
     // centre on the pivot
     var box = new T.Box3().setFromObject(model), c = box.getCenter(new T.Vector3()), size = box.getSize(new T.Vector3());
     model.position.sub(c);
@@ -1316,7 +1243,6 @@
     var ext = Math.max(size.x, size.y, size.z);
     var sc = key.shadow.camera, half = ext * 0.6; sc.left = sc.bottom = -half; sc.right = sc.top = half; sc.near = 0.1; sc.far = 40; sc.updateProjectionMatrix();
     fitDist();
-    ph.q = null;
   }
 
   function applyCamera() {
@@ -1340,40 +1266,7 @@
     if (!renderer || !model) return;
     if (st.auto) rotateAxis([0, 1, 0], dt * 0.45);
     if (st.hold) rotateAxis(st.hold.axis, st.hold.sign * dt * 1.6);
-    physics(dt);
     renderer.render(scene, camera);
-  }
-
-  /*
-   * Cloth physics (light): the garment's angular velocity is read from the turntable each
-   * frame. A damped spring with air drag drives a lag rotation phi of the loose fabric:
-   *   phi'' = -K phi - C phi' - D w,   and a change of w kicks phi' the other way (inertia).
-   * The shader applies phi weighted by aSway, plus a ripple and flare scaled by the motion.
-   */
-  var ph = { q: null, w: null, wPrev: null, phi: null, u: null, t: 0 };
-  var PHYS = { K: 55, C: 4.2, D: 1.5, scale: 0.55, limit: 0.075 };
-  function physics(dt) {
-    var U = swayUniforms(), q = pivot.quaternion;
-    if (!ph.q) { ph.q = q.clone(); ph.w = new T.Vector3(); ph.wPrev = new T.Vector3(); ph.phi = new T.Vector3(); ph.u = new T.Vector3(); U.uLag.value.set(0, 0, 0); U.uFlut.value = 0; U.uFlare.value = 0; }
-    ph.t += dt; U.uTime.value = ph.t;
-    if (!dt) return;
-    var dq = q.clone().multiply(ph.q.clone().invert()); ph.q.copy(q);
-    if (dq.w < 0) { dq.x = -dq.x; dq.y = -dq.y; dq.z = -dq.z; dq.w = -dq.w; }
-    var ang = 2 * Math.acos(clamp(dq.w, -1, 1)), sn = Math.sqrt(Math.max(0, 1 - dq.w * dq.w)), wNow = new T.Vector3();
-    if (ang > 1e-6 && ang < 0.45 && sn > 1e-6) wNow.set(dq.x / sn, dq.y / sn, dq.z / sn).multiplyScalar(ang / dt); // bigger jumps are view snaps
-    ph.w.lerp(wNow, 1 - Math.exp(-dt * 30));
-    ph.u.sub(new T.Vector3().subVectors(ph.w, ph.wPrev)); ph.wPrev.copy(ph.w);
-    var n = Math.max(1, Math.ceil(dt * 240)), h = dt / n, acc = new T.Vector3();
-    for (var i = 0; i < n; i++) {
-      acc.copy(ph.phi).multiplyScalar(-PHYS.K).addScaledVector(ph.u, -PHYS.C).addScaledVector(ph.w, -PHYS.D);
-      ph.u.addScaledVector(acc, h); ph.phi.addScaledVector(ph.u, h);
-    }
-    var inv = q.clone().invert(), lag = ph.phi.clone().multiplyScalar(PHYS.scale), L = lag.length();
-    if (L > 1e-9) lag.multiplyScalar((PHYS.limit * Math.tanh(L / PHYS.limit)) / L);
-    U.uLag.value.copy(lag.applyQuaternion(inv));
-    var k = 1 - Math.exp(-dt * 6), energy = ph.u.length() * 0.35 + ph.w.length() * 0.2, wl = ph.w.clone().applyQuaternion(inv);
-    U.uFlut.value = lerp(U.uFlut.value, Math.min(0.011, 0.0012 + 0.0045 * energy), k);
-    U.uFlare.value = lerp(U.uFlare.value, Math.min(0.022, wl.y * wl.y * 0.0016), k);
   }
 
   function rotateAxis(axis, angle) {
@@ -1588,5 +1481,5 @@
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
 
-  window.TMZ3D = { open: open, close: close, _state: st, _debug: function () { return { T: T, renderer: renderer, scene: scene, model: model, key: key, sway: SW, phys: PHYS }; } };
+  window.TMZ3D = { open: open, close: close, _state: st, _debug: function () { return { T: T, renderer: renderer, scene: scene, model: model, key: key }; } };
 })();

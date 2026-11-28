@@ -77,7 +77,7 @@ sharp at any zoom:
 * **Fabric weave** per series, taken from the series' fabric list in `data.js`: ARCTIX jersey
   knit, HEXA honeycomb mesh, AGILIS twill, QUADRA waffle, MICROTEX/TASLAN for jackets and
   pants, and MESH for running singlets.
-* **Construction:** soft drape folds, coverstitched hems, ribbed collars and cuffs, stitched
+* **Construction:** smooth, wrinkle-free fabric, coverstitched hems, ribbed collars and cuffs, stitched
   seams and panels, a printed neck label, a woven hem tag, laser-cut side vents, micro-text, a
   tonal monogram print, and raised-print logos.
 
@@ -92,15 +92,15 @@ opens a popup showing the garment as if worn, "ghost mannequin" style, with no m
 * **Tops** show the upper-body garment; **pants** show the waist down. The neck, hem, cuffs,
   armholes and waist are real openings. The inside is black fabric, with the collar band (or
   waistband) continuing on the inside and the TMZ logo printed top-centre on the inside back.
-* The garment is shaped for an **athletic build**: V-taper waist, chest and shoulder-blade
-  contours, snug sleeves over the biceps, and fitted legs on the pants. The **Male fit / Female
-  fit** switch changes the body shape, and the choice is remembered.
+* The garment is shaped for a **very fit build**: a V-taper waist, a defined chest (pecs on the
+  male fit, a fuller bust on the female fit), shoulder blades and snug sleeves. Sleeves open to
+  a wide cuff. Jackets, windbreakers and long sleeves share the jersey's shape, with the sleeves
+  angled out like a jersey's and the hood lying back behind the neck. Pants have a trim
+  athletic fit: slim legs tapering to the ankle, neat hips and a flat front. The **Male fit /
+  Female fit** switch changes the body shape, and the choice is remembered.
 * **Fabric:** the artwork is wrapped on at up to 4096 px. On top of it sits a thread-scale knit or
   weave for each fabric (irregular yarns, fibre fuzz, glossier yarn tops, subtle colour
   mottling), with velvety sheen, studio lighting and soft self-shadows. It stays crisp at 3×.
-* **Folds:** real geometric drape is modelled: underarm folds, waist ripples, elbow and cuff
-  bunching, a hem wave, crotch pulls, knee breaks, stacked ankles and a gathered elastic waist.
-  Ambient occlusion darkens the creases.
 * **Seams and edges:** front and back panels are meshed on one shared outline, so they meet edge
   to edge with no gaps, finished with a fine tone-on-tone seam. Open edges have a rolled hem.
 * **Raised layers:** collar bands, polo collars and plackets, zip collars, zip tape, kangaroo
@@ -108,8 +108,6 @@ opens a popup showing the garment as if worn, "ghost mannequin" style, with no m
   sits on top of the shirt with real thickness, a rounded edge and a contact shadow.
 * **Hardware:** 3D buttons (dished, four-hole, cross-stitched), interlocking zip teeth, a metal
   zip slider with pull tab, braided drawcords with toggles or metal aglets, and eyelets.
-* **Physics:** turning the garment makes it lag slightly, spring back and ripple, anchored at
-  the shoulders or waistband. The hem, sleeve ends, legs and cords move most.
 * **Drag** rotates freely around any axis. **Shift-drag** or a two-finger twist rolls around the
   view axis, and the X / Y / Z buttons rotate step by step. **Scroll** or **pinch** zooms from
   1× to 3× toward the pointer, **right-drag** pans, and **double-click** resets.
