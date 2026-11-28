@@ -95,16 +95,30 @@ opens a popup showing the garment as if worn, "ghost mannequin" style, with no m
 * The garment is shaped for an **athletic build**: V-taper waist, chest and shoulder-blade
   contours, snug sleeves over the biceps, and fitted legs on the pants. The **Male fit / Female
   fit** switch changes the body shape, and the choice is remembered.
-* **Fabric:** the artwork is wrapped on at up to 4096 px, with a woven surface texture matching
-  the fabric, soft sheen, studio lighting and soft self-shadows. Front and back panels are
-  meshed on one shared outline, so they meet edge to edge with no gaps, finished with a fine
-  tone-on-tone seam.
+* **Fabric:** the artwork is wrapped on at up to 4096 px. On top of it sits a thread-scale knit or
+  weave for each fabric (irregular yarns, fibre fuzz, glossier yarn tops, subtle colour
+  mottling), with velvety sheen, studio lighting and soft self-shadows. It stays crisp at 3×.
+* **Folds:** real geometric drape is modelled: underarm folds, waist ripples, elbow and cuff
+  bunching, a hem wave, crotch pulls, knee breaks, stacked ankles and a gathered elastic waist.
+  Ambient occlusion darkens the creases.
+* **Seams and edges:** front and back panels are meshed on one shared outline, so they meet edge
+  to edge with no gaps, finished with a fine tone-on-tone seam. Open edges have a rolled hem.
+* **Raised layers:** collar bands, polo collars and plackets, zip collars, zip tape, kangaroo
+  pockets, armhole bindings, sleeve cuffs, waistbands and ankle cuffs are separate layers. Each
+  sits on top of the shirt with real thickness, a rounded edge and a contact shadow.
+* **Hardware:** 3D buttons (dished, four-hole, cross-stitched), interlocking zip teeth, a metal
+  zip slider with pull tab, braided drawcords with toggles or metal aglets, and eyelets.
+* **Physics:** turning the garment makes it lag slightly, spring back and ripple, anchored at
+  the shoulders or waistband. The hem, sleeve ends, legs and cords move most.
 * **Drag** rotates freely around any axis. **Shift-drag** or a two-finger twist rolls around the
   view axis, and the X / Y / Z buttons rotate step by step. **Scroll** or **pinch** zooms from
   1× to 3× toward the pointer, **right-drag** pans, and **double-click** resets.
 
 The 3D garment is built in the browser from the product's own front and back SVGs, so any new
-design you add gets a 3D view automatically. The viewer loads three.js 0.128.0 from jsDelivr the
+design you add gets a 3D view automatically. Raised layers are the artwork elements marked
+`data-l="…"` in `src/jersey.js`; the lift height for each type is set in `LAYER` in
+`src/viewer3d.js`. Hardware is read from elements with the classes `bn`, `zp`, `ds`, `dt`,
+`ey` and `ag`. The viewer loads three.js 0.128.0 from jsDelivr the
 first time someone opens it, so it needs an internet connection.
 
 ## How ordering works (no backend)

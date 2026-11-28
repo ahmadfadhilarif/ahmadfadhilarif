@@ -590,7 +590,7 @@ function render(spec, view = 'front') {
     art.push(`<path d="M0 0H600V${spec.yoke}Q300 ${spec.yoke + 30} 0 ${spec.yoke}Z" fill="${c.trim}"/>`);
   }
   // cuffs + hem
-  g.cuffs.forEach((d) => art.push(`<path d="${d}" fill="${c.trim}"/>`));
+  g.cuffs.forEach((d) => art.push(`<path data-l="u" d="${d}" fill="${c.trim}"/>`));
   if (spec.cuffStripe !== false) g.cuffs.forEach((d, i) => {
     const [a, b] = g.cuffLines[i];
     art.push(`<path d="M${a}L${b}" stroke="${c.p2 || c.trim}" stroke-width="3" transform="translate(${i ? -1 : 1} 0)" opacity=".9"/>`);
@@ -632,7 +632,7 @@ function render(spec, view = 'front') {
     f.push(`<path d="M240 ${hL[1] - 46}L236 ${hL[1] + 4}M360 ${hL[1] - 46}L364 ${hL[1] + 4}" stroke="#000" stroke-opacity=".07" stroke-width="10"/>`);
     f.push(`<ellipse cx="300" cy="${aL[1] + 8}" rx="74" ry="42" fill="#fff" fill-opacity=".07"/>`);
     f.push(`<path d="M${g.nL[0] - 6} ${g.nL[1] + 34}Q300 ${g.nL[1] + 52} ${X(g.nL[0] - 6)} ${g.nL[1] + 34}" stroke="#000" stroke-opacity=".06" stroke-width="7"/>`);
-    art.push(`<g fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
+    art.push(`<g class="dr" fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
   }
   // fabric shading: soft vertical highlight + edges
   defs.push(`<linearGradient id="${id}sh" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".22"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".07"/><stop offset=".7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>`);
@@ -656,39 +656,39 @@ function render(spec, view = 'front') {
   // seams
   const seamCol = spec.outline || 'rgba(0,0,0,.25)';
   g.seams.forEach((d) => parts.push(`<path d="${d}" fill="none" stroke="${seamCol}" stroke-width="1.2"/><g transform="translate(2.2 .8)">${stitch(d, 0.9)}</g><g transform="translate(-2 -.6)">${stitch(d, 0.6)}</g>`));
-  if (g.armholes) g.armholes.forEach((d) => parts.push(`<path d="${d}" fill="none" stroke="${c.trim}" stroke-width="12"/><path d="${d}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.5" transform="translate(${d.includes('M220') ? 4 : -4} 0)"/>`));
+  if (g.armholes) g.armholes.forEach((d) => parts.push(`<path data-l="c" d="${d}" fill="none" stroke="${c.trim}" stroke-width="12"/><path d="${d}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.5" transform="translate(${d.includes('M220') ? 4 : -4} 0)"/>`));
 
   // collar
   if (view === 'front') {
     if (nk.trim) {
-      parts.push(`<g class="cl"><path d="${nk.trim}" fill="none" stroke="${c.trim}" stroke-width="${nk.trimW}" stroke-linejoin="miter"/>${rib(nk.trim, nk.trimW)}<path d="${nk.trim}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.4" transform="translate(0 ${nk.trimW / 2 + 1})" opacity=".9"/>${stitch(nk.trim, 1, `translate(0 ${nk.trimW / 2 + 3.6})`)}</g>`);
+      parts.push(`<g class="cl"><path data-l="c" d="${nk.trim}" fill="none" stroke="${c.trim}" stroke-width="${nk.trimW}" stroke-linejoin="miter"/>${rib(nk.trim, nk.trimW)}<path d="${nk.trim}" fill="none" stroke="${c.p2 || c.trim}" stroke-width="2.4" transform="translate(0 ${nk.trimW / 2 + 1})" opacity=".9"/>${stitch(nk.trim, 1, `translate(0 ${nk.trimW / 2 + 3.6})`)}</g>`);
     }
     parts.push(`<path class="bt" d="${nk.backTrim}" fill="none" stroke="${shade(c.trim, -0.25)}" stroke-width="5"/>`);
   } else {
     // printed neck tape
     const tape = spec.template ? '' : `<path d="M${g.nL[0] + 8} ${g.nL[1] + 14}Q300 ${g.nL[1] + 28} ${X(g.nL[0] + 8)} ${g.nL[1] + 14}" fill="none" stroke="${shade(c.trim, 0.12)}" stroke-width="3" stroke-opacity=".6"/>`;
-    parts.push(`<g class="cl"><path d="${nk.backTrim}" fill="none" stroke="${c.trim}" stroke-width="10"/>${rib(nk.backTrim, 10)}${stitch(nk.backTrim, 1, 'translate(0 7)')}${tape}</g>`);
+    parts.push(`<g class="cl"><path data-l="c" d="${nk.backTrim}" fill="none" stroke="${c.trim}" stroke-width="10"/>${rib(nk.backTrim, 10)}${stitch(nk.backTrim, 1, 'translate(0 7)')}${tape}</g>`);
   }
   if (nk.polo) {
     const [nL, nR] = [g.nL, g.nR];
     const vy = nk.vy;
     if (view === 'front') {
-      parts.push(`<path d="M286 ${vy - 4}h28v64h-28Z" fill="${shade(c.base, -0.08)}" stroke="${outlineCol}"/><circle cx="300" cy="${vy + 14}" r="3" fill="${c.trim}"/><circle cx="300" cy="${vy + 38}" r="3" fill="${c.trim}"/>`);
-      parts.push(`<path d="M${nL[0] - 6} ${nL[1] - 4}L${nL[0] - 18} ${nL[1] + 40}L292 ${vy + 4}L300 ${vy - 2}Q280 ${nL[1] + 10} ${nL[0] + 4} ${nL[1] - 8}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
-      parts.push(`<path d="M${nR[0] + 6} ${nR[1] - 4}L${nR[0] + 18} ${nR[1] + 40}L308 ${vy + 4}L300 ${vy - 2}Q320 ${nR[1] + 10} ${nR[0] - 4} ${nR[1] - 8}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
+      parts.push(`<path data-l="p" d="M286 ${vy - 4}h28v64h-28Z" fill="${shade(c.base, -0.08)}" stroke="${outlineCol}"/><circle class="bn" cx="300" cy="${vy + 14}" r="3" fill="${c.trim}"/><circle class="bn" cx="300" cy="${vy + 38}" r="3" fill="${c.trim}"/>`);
+      parts.push(`<path data-l="f" d="M${nL[0] - 6} ${nL[1] - 4}L${nL[0] - 18} ${nL[1] + 40}L292 ${vy + 4}L300 ${vy - 2}Q280 ${nL[1] + 10} ${nL[0] + 4} ${nL[1] - 8}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
+      parts.push(`<path data-l="f" d="M${nR[0] + 6} ${nR[1] - 4}L${nR[0] + 18} ${nR[1] + 40}L308 ${vy + 4}L300 ${vy - 2}Q320 ${nR[1] + 10} ${nR[0] - 4} ${nR[1] - 8}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
       parts.push(`<path d="M${nL[0] - 14} ${nL[1] + 30}L292 ${vy}" stroke="${c.p2 || c.base}" stroke-width="2.5" opacity=".8"/><path d="M${nR[0] + 14} ${nR[1] + 30}L308 ${vy}" stroke="${c.p2 || c.base}" stroke-width="2.5" opacity=".8"/>`);
     } else {
-      parts.push(`<path d="M${nL[0] - 6} ${nL[1] - 6}Q300 ${nL[1] + 2} ${nR[0] + 6} ${nR[1] - 6}L${nR[0] + 8} ${nR[1] + 14}Q300 ${nL[1] + 26} ${nL[0] - 8} ${nL[1] + 14}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
+      parts.push(`<path data-l="f" d="M${nL[0] - 6} ${nL[1] - 6}Q300 ${nL[1] + 2} ${nR[0] + 6} ${nR[1] - 6}L${nR[0] + 8} ${nR[1] + 14}Q300 ${nL[1] + 26} ${nL[0] - 8} ${nL[1] + 14}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
     }
   }
   if (nk.zip) {
     const [nL, nR] = [g.nL, g.nR];
-    parts.push(`<path d="M${nL[0] - 4} ${nL[1] - 10}Q300 ${nL[1] + (view === 'front' ? 14 : 4)} ${nR[0] + 4} ${nR[1] - 10}L${nR[0] + 4} ${nR[1] + 12}Q300 ${nL[1] + (view === 'front' ? 34 : 24)} ${nL[0] - 4} ${nL[1] + 12}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
+    parts.push(`<path data-l="z" d="M${nL[0] - 4} ${nL[1] - 10}Q300 ${nL[1] + (view === 'front' ? 14 : 4)} ${nR[0] + 4} ${nR[1] - 10}L${nR[0] + 4} ${nR[1] + 12}Q300 ${nL[1] + (view === 'front' ? 34 : 24)} ${nL[0] - 4} ${nL[1] + 12}Z" fill="${c.trim}" stroke="${outlineCol}"/>`);
     if (view === 'front') {
       const zEnd = spec.halfZip ? 240 : g.hemY - 10;
-      parts.push(`<path d="M300 ${nk.vy + 6}V${zEnd}" stroke="${shade(c.trim, -0.3)}" stroke-width="5"/><path d="M300 ${nk.vy + 6}V${zEnd}" stroke="#cfcfcf" stroke-width="1.6" stroke-dasharray="2 2"/><rect x="295" y="${nk.vy + 10}" width="10" height="18" rx="2" fill="#bdbdbd" stroke="#666" stroke-width=".8"/>`);
-      if (nk.hood) parts.push(`<path d="M286 ${nk.vy + 6}q-6 40 -2 70M314 ${nk.vy + 6}q6 40 2 70" stroke="${c.p2 || '#fff'}" stroke-width="2.5" fill="none"/><circle cx="284" cy="${nk.vy + 78}" r="3.5" fill="${c.p2 || '#fff'}"/><circle cx="316" cy="${nk.vy + 78}" r="3.5" fill="${c.p2 || '#fff'}"/>`);
-      if (spec.pocket) parts.push(`<path d="M228 400L372 400L392 470L208 470Z" fill="none" stroke="${outlineCol}" stroke-width="1.6"/><path d="M228 400L208 470M372 400L392 470" stroke="${shade(c.base, -0.3)}" stroke-width="4"/>`);
+      parts.push(`<path data-l="t" d="M300 ${nk.vy + 6}V${zEnd}" stroke="${shade(c.trim, -0.3)}" stroke-width="5"/><path d="M300 ${nk.vy + 6}V${zEnd}" stroke="#cfcfcf" stroke-width="1.6" stroke-dasharray="2 2"/><rect class="zp" x="295" y="${nk.vy + 10}" width="10" height="18" rx="2" fill="#bdbdbd" stroke="#666" stroke-width=".8"/>`);
+      if (nk.hood) parts.push(`<path class="ds" d="M286 ${nk.vy + 6}q-6 40 -2 70M314 ${nk.vy + 6}q6 40 2 70" stroke="${c.p2 || '#fff'}" stroke-width="2.5" fill="none"/><circle class="dt" cx="284" cy="${nk.vy + 78}" r="3.5" fill="${c.p2 || '#fff'}"/><circle class="dt" cx="316" cy="${nk.vy + 78}" r="3.5" fill="${c.p2 || '#fff'}"/>`);
+      if (spec.pocket) parts.push(`<path data-l="k" d="M228 400L372 400L392 470L208 470Z" fill="#000" fill-opacity=".035" stroke="${outlineCol}" stroke-width="1.6"/><path d="M228 400L208 470M372 400L392 470" stroke="${shade(c.base, -0.3)}" stroke-width="4"/>`);
     }
   }
 
@@ -742,8 +742,8 @@ function renderPants(spec, view = 'front') {
     art.push(`<path d="M208 118Q208 380 232 560M392 118Q392 380 368 560" stroke="${c.trim}" stroke-width="3" fill="none" opacity=".9"/>`);
   }
   // waistband + ankle cuffs
-  art.push(`<path d="M196 86H404V118H196Z" fill="${c.trim}"/>`);
-  art.push(`<path d="M206 554L276 554L278 572L204 572Z" fill="${c.trim}"/><path d="M324 554L394 554L396 572L322 572Z" fill="${c.trim}"/>`);
+  art.push(`<path data-l="w" d="M196 86H404V118H196Z" fill="${c.trim}"/>`);
+  art.push(`<path data-l="u" d="M206 554L276 554L278 572L204 572Z" fill="${c.trim}"/><path data-l="u" d="M324 554L394 554L396 572L322 572Z" fill="${c.trim}"/>`);
   art.push(rib('M196 102H404', 32), rib('M205 563L277 563', 18), rib('M323 563L395 563', 18));
   if (view === 'back') art.push(`<path d="M196 94H404M196 101H404M196 108H404" stroke="${shade(c.trim, -0.25)}" stroke-width="1.2"/>`);
   art.push(`<rect width="600" height="620" fill="url(#${id}fb)"/>`);
@@ -757,7 +757,7 @@ function renderPants(spec, view = 'front') {
       [516, 530, 544].forEach((y, k) => f.push(`<path d="M${cx - 28} ${y}Q${cx} ${y + 8} ${cx + 28} ${y}" stroke="${k % 2 ? '#fff' : '#000'}" stroke-opacity="${k % 2 ? '.08' : '.14'}" stroke-width="5"/>`));
       f.push(`<ellipse cx="${cx + (cx < 300 ? 8 : -8)}" cy="210" rx="34" ry="46" fill="#fff" fill-opacity=".07"/>`);
     });
-    art.push(`<g fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
+    art.push(`<g class="dr" fill="none" stroke-linecap="round" filter="url(#${id}bl)">${f.join('')}</g>`);
   }
   // stitching: waistband, cuffs, stripe edges
   art.push(stitch('M197 121H403'), stitch('M206 551L276 551'), stitch('M324 551L394 551'));
@@ -773,7 +773,7 @@ function renderPants(spec, view = 'front') {
     parts.push(`<path d="M210 122Q236 150 242 200M390 122Q364 150 358 200" stroke="${seamCol}" stroke-width="1.6" fill="none"/>`, `<g transform="translate(3 0)">${stitch('M210 122Q236 150 242 200')}</g><g transform="translate(-3 0)">${stitch('M390 122Q364 150 358 200')}</g>`);
     // drawstrings
     const cord = c.p2 && c.p2 !== c.trim ? c.p2 : '#ffffff';
-    parts.push(`<circle cx="290" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><circle cx="310" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><path d="M290 104q-6 30 -10 60M310 104q6 30 10 60" stroke="${cord}" stroke-width="3" fill="none" stroke-linecap="round"/><rect x="276" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/><rect x="317" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/>`);
+    parts.push(`<circle class="ey" cx="290" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><circle class="ey" cx="310" cy="104" r="3" fill="${shade(c.trim, -0.4)}"/><path class="ds" d="M290 104q-6 30 -10 60M310 104q6 30 10 60" stroke="${cord}" stroke-width="3" fill="none" stroke-linecap="round"/><rect class="ag" x="276" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/><rect class="ag" x="317" y="160" width="7" height="12" rx="2" fill="#bdbdbd"/>`);
     parts.push(raisedLogo(id, 238, 240, 34, logoFill));
     parts.push(`<text transform="translate(366 470) rotate(-86)" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="5" letter-spacing="1.1" fill="${tone}" fill-opacity=".6">TMZ TRACK · PERFORMANCE</text>`);
   } else {
